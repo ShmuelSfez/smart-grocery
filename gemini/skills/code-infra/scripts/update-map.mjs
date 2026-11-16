@@ -61,16 +61,25 @@ try {
   lastCommit = execSync('git log -1 --format="%h %cs %s"', { cwd: ROOT, encoding: 'utf8' }).trim();
 } catch {}
 
-const md = `# Codebase File Inventory (Auto-Generated)
-
-- **Updated:** ${new Date().toISOString()}
-- **Latest Commit:** \`${lastCommit}\`
+const body = `- **Latest Commit:** \`${lastCommit}\`
 - **Unit Tests (\`npm test\`):** ${testSummary}
 
 | File | Lines / Size | Exports |
 | :--- | :--- | :--- |
 ${rows.join('\n')}
 `;
+
+const prev = fs.existsSync(OUT) ? fs.readFileSync(OUT, 'utf8') : '';
+const stripHeader = (s) => s.replace(/^#[^\n]*\n\n- \*\*Updated:\*\* [^\n]*\n/, '');
+if (stripHeader(prev) === body) {
+  console.log(`No changes in ${path.relative(ROOT, OUT)} (tests: ${testSummary})`);
+  process.exit(0);
+}
+
+const md = `# Codebase File Inventory (Auto-Generated)
+
+- **Updated:** ${new Date().toISOString()}
+${body}`;
 
 fs.writeFileSync(OUT, md, 'utf8');
 console.log(`Wrote ${path.relative(ROOT, OUT)} (${rows.length} files, tests: ${testSummary})`);

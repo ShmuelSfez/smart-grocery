@@ -1,7 +1,7 @@
 # Codebase File Inventory (Auto-Generated)
 
-- **Updated:** 2026-11-16T19:51:09.734Z
-- **Latest Commit:** `23c224b 2026-11-16 Add gemini/agents.md project definition and empty gemini/skills directory`
+- **Updated:** 2026-11-16T19:57:30.866Z
+- **Latest Commit:** `e57f2b1 2026-11-16 Refine project goals in agents.md and add code-infra skill + weekly map script`
 - **Unit Tests (`npm test`):** 7 pass, 0 fail
 
 | File | Lines / Size | Exports |
@@ -22,7 +22,7 @@
 | `gemini/agents.md` | 50 | — |
 | `gemini/skills/code-infra/SKILL.md` | 44 | — |
 | `gemini/skills/code-infra/references/architecture.md` | 41 | — |
-| `gemini/skills/code-infra/scripts/update-map.mjs` | 77 | — |
+| `gemini/skills/code-infra/scripts/update-map.mjs` | 86 | — |
 | `package.json` | 2 | — |
 | `serve.mjs` | 379 | — |
 | `tests/core.test.mjs` | 129 | — |
