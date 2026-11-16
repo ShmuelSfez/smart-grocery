@@ -1,0 +1,315 @@
+<!doctype html>
+<html lang="he" dir="rtl">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta name="theme-color" content="#0f766e" />
+  <title>העגלה החכמה – השוואת סלים ורשימת קניות חכמה</title>
+  <link rel="manifest" href="manifest.webmanifest" />
+  <link rel="icon" href="icon.svg" type="image/svg+xml" />
+  <link rel="apple-touch-icon" href="icon.svg" />
+  <link rel="stylesheet" href="styles.css?v=14" />
+</head>
+<body>
+  <header class="topbar">
+    <div class="brand">
+      <span class="logo">🛒</span>
+      <div>
+        <h1>העגלה החכמה</h1>
+        <small class="subtitle">השוואת מחירים חיה בין רשתות + מילוי סל בלחיצה</small>
+      </div>
+    </div>
+    <div class="top-actions">
+      <button class="pill-btn" id="btnFamily" title="שיתוף סל בזמן אמת עם המשפחה">👨‍👩‍👧‍👦 סנכרון משפחתי</button>
+      <button class="icon-btn" id="btnSettings" title="הגדרות" aria-label="הגדרות">⚙️</button>
+    </div>
+  </header>
+
+  <main>
+    <div id="familyBanner" class="family-banner" hidden>
+      <span class="dot"></span>
+      <span id="familyText">מסונכרן חי עם המשפחה</span>
+      <button type="button" class="chip-btn" id="btnCopyRoom">🔗 העתק קישור למשפחה</button>
+      <button type="button" class="chip-btn" id="btnLeaveRoom">נתק חדר</button>
+    </div>
+
+    <form id="addForm" class="add-bar" autocomplete="off">
+      <input id="addInput" type="text" placeholder="הוסף מוצר… (2 חלב, 1 ק״ג עגבניות, במבה x3)" enterkeyhint="done" />
+      <button type="submit" class="btn primary" aria-label="הוסף">＋</button>
+    </form>
+    <div id="autocomplete" class="autocomplete" hidden></div>
+
+    <div class="tools">
+      <button class="chip-btn" id="btnSheets">📊 ייבוא / ייצוא Google Sheets</button>
+      <button class="chip-btn" id="btnPaste">📋 הדבק רשימה / טקסט</button>
+      <button class="chip-btn" id="btnRecipes">🍲 מתכונים וארוחות</button>
+      <button class="chip-btn" id="btnAi">✨ AI</button>
+      <button class="chip-btn" id="btnExt">🧩 התקנת התוסף לכרום</button>
+    </div>
+
+    <!-- Location & Delivery Preferences Bar -->
+    <section id="locationBar" class="location-bar">
+      <div class="loc-row">
+        <span class="loc-label">📍 אזור משלוח / יישוב:</span>
+        <input id="locInput" list="citiesList" type="text" placeholder="הזן עיר או יישוב (למשל: ירושלים, מודיעין, באר שבע, אריאל…)" />
+        <datalist id="citiesList"></datalist>
+        <button type="button" class="chip-btn" id="btnGeo" title="זהה מיקום אוטומטית">🎯 זהה מיקום</button>
+      </div>
+      <div class="loc-options">
+        <label class="check"><input type="checkbox" id="incDelivery" checked /> חשב סה״כ כולל דמי משלוח</label>
+        <div class="sort-pills">
+          <span>עדיפות:</span>
+          <button type="button" class="chip-btn active-auto" id="sortCheapest">💰 הכי זול (כולל משלוח)</button>
+          <button type="button" class="chip-btn" id="sortFastest">⚡ המשלוח המהיר ביותר</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- Multi-Supermarket Comparison Dashboard -->
+    <section id="compareBox" class="compare-box">
+      <div class="compare-head">
+        <div>
+          <h2>📊 השוואת סל הקניות בין רשתות</h2>
+          <p class="muted" id="compareSummary">המערכת בוחרת אוטומטית את הרשת הזולה ביותר עבור הסל שלך (לחץ על רשת כדי לבחור בה ידנית):</p>
+        </div>
+        <button type="button" class="chip-btn active-auto" id="btnAutoChain">🏆 בחר אוטומטית את הזולה ביותר</button>
+      </div>
+      <div id="chainGrid" class="chain-grid"></div>
+    </section>
+
+    <section id="authBar" class="auth-bar">
+      <div class="auth-title" id="authLabel">👤 אימייל לחיבור ברשת הנבחרת:</div>
+      <input id="shufUser" type="email" placeholder="אימייל לחיבור אוטומטי בדף ההתחברות של הרשת" autocomplete="username" />
+    </section>
+
+    <section id="suggestBox" class="suggest" hidden>
+      <h2 id="suggestTitle"></h2>
+      <div id="suggestChips" class="chips"></div>
+    </section>
+
+    <section id="listBox"></section>
+
+    <div id="emptyState" class="empty" hidden>
+      <div class="empty-emoji">🧺</div>
+      <p>הרשימה ריקה. לחץ על מוצרים למעלה כדי לראות השוואת מחירים חיה בין רמי לוי, שופרסל, קרפור, ויקטורי ויוחננוף!</p>
+    </div>
+    <p class="disclaimer">שירות השוואת מחירים עצמאי ובלתי רשמי – אינו קשור או מופעל ע״י רשתות השיווק.</p>
+  </main>
+
+  <footer class="bottombar">
+    <button class="btn primary big" id="btnSend">🛍️ שלח סל לרשת המשתלמת <span id="sendCount"></span></button>
+    <div class="bottom-actions">
+      <button class="icon-btn" id="btnShare" title="שתף" aria-label="שתף">📤</button>
+      <button class="icon-btn" id="btnClear" title="נקה רשימה" aria-label="נקה רשימה">🗑️</button>
+    </div>
+  </footer>
+
+  <!-- Paste / AI dialog -->
+  <dialog id="dlgPaste">
+    <form method="dialog" class="dlg">
+      <h3 id="pasteTitle">הדבק רשימה</h3>
+      <p class="muted" id="pasteHint">כל שורה או פסיק = מוצר. אפשר להדביק מוואטסאפ.</p>
+      <textarea id="pasteText" rows="8" placeholder="חלב&#10;2 לחם&#10;1 ק״ג עגבניות, בננות"></textarea>
+      <div class="dlg-actions">
+        <button value="cancel" class="btn">ביטול</button>
+        <button id="pasteOk" value="ok" class="btn primary">הוסף לרשימה</button>
+      </div>
+    </form>
+  </dialog>
+
+  <!-- Recipes dialog -->
+  <dialog id="dlgRecipes">
+    <form method="dialog" class="dlg">
+      <h3>מתכונים וארוחות</h3>
+      <div id="recipeGrid" class="recipe-grid"></div>
+      <div id="recipeDetail" hidden>
+        <div class="servings">
+          <span id="recipeName"></span>
+          <label>סועדים
+            <button type="button" class="step" data-d="-1">−</button>
+            <b id="servings">4</b>
+            <button type="button" class="step" data-d="1">+</button>
+          </label>
+        </div>
+        <p class="muted">סמן רק את מה שחסר לך:</p>
+        <div id="recipeItems" class="recipe-items"></div>
+      </div>
+      <div class="dlg-actions">
+        <button value="cancel" class="btn">סגור</button>
+        <button id="recipeAdd" value="ok" class="btn primary" hidden>הוסף לרשימה</button>
+      </div>
+    </form>
+  </dialog>
+
+  <!-- Edit item dialog -->
+  <dialog id="dlgEdit">
+    <form method="dialog" class="dlg">
+      <h3>עריכת מוצר</h3>
+      <label class="field">שם<input id="editName" type="text" /></label>
+      <div class="row">
+        <label class="field">כמות<input id="editQty" type="number" step="0.1" min="0" inputmode="decimal" /></label>
+        <label class="field">יחידה
+          <select id="editUnit">
+            <option value="unit">יחידות</option>
+            <option value="kg">ק״ג</option>
+            <option value="g">גרם</option>
+            <option value="pack">חבילות</option>
+          </select>
+        </label>
+      </div>
+      <label class="field">מחלקה<select id="editCat"></select></label>
+      <label class="field">הערה<input id="editNote" type="text" placeholder="למשל: 3%, בלי לקטוז" /></label>
+      <div class="dlg-actions">
+        <button value="cancel" class="btn">ביטול</button>
+        <button value="ok" class="btn primary">שמור</button>
+      </div>
+    </form>
+  </dialog>
+
+  <!-- Settings dialog -->
+  <dialog id="dlgSettings">
+    <form method="dialog" class="dlg">
+      <h3>הגדרות</h3>
+      <fieldset>
+        <legend>✨ AI (לא חובה)</legend>
+        <p class="muted">מפתח Gemini API מאפשר להפוך טקסט חופשי/מתכון לרשימה. נשמר רק במכשיר הזה.
+          <a href="https://aistudio.google.com/apikey" target="_blank" rel="noopener">קבלת מפתח</a></p>
+        <label class="field">מפתח API<input id="setKey" type="password" placeholder="AIza…" autocomplete="off" /></label>
+        <label class="field">מודל<input id="setModel" type="text" /></label>
+      </fieldset>
+      <fieldset>
+        <legend>💾 גיבוי</legend>
+        <div class="row">
+          <button type="button" class="btn" id="btnExport">ייצוא</button>
+          <button type="button" class="btn" id="btnImport">ייבוא</button>
+          <input type="file" id="importFile" accept="application/json" hidden />
+        </div>
+        <button type="button" class="btn danger" id="btnResetHistory">מחק היסטוריית קניות</button>
+      </fieldset>
+      <div class="dlg-actions">
+        <button value="cancel" class="btn">ביטול</button>
+        <button value="ok" class="btn primary">שמור</button>
+      </div>
+    </form>
+  </dialog>
+
+  <!-- Send dialog -->
+  <dialog id="dlgSend">
+    <form method="dialog" class="dlg">
+      <h3 id="sendModalTitle">🛍️ שליחת הסל לרשת</h3>
+      <div id="sendDesktop">
+        <p id="sendDesktopDesc">ייפתח אתר הרשת והתוסף יוסיף אוטומטית את כל המוצרים שבחרת ישירות לסל הקניות שלך.</p>
+      </div>
+      <div id="sendMobile" hidden>
+        <p>השלב של מילוי הסל האוטומטי רץ על <b>מחשב עם כרום והתוסף</b>. שלח לעצמך את הקישור ופתח אותו במחשב:</p>
+      </div>
+      <label class="check"><input type="checkbox" id="sendRecord" checked /> לשמור כקנייה בהיסטוריה (לשיפור ההצעות)</label>
+      <div class="dlg-actions wrap">
+        <button value="cancel" class="btn">ביטול</button>
+        <button type="button" id="sendCopy" class="btn">🔗 העתק קישור לסל</button>
+        <button type="button" id="sendWa" class="btn">💬 שלח לעצמי בוואטסאפ</button>
+        <button type="button" id="sendGo" class="btn primary">פתח את האתר והוסף לסל</button>
+      </div>
+    </form>
+  </dialog>
+
+  <!-- Share dialog -->
+  <dialog id="dlgShare">
+    <form method="dialog" class="dlg">
+      <h3>📤 שיתוף הרשימה</h3>
+      <div class="dlg-actions wrap col">
+        <button type="button" id="shareFamilyRoom" class="btn primary">👨‍👩‍👧‍👦 צור חדר משפחתי חי (סנכרון בזמן אמת)</button>
+        <button type="button" id="shareWaText" class="btn">💬 וואטסאפ (כטקסט עם השוואת מחירים)</button>
+        <button type="button" id="shareLink" class="btn">🔗 העתק קישור לרשימה</button>
+        <button type="button" id="shareNative" class="btn">📲 שיתוף…</button>
+        <button value="cancel" class="btn">סגור</button>
+      </div>
+    </form>
+  </dialog>
+
+  <!-- Google Sheets / CSV Smart Import & Export dialog -->
+  <dialog id="dlgSheets">
+    <form method="dialog" class="dlg">
+      <h3>📊 ייבוא וייצוא Google Sheets (עם סינון חכם)</h3>
+      <p class="muted">האתר מזהה אוטומטית מוצרי סופר ומסנן כותרות, ציוד בנייה, ריהוט וכלי בית לא רלוונטיים.</p>
+
+      <div class="sheet-box">
+        <label class="field">קישור ל-Google Sheet (אם הגיליון פתוח לצפייה בקישור):
+          <div class="row">
+            <input id="sheetUrl" type="url" placeholder="https://docs.google.com/spreadsheets/d/..." dir="ltr" />
+            <button type="button" class="btn primary" id="btnFetchSheet">טען</button>
+          </div>
+        </label>
+        <div id="sheetStatus" class="sheet-status" hidden></div>
+        <div class="row" style="align-items:center">
+          <span class="muted" style="flex:1">או פשוט סמן בגיליון ← העתק (Ctrl+C) והדבק כאן, או העלה קובץ CSV:</span>
+          <button type="button" class="btn" id="btnUploadCsv">📂 העלה CSV</button>
+          <input type="file" id="csvFile" accept=".csv,.tsv,text/csv,text/tab-separated-values" hidden />
+        </div>
+        <textarea id="sheetRaw" rows="4" placeholder="הדבק כאן תאים מ-Google Sheets או תוכן CSV…"></textarea>
+      </div>
+
+      <div id="sheetPreview" hidden>
+        <div class="sheet-section">
+          <b id="sheetRelTitle" class="ok-txt">✅ רלוונטיים לסופר:</b>
+          <div id="sheetRelList" class="sheet-list"></div>
+        </div>
+        <div class="sheet-section">
+          <b id="sheetSkipTitle" class="muted">🚫 סוננו כלא-רלוונטיים (לא יתווספו לסל):</b>
+          <div id="sheetSkipList" class="sheet-list muted-list"></div>
+        </div>
+      </div>
+
+      <div class="sheet-export-bar">
+        <span>ייצוא הרשימה הנוכחית:</span>
+        <button type="button" class="btn" id="btnExportCsv">⬇️ הורד CSV ל-Sheets/Excel</button>
+        <button type="button" class="btn" id="btnCopyTsv">📋 העתק ל-Google Sheets</button>
+      </div>
+
+      <div class="dlg-actions">
+        <button value="cancel" class="btn">סגור</button>
+        <button type="button" id="btnSheetImport" class="btn primary" hidden>הוסף מוצרים רלוונטיים לרשימה</button>
+      </div>
+    </form>
+  </dialog>
+
+  <!-- Google Sheets Permission Required Popup -->
+  <dialog id="dlgSheetPerm">
+    <form method="dialog" class="dlg">
+      <h3>🔒 נדרשת הרשאת גישה לגיליון</h3>
+      <p>כדי שהאתר יוכל לקרוא את רשימת הקניות מתוך הקישור של Google Sheets, הגיליון צריך הרשאת צפייה בקישור.</p>
+      <ol class="steps">
+        <li>לחץ על <b>פתח את הגיליון להרשאה</b> למטה.</li>
+        <li>בפינה הימנית-עליונה בגיליון לחץ <b>Share (שיתוף)</b>.</li>
+        <li>תחת <b>General access</b> שנה מ-Restricted ל-<b>Anyone with the link</b> (Viewer / צפייה).</li>
+        <li>חזור לכאן ולחץ <b>שיניתי, טען עכשיו ↻</b>.</li>
+      </ol>
+      <div class="dlg-actions wrap">
+        <button type="button" id="permOpenSheet" class="btn">↗️ פתח את הגיליון להרשאה</button>
+        <button type="button" id="permRetry" class="btn primary">↻ שיניתי, טען עכשיו</button>
+        <button type="button" id="permPasteInstead" class="btn">📋 אדביק ידנית בלי לשנות הרשאה</button>
+      </div>
+    </form>
+  </dialog>
+
+  <!-- Extension install dialog -->
+  <dialog id="dlgExt">
+    <form method="dialog" class="dlg">
+      <h3>🧩 התקנת התוסף לכרום (תומך בשופרסל ורמי לוי)</h3>
+      <ol class="steps">
+        <li><a href="shufersal-extension.zip" download="shufersal-extension.zip"><b>הורד את קובץ התוסף (shufersal-extension.zip)</b></a> וחלץ אותו לתיקייה במחשב.</li>
+        <li>פתח בכרום את הכתובת <code>chrome://extensions</code> והפעל <b>Developer mode</b> (למעלה מימין).</li>
+        <li>לחץ <b>Load unpacked</b> ובחר את התיקייה שחילצת (או לחץ ↻ אם כבר מותקן).</li>
+      </ol>
+      <div class="dlg-actions">
+        <a href="shufersal-extension.zip" download="shufersal-extension.zip" class="btn primary dl-link">⬇️ הורד את התוסף</a>
+        <button value="cancel" class="btn">סגור</button>
+      </div>
+    </form>
+  </dialog>
+
+  <div id="toast" class="toast" hidden></div>
+  <script src="js/codec.js?v=14"></script>
+  <script type="module" src="js/app.js?v=14"></script>
+</body>
+</html>

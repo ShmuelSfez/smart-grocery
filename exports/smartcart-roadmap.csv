@@ -1,0 +1,14 @@
+ID,Phase,Task,Priority,Status,Component,Est. Cost,Notes
+T-01,1. Foundation,Smart Hebrew/English parser & auto-aisle categorization,High,Done,"web/js/parser.js, categories.js",$0,6 unit tests passing
+T-02,1. Foundation,Multi-supermarket cart comparison (5 chains) + location & delivery ETA,High,Done,"web/js/app.js, serve.mjs",$0,Live Rami Levy + Shufersal search
+T-03,1. Foundation,Chrome extension auto-login redirect & 1-click cart fill (Shufersal & Rami Levy),High,Done,extension/panel.js,$0,v2.2.0 packaged in zip
+T-04,1. Foundation,"Security hardening (no password in URL, 256KB codec cap, CSP, rate limit)",Critical,Done,"codec.js, vercel.json, serve.mjs",$0,Audited by Hydrogen reviewer
+T-05,2. Public Launch,Deploy web app & /api/search to Vercel / Cloudflare Pages,Critical,Todo,"vercel.json, api/search.js",$0/mo,Permanent HTTPS URL 24/7
+T-06,2. Public Launch,Publish Chrome Extension to Chrome Web Store + Privacy Policy page,High,Todo,extension/manifest.json,$5 one-time,1-click install without Dev Mode
+T-07,2. Public Launch,Connect custom domain (e.g. smartcart.co.il),Medium,Todo,DNS / Vercel,~$2/mo,Clean branding & PWA install
+T-08,3. Scale & Data,Ingest official Israeli Price Transparency XML/GZ feeds (hourly cron),Critical,Todo,Postgres + Worker,$0-$25/mo,"Replaces scraping; adds Victory, Carrefour, Yochananof exact prices"
+T-09,3. Scale & Data,Replace in-memory rooms with Supabase Realtime DB + user accounts,High,Todo,Supabase / Postgres,$0-$25/mo,Persistent family lists + offline sync
+T-10,3. Scale & Data,Move Gemini AI calls to server-side /api/ai proxy with per-user quota,Medium,Todo,api/ai.js,~$0.0001/call,Protects API key & enables Pro limits
+T-11,4. Monetization,Add Freemium paywall (15-25 ILS/mo via Meshulam / PayPlus / Stripe),High,Todo,Billing / Auth,1.5%-2.5% fee,Free: list + 1 chain; Pro: 5-chain compare + family sync + AI
+T-12,4. Monetization,Sponsored brand placement admin + analytics dashboard,Medium,Todo,Supermarkets / Brands DB,Revenue,Charge brands for top suggested slot
+T-13,4. Monetization,"Add cart-fill extension adapters for Carrefour, Victory, Yochananof",Medium,Todo,extension/,$0,Use optional_host_permissions in MV3

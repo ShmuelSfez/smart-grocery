@@ -1,0 +1,41 @@
+<!doctype html>
+<html lang="he" dir="rtl">
+<head>
+  <meta charset="utf-8" />
+  <style>
+    body { width: 340px; margin: 0; font: 14px system-ui, "Segoe UI", Arial, sans-serif; color: #1d1d1f; }
+    header { background: #e2001a; color: #fff; padding: 12px 14px; font-weight: 700; font-size: 15px; }
+    section { padding: 10px 14px; border-bottom: 1px solid #eee; }
+    h4 { margin: 0 0 6px; font-size: 13px; color: #6e6e73; }
+    button { font: inherit; border: 1px solid #ddd; background: #fff; border-radius: 10px; padding: 8px 12px; cursor: pointer; }
+    .primary { background: #e2001a; color: #fff; border-color: #e2001a; font-weight: 600; width: 100%; }
+    textarea { width: 100%; box-sizing: border-box; border: 1px solid #ddd; border-radius: 8px; font: 12px monospace; direction: ltr; }
+    .maps { max-height: 220px; overflow: auto; }
+    .map { display: flex; align-items: center; gap: 6px; padding: 4px 0; border-bottom: 1px solid #f2f2f2; font-size: 12px; }
+    .map img { width: 28px; height: 28px; object-fit: contain; }
+    .map .g { flex: 1; min-width: 0; }
+    .map .g div { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .map .x { border: 0; background: none; color: #aaa; padding: 2px 6px; }
+    .map .x:hover { color: #e2001a; }
+    .muted { color: #6e6e73; font-size: 12px; }
+    .row { display: flex; gap: 6px; }
+  </style>
+</head>
+<body>
+  <header>🛒 הרשימה החכמה ← שופרסל</header>
+  <section>
+    <div id="pendingInfo" class="muted"></div>
+    <div class="row" style="margin-top:8px"><button class="primary" id="open">פתח את שופרסל עם החלונית</button></div>
+  </section>
+  <section>
+    <h4>ייבוא ידני</h4>
+    <textarea id="code" rows="3" placeholder="הדבק כאן קישור שופרסל מהאפליקציה (…#smartlist=…)"></textarea>
+    <div class="row" style="margin-top:6px"><button id="import">טען רשימה</button></div>
+  </section>
+  <section>
+    <h4 id="mapsTitle">מוצרים שמורים</h4>
+    <div id="maps" class="maps"></div>
+  </section>
+  <script src="popup.js"></script>
+</body>
+</html>

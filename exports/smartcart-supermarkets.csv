@@ -1,0 +1,6 @@
+Chain ID,Chain Name,Delivery Fee (ILS),Free Delivery Over (ILS),Min Order (ILS),Auto-Cart Extension,Price Source
+ramilevy,רמי לוי,29.9,750,200,Supported,Live API + XML Feed
+shufersal,שופרסל,29.9,650,150,Supported,Live API + XML Feed
+carrefour,קרפור,29.9,550,150,Planned,Index / XML Feed
+victory,ויקטורי,29,700,200,Planned,Index / XML Feed
+yochananof,יוחננוף,24.9,650,200,Planned,Index / XML Feed

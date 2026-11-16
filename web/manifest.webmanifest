@@ -1,0 +1,15 @@
+{
+  "name": "הרשימה החכמה",
+  "short_name": "רשימה חכמה",
+  "description": "רשימת קניות חכמה עם שליחה לשופרסל",
+  "lang": "he",
+  "dir": "rtl",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#f6f6f8",
+  "theme_color": "#e2001a",
+  "icons": [
+    { "src": "icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any maskable" }
+  ]
+}
