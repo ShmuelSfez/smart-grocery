@@ -69,7 +69,7 @@ const body = `- **Latest Commit:** \`${lastCommit}\`
 ${rows.join('\n')}
 `;
 
-const prev = fs.existsSync(OUT) ? fs.readFileSync(OUT, 'utf8') : '';
+const prev = fs.existsSync(OUT) ? fs.readFileSync(OUT, 'utf8').replace(/\r\n/g, '\n') : '';
 const stripHeader = (s) => s.replace(/^#[^\n]*\n\n- \*\*Updated:\*\* [^\n]*\n/, '');
 if (stripHeader(prev) === body) {
   console.log(`No changes in ${path.relative(ROOT, OUT)} (tests: ${testSummary})`);
