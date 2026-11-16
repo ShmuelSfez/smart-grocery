@@ -47,3 +47,13 @@
 4. **Cache Busting:** Bump `?v=N` on CSS/JS tags in `web/index.html` whenever frontend assets change.
 5. **Keep UX Frictionless & Build-Free:** Preserve vanilla ES modules with zero required build step. Verify every edit with `npm test` and `node --check`.
 6. **Legal & Trademark Separation:** Maintain non-affiliation disclaimers in `web/index.html` and `extension/manifest.json`.
+
+---
+
+## 5. Team & Git Workflow (Commits & Pushes)
+Other developers and collaborators will join this repository on **https://github.com/ShmuelSfez/smart-grocery**. Keep history clean and tracked from now on:
+1. **Sync Before Editing:** Always `git pull --rebase origin main` before starting work.
+2. **Small, Descriptive Commits:** Every completed task, bug fix, or feature gets its own focused commit and push (never bundle unrelated edits). Use short imperative messages (e.g., `Add Rami Levy unit-weight rounding fix`).
+3. **Branch / PR Ready:** Once collaborators join, create feature branches (`feat/...`, `fix/...`) instead of pushing unreviewed large refactors straight to `main`.
+4. **Green Before Push:** Always run `npm test` (and `node --check` on modified JS files) before committing and pushing.
+5. **Deploy Sync:** After pushing changes that affect `web/` or `api/`, deploy to production (`npx vercel --prod`) or keep Vercel Git integration connected to `main`.
