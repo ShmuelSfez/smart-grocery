@@ -2,18 +2,20 @@
 name: code-infra
 description: >-
   Explains the SmartCart (smart-grocery) code infrastructure, module boundaries,
-  end-to-end data flows, and optimal code-reading order. Use whenever onboarding
-  to the codebase, planning a feature, debugging, or performing the weekly
-  architecture doc refresh.
+  end-to-end data flows, and optimal code-reading order, and keeps README.md
+  aligned with the codebase. Use whenever onboarding, planning a feature,
+  debugging, or performing the weekly docs & README refresh.
 ---
 
 # SmartCart Code Infrastructure & Reading Guide
 
-Use this skill to quickly understand how **SmartCart (העגלה החכמה)** is structured and where to look before making edits.
+Use this skill to quickly understand how **SmartCart (העגלה החכמה)** is structured and keep both the architecture docs and `README.md` accurate.
 
 ## Optimal Code Reading Order (Read in ~3 Minutes)
 Follow this order instead of scanning files randomly:
 
+0. **Project Overview & Goals (`README.md` + `gemini/agents.md`)**
+   - Skim `README.md` for user-facing features, directory overview, and setup commands, and `gemini/agents.md` for commercial vision and strict security/engineering guardrails.
 1. **System Entry & Routing (`serve.mjs` + `vercel.json`)**
    - Read `serve.mjs` (local dev server) and `vercel.json` (production rewrites + CSP headers) to see every HTTP route (`/`, `/api/search`, `/api/sheet`, `/api/room`) and security boundary.
 2. **Core Domain Logic (`web/js/`) — Pure, Testable Modules First**
@@ -36,8 +38,9 @@ Follow this order instead of scanning files randomly:
 - Auto-generated file & export map: [file-inventory.md](./references/file-inventory.md)
 
 ## Weekly Maintenance Workflow
-Every week, keep this skill synchronized with the actual repository:
+Every week, keep both this skill and `README.md` synchronized with the actual codebase:
 1. Run `node gemini/skills/code-infra/scripts/update-map.mjs` from the repo root to regenerate [file-inventory.md](./references/file-inventory.md) and run `npm test`.
 2. Review `git log --since="7 days ago" --stat` for any new endpoints, modules, extension changes, or architectural shifts.
-3. Update [architecture.md](./references/architecture.md) and this `SKILL.md` if any reading-order file, API route, or invariant changed.
-4. Commit any updates (or report changes clearly if uncommitted).
+3. **Verify `README.md` against the code:** Read `README.md` and check that its listed features, directory structure, endpoints, test counts, setup commands, and roadmap status still match the actual files and `file-inventory.md`. Update `README.md` if anything drifted.
+4. Update [architecture.md](./references/architecture.md) and this `SKILL.md` if any reading-order file, API route, or invariant changed.
+5. Commit and push any updates (`git add README.md gemini/skills/code-infra`).

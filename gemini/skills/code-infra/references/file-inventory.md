@@ -1,13 +1,13 @@
 # Codebase File Inventory (Auto-Generated)
 
-- **Updated:** 2026-11-16T20:00:20.267Z
-- **Latest Commit:** `60fb354 2026-11-16 Normalize CRLF in code-infra weekly update script`
+- **Updated:** 2026-11-16T20:07:24.686Z
+- **Latest Commit:** `0a863b8 2026-11-16 Document team Git commit and push workflow in gemini/agents.md`
 - **Unit Tests (`npm test`):** 7 pass, 0 fail
 
 | File | Lines / Size | Exports |
 | :--- | :--- | :--- |
 | `.gitignore` | binary (45 B) | — |
-| `README.md` | 42 | — |
+| `README.md` | 91 | — |
 | `api/search.js` | 304 | `default` |
 | `api/sheet.js` | 92 | `extractSheetExportUrl`, `default` |
 | `extension/capture.js` | 11 | — |
@@ -20,7 +20,7 @@
 | `extension/popup.html` | 42 | — |
 | `extension/popup.js` | 65 | — |
 | `gemini/agents.md` | 60 | — |
-| `gemini/skills/code-infra/SKILL.md` | 44 | — |
+| `gemini/skills/code-infra/SKILL.md` | 47 | — |
 | `gemini/skills/code-infra/references/architecture.md` | 41 | — |
 | `gemini/skills/code-infra/scripts/update-map.mjs` | 86 | — |
 | `package.json` | 2 | — |
