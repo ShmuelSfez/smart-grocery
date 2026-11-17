@@ -8,7 +8,7 @@
   <link rel="manifest" href="manifest.webmanifest" />
   <link rel="icon" href="icon.svg" type="image/svg+xml" />
   <link rel="apple-touch-icon" href="icon.svg" />
-  <link rel="stylesheet" href="styles.css?v=14" />
+  <link rel="stylesheet" href="styles.css?v=15" />
 </head>
 <body>
   <header class="topbar">
@@ -16,7 +16,7 @@
       <span class="logo">🛒</span>
       <div>
         <h1>העגלה החכמה</h1>
-        <small class="subtitle">השוואת מחירים חיה בין רשתות + מילוי סל בלחיצה</small>
+        <small class="subtitle">רשימת קניות נוחה והשוואת מחירים שקופה בין רשתות</small>
       </div>
     </div>
     <div class="top-actions">
@@ -50,18 +50,12 @@
     <!-- Location & Delivery Preferences Bar -->
     <section id="locationBar" class="location-bar">
       <div class="loc-row">
-        <span class="loc-label">📍 אזור משלוח / יישוב:</span>
-        <input id="locInput" list="citiesList" type="text" placeholder="הזן עיר או יישוב (למשל: ירושלים, מודיעין, באר שבע, אריאל…)" />
+        <span class="loc-label">📍 עיר / יישוב:</span>
+        <input id="locInput" list="citiesList" type="text" placeholder="הזן עיר (למשל: הרצליה, ירושלים, תל אביב, באר שבע…)" />
         <datalist id="citiesList"></datalist>
-        <button type="button" class="chip-btn" id="btnGeo" title="זהה מיקום אוטומטית">🎯 זהה מיקום</button>
       </div>
       <div class="loc-options">
-        <label class="check"><input type="checkbox" id="incDelivery" checked /> חשב סה״כ כולל דמי משלוח</label>
-        <div class="sort-pills">
-          <span>עדיפות:</span>
-          <button type="button" class="chip-btn active-auto" id="sortCheapest">💰 הכי זול (כולל משלוח)</button>
-          <button type="button" class="chip-btn" id="sortFastest">⚡ המשלוח המהיר ביותר</button>
-        </div>
+        <label class="check"><input type="checkbox" id="incDelivery" checked /> חשב סה״כ כולל דמי משלוח ידועים <small id="deliveryCheckedNote" class="muted"></small></label>
       </div>
     </section>
 
@@ -91,7 +85,7 @@
 
     <div id="emptyState" class="empty" hidden>
       <div class="empty-emoji">🧺</div>
-      <p>הרשימה ריקה. לחץ על מוצרים למעלה כדי לראות השוואת מחירים חיה בין רמי לוי, שופרסל, קרפור, ויקטורי ויוחננוף!</p>
+      <p>הרשימה ריקה. הוסף מוצרים למעלה כדי להשוות מחירים אמיתיים בין שופרסל, רמי לוי וקרפור.</p>
     </div>
     <p class="disclaimer">שירות השוואת מחירים עצמאי ובלתי רשמי – אינו קשור או מופעל ע״י רשתות השיווק.</p>
   </main>
@@ -309,7 +303,7 @@
   </dialog>
 
   <div id="toast" class="toast" hidden></div>
-  <script src="js/codec.js?v=14"></script>
-  <script type="module" src="js/app.js?v=14"></script>
+  <script src="js/codec.js?v=15"></script>
+  <script type="module" src="js/app.js?v=15"></script>
 </body>
 </html>

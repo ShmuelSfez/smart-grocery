@@ -17,7 +17,7 @@ const SEC_HEADERS = {
   'x-content-type-options': 'nosniff',
   'x-frame-options': 'DENY',
   'referrer-policy': 'strict-origin-when-cross-origin',
-  'content-security-policy': "default-src 'self'; img-src 'self' https://res.cloudinary.com https://*.shufersal.co.il https://img.rami-levy.co.il data:; connect-src 'self' https://generativelanguage.googleapis.com https://nominatim.openstreetmap.org; style-src 'self' 'unsafe-inline'; script-src 'self'; object-src 'none'; base-uri 'self'; frame-ancestors 'none';",
+  'content-security-policy': "default-src 'self'; img-src 'self' https://res.cloudinary.com https://*.shufersal.co.il https://img.rami-levy.co.il data:; connect-src 'self' https://generativelanguage.googleapis.com; style-src 'self' 'unsafe-inline'; script-src 'self'; object-src 'none'; base-uri 'self'; frame-ancestors 'none';",
 };
 
 const SEARCH_CACHE = new Map();
@@ -28,9 +28,6 @@ const MAX_REQ_PER_MIN = 120;
 
 // Real-time family sync rooms: roomId -> { updatedAt, list, chain }
 const FAMILY_ROOMS = new Map();
-
-// Sponsored brands for commercial demo
-const SPONSORED_BRANDS = ['תנובה', 'יטבתה', 'אסם', 'סוגת', 'שטראוס', 'עלית', 'טרית'];
 
 function allowRate(ip) {
   const now = Date.now();
@@ -60,11 +57,6 @@ function parsePriceNum(val) {
   if (typeof val === 'number') return val;
   const m = String(val || '').match(/(\d+(?:\.\d+)?)/);
   return m ? parseFloat(m[1]) : 0;
-}
-
-function isSponsoredBrand(brand, name) {
-  const txt = `${brand || ''} ${name || ''}`;
-  return SPONSORED_BRANDS.some((b) => txt.includes(b));
 }
 
 function fetchShufersal(query, limit = 10) {
@@ -101,7 +93,7 @@ function fetchShufersal(query, limit = 10) {
               sellingMethod: (p.sellingMethod && p.sellingMethod.code) || 'BY_UNIT',
               inStock: !(p.stock && p.stock.stockLevelStatus) || p.stock.stockLevelStatus.code === 'inStock',
               purchasable: p.purchasable !== false,
-              sponsored: isSponsoredBrand(brand, p.name),
+              sponsored: false,
             };
           }).filter((p) => p.purchasable);
           resolve(items);
@@ -150,7 +142,7 @@ function fetchRamiLevy(query, limit = 10) {
               sellingMethod: byKg ? 'BY_WEIGHT' : 'BY_UNIT',
               inStock: p.prop ? p.prop.status !== 0 : true,
               purchasable: true,
-              sponsored: isSponsoredBrand(brand, p.name),
+              sponsored: false,
             };
           }).filter((p) => p.priceNum > 0);
           resolve(items);
@@ -165,51 +157,31 @@ function fetchRamiLevy(query, limit = 10) {
 }
 
 function buildMultiChainResults(shufItems, ramiItems, limit = 10) {
-  // Match by barcode when possible, and compute per-chain prices for all 5 major Israeli chains
+  // Real prices only: a chain gets a price only for the exact same barcode. Nothing is estimated.
   const ramiByBarcode = new Map(ramiItems.map((r) => [r.barcode, r]));
   const shufByBarcode = new Map(shufItems.map((s) => [s.barcode, s]));
-
-  const baseList = shufItems.length ? shufItems : ramiItems;
-  const minRami = ramiItems.length ? Math.min(...ramiItems.map((i) => i.priceNum).filter(Boolean)) : 0;
-  const minShuf = shufItems.length ? Math.min(...shufItems.map((i) => i.priceNum).filter(Boolean)) : 0;
-
-  const merged = baseList.slice(0, limit).map((item, idx) => {
-    const shufMatch = item.chain === 'shufersal' ? item : shufByBarcode.get(item.barcode) || shufItems[idx] || shufItems[0];
-    const ramiMatch = item.chain === 'ramilevy' ? item : ramiByBarcode.get(item.barcode) || ramiItems[idx] || ramiItems[0];
-
-    const shufPrice = shufMatch?.priceNum || item.priceNum || 10;
-    const ramiPrice = ramiMatch?.priceNum || +(shufPrice * 0.89).toFixed(2);
-    // Official Israeli Price Transparency index ratios for Carrefour, Victory, Yochananof when exact match isn't live-queried
-    const baseRef = Math.min(shufPrice, ramiPrice);
-    const carrefourPrice = +((baseRef * 0.95) + ((idx % 3) * 0.2)).toFixed(2);
-    const victoryPrice = +((baseRef * 0.94) + ((idx % 2) * 0.3)).toFixed(2);
-    const yochananofPrice = +((baseRef * 0.92) + ((idx % 3) * 0.15)).toFixed(2);
-
-    const chainPrices = {
-      ramilevy: ramiPrice,
-      yochananof: yochananofPrice,
-      victory: victoryPrice,
-      carrefour: carrefourPrice,
-      shufersal: shufPrice,
-    };
-
-    const chainCodes = {
-      shufersal: shufMatch?.code || item.code,
-      ramilevy: ramiMatch?.code || item.code,
-    };
-
-    return {
+  const seen = new Set();
+  const merged = [];
+  for (const item of [...shufItems, ...ramiItems]) {
+    if (seen.has(item.barcode)) continue;
+    seen.add(item.barcode);
+    const shufMatch = shufByBarcode.get(item.barcode);
+    const ramiMatch = ramiByBarcode.get(item.barcode);
+    const chainPrices = {};
+    const chainCodes = {};
+    if (shufMatch && shufMatch.priceNum > 0) { chainPrices.shufersal = shufMatch.priceNum; chainCodes.shufersal = shufMatch.code; }
+    if (ramiMatch && ramiMatch.priceNum > 0) { chainPrices.ramilevy = ramiMatch.priceNum; chainCodes.ramilevy = ramiMatch.code; }
+    merged.push({
       ...item,
+      sponsored: false,
       img: item.img || shufMatch?.img || ramiMatch?.img || '',
       brand: item.brand || shufMatch?.brand || ramiMatch?.brand || '',
       chainPrices,
       chainCodes,
-      minChainPrice: Math.min(...Object.values(chainPrices)),
-    };
-  });
-
-  // Sort sponsored items first, then in-stock
-  merged.sort((a, b) => (b.inStock - a.inStock) || ((b.sponsored ? 1 : 0) - (a.sponsored ? 1 : 0)));
+    });
+    if (merged.length >= limit) break;
+  }
+  merged.sort((a, b) => b.inStock - a.inStock);
   return merged;
 }
 

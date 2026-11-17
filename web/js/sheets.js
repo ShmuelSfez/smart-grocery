@@ -159,7 +159,12 @@ export function exportListToCsv(list, chainById, activeChainId) {
     const cat = CATEGORY_BY_ID[it.category]?.he || 'אחר';
     const unitLabel = UNITS[it.unit]?.he || it.unit;
     const prodName = it.product ? `${it.product.brand ? it.product.brand + ' - ' : ''}${it.product.name}` : '';
-    const price = it.product?.chainPrices?.[activeChainId] ?? it.product?.price ?? '';
+    const chainPrice = it.product?.chainPrices?.[activeChainId];
+    const price = typeof chainPrice === 'number' && chainPrice > 0
+      ? chainPrice.toFixed(2)
+      : (it.product?.chain === activeChainId && typeof it.product?.priceNum === 'number' && it.product.priceNum > 0
+        ? it.product.priceNum.toFixed(2)
+        : '');
     rows.push([
       cat,
       it.name,
@@ -167,7 +172,7 @@ export function exportListToCsv(list, chainById, activeChainId) {
       unitLabel,
       it.checked ? 'כן' : 'לא',
       prodName,
-      typeof price === 'number' ? price.toFixed(2) : price,
+      price,
       it.note || '',
     ]);
   }
