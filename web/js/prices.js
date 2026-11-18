@@ -371,6 +371,29 @@ export async function loadCities() {
   return citiesPromise;
 }
 
+let onlinePromise = null;
+/** Online (delivery) stores per chain: { [chainId]: [{ storeId, name, address, city, itemsCount, quick }] } */
+export async function loadOnlineStores() {
+  if (!onlinePromise) {
+    onlinePromise = fetchJsonNoErrorCache('online.json').catch((err) => {
+      onlinePromise = null;
+      throw err;
+    });
+  }
+  return onlinePromise;
+}
+
+/** Coverage status of a chain for a city: 'covered' | 'not-covered' | 'unknown'. */
+export function deliveryCoverage(coverageCfg, chainId, cityName) {
+  const c = coverageCfg?.chains?.[chainId];
+  if (!c || !cityName) return 'unknown';
+  const norm = (s) => normalizeSearchText(s).replace(/\s*-\s*/g, '-');
+  const target = norm(cityName);
+  if ((c.notCovered || []).some((x) => norm(x) === target)) return 'not-covered';
+  if ((c.covered || []).some((x) => norm(x) === target)) return 'covered';
+  return 'unknown';
+}
+
 export async function loadChainCatalog(chainId) {
   if (catalogCache.has(chainId)) return catalogCache.get(chainId);
   const p = fetchJsonNoErrorCache(`${chainId}/catalog.json`)

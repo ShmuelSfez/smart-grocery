@@ -8,7 +8,7 @@
   <link rel="manifest" href="manifest.webmanifest" />
   <link rel="icon" href="icon.svg" type="image/svg+xml" />
   <link rel="apple-touch-icon" href="icon.svg" />
-  <link rel="stylesheet" href="styles.css?v=22" />
+  <link rel="stylesheet" href="styles.css?v=23" />
 </head>
 <body>
   <header class="topbar">
@@ -47,17 +47,21 @@
       <button class="chip-btn" id="btnExt">🧩 התקנת התוסף לכרום</button>
     </div>
 
-    <!-- Location & Branch Selection Bar -->
+    <!-- Location, Mode & Store Selection Bar -->
     <section id="locationBar" class="location-bar">
+      <div class="mode-toggle" role="tablist" aria-label="אופן קנייה">
+        <button type="button" class="chip-btn active-auto" id="modeDelivery">🚚 משלוח הביתה (מחירון אונליין)</button>
+        <button type="button" class="chip-btn" id="modeStore">🏬 קנייה בסניף פיזי</button>
+      </div>
       <div class="loc-row">
-        <span class="loc-label">📍 עיר / יישוב:</span>
-        <input id="locInput" list="citiesList" type="text" placeholder="הזן עיר מתוך קובצי השקיפות (למשל: הרצליה, ירושלים, תל אביב-יפו…)" />
+        <span class="loc-label" id="locLabel">📍 עיר למשלוח:</span>
+        <input id="locInput" list="citiesList" type="text" placeholder="הזן עיר או כתובת (למשל: רחובות, הרצליה, ירושלים…)" />
         <datalist id="citiesList"></datalist>
       </div>
       <div id="quickCities" class="quick-cities" hidden></div>
       <div id="branchPickers" class="branch-pickers" hidden></div>
       <div class="loc-options">
-        <label class="check"><input type="checkbox" id="incDelivery" checked /> חשב סה״כ כולל דמי משלוח ידועים <small id="deliveryCheckedNote" class="muted"></small></label>
+        <label class="check" id="deliveryOptions"><input type="checkbox" id="incDelivery" checked /> חשב סה״כ כולל דמי משלוח ידועים <small id="deliveryCheckedNote" class="muted"></small></label>
         <small id="pricesMetaNote" class="muted"></small>
       </div>
     </section>
@@ -307,7 +311,7 @@
   </dialog>
 
   <div id="toast" class="toast" hidden></div>
-  <script src="js/codec.js?v=22"></script>
-  <script type="module" src="js/app.js?v=22"></script>
+  <script src="js/codec.js?v=23"></script>
+  <script type="module" src="js/app.js?v=23"></script>
 </body>
 </html>

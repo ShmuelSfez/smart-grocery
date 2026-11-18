@@ -1,0 +1,9 @@
+{
+  "_comment": "Delivery coverage per chain and city. None of the chains publishes a static delivery-area list (checked 2026-11-18: Shufersal, Rami Levy and Carrefour all decide coverage per street address on their own websites). Only add a city here after a person verified it on the chain's site; record the date in lastChecked. Cities not listed = unknown (the UI says 'בדוק כיסוי באתר הרשת' and keeps the chain in the comparison).",
+  "lastChecked": "2026-11-18",
+  "chains": {
+    "shufersal": { "checkUrl": "https://www.shufersal.co.il/online/he/", "covered": [], "notCovered": [] },
+    "ramilevy": { "checkUrl": "https://www.rami-levy.co.il/he/online/market", "covered": [], "notCovered": [] },
+    "carrefour": { "checkUrl": "https://www.carrefour.co.il/", "covered": [], "notCovered": [] }
+  }
+}
