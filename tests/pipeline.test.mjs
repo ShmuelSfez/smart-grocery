@@ -119,9 +119,13 @@ test('prices + compareBasket: Q15 hybrid matching (exact barcode, substitute, mi
     carrefour: {
       catalog: buildCatalogBundle({
         '7290004131074': ['חלב טרי 3% 1 ליטר', 'תנובה', 1, 'ליטר', 0],
+        '7290004127329': ["קוטג' תנובה 5% שומן 250 גרם", 'תנובה', 250, 'גרם', 0],
+        '7290004127000': ["קוטג' תנובה בקטנה 5%", 'תנובה', 100, 'גרם', 0],
       }),
       storePrices: {
         '7290004131074': [6.7, 6.7],
+        '7290004127329': [6.1, 2.44],
+        '7290004127000': [3.2, 3.2],
       },
     },
   };
@@ -150,6 +154,11 @@ test('prices + compareBasket: Q15 hybrid matching (exact barcode, substitute, mi
   assert.equal(tomMatches.shufersal.price, 7.9);
   assert.equal(tomMatches.ramilevy.price, 5.9);
   assert.equal(tomMatches.carrefour, null);
+
+  // Generic "קוטג'" prefers standard 250g SKU over mini "בקטנה" 100g cup
+  const cotMatches = matchLineAcrossChains({ id: 'c1', name: "קוטג'", qty: 1, unit: 'unit', product: null }, branchData);
+  assert.equal(cotMatches.carrefour.code, '7290004127329');
+  assert.equal(cotMatches.carrefour.price, 6.1);
 
   const cmp = compareBasket(
     [

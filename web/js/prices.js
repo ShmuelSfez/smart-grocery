@@ -124,8 +124,9 @@ export function scoreEntry(entry, queryNorm, tokenVariants) {
   if (matchedCount < tokenVariants.length) return 0;
   if (entry.normName.startsWith(queryNorm + ' ')) score += 45;
   // Penalize mini/personal cups when user asks for generic staples ("קוטג'" -> 250g, not "בקטנה" 100g)
-  if (!/(בקטנה|אישי|מיני|לדרך)/.test(queryNorm) && /\b(בקטנה|אישי|מיני|לדרך)\b/.test(entry.normName)) {
-    score -= 22;
+  if (!/(?:^|\s)(בקטנה|אישי|מיני|לדרך|מוקטן)(?:$|\s)/.test(queryNorm)
+      && /(?:^|\s)(בקטנה|אישי|מיני|לדרך|מוקטן)(?:$|\s)/.test(entry.normName)) {
+    score -= 25;
   }
   // Slightly prefer concise core product names over long multi-pack accessories
   score -= Math.min(20, Math.max(0, entry.words.length - tokenVariants.length) * 3);

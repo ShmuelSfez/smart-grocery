@@ -1,7 +1,7 @@
 # Codebase File Inventory (Auto-Generated)
 
-- **Updated:** 2026-11-18T01:38:31.267Z
-- **Latest Commit:** `a5066e1 2026-11-18 Add .vercelignore to exclude local pipeline data from Vercel uploads`
+- **Updated:** 2026-11-18T01:41:52.325Z
+- **Latest Commit:** `395114e 2026-11-18 Fix root-anchored .vercelignore for web/data, [hidden] CSS specificity, and mini-pack ranking`
 - **Unit Tests (`npm test`):** 18 pass, 0 fail
 
 | File | Lines / Size | Exports |
@@ -40,7 +40,7 @@
 | `tests/fixtures/prices-sample.xml` | binary (1160 B) | — |
 | `tests/fixtures/promos-sample.xml` | binary (4793 B) | — |
 | `tests/fixtures/stores-sample.xml` | binary (844 B) | — |
-| `tests/pipeline.test.mjs` | 197 | — |
+| `tests/pipeline.test.mjs` | 206 | — |
 | `tests/pricing.test.mjs` | 72 | — |
 | `vercel.json` | 22 | — |
 | `web/data/delivery.json` | 10 | — |
@@ -53,7 +53,7 @@
 | `web/js/chains.js` | 14 | `CHAINS`, `CHAIN_BY_ID`, `LIVE_CHAIN_IDS` |
 | `web/js/codec.js` | 139 | — |
 | `web/js/parser.js` | 177 | `UNITS`, `parseItem`, `splitItems`, `parseMany`, `normalizeName`, `formatQty` |
-| `web/js/prices.js` | 434 | `PROD_DATA_BASE`, `LOCAL_DATA_BASE`, `normalizeBarcode`, `normalizeSearchText`, `expandHebrewToken`, `buildCatalogBundle`, `scoreEntry`, `searchCatalogProducts`, `matchLineAcrossChains`, `loadMeta`, `loadCities`, `loadChainCatalog`, `loadBranchPrices`, `findMatchingCity`, `branchesInCity` |
+| `web/js/prices.js` | 435 | `PROD_DATA_BASE`, `LOCAL_DATA_BASE`, `normalizeBarcode`, `normalizeSearchText`, `expandHebrewToken`, `buildCatalogBundle`, `scoreEntry`, `searchCatalogProducts`, `matchLineAcrossChains`, `loadMeta`, `loadCities`, `loadChainCatalog`, `loadBranchPrices`, `findMatchingCity`, `branchesInCity` |
 | `web/js/pricing.js` | 117 | `chargeQty`, `applyPromo`, `lineCost`, `compareBasket` |
 | `web/js/recipes.js` | 85 | `RECIPES`, `scaleRecipe` |
 | `web/js/sheets.js` | 181 | `parseGrid`, `analyzeSheetGrid`, `exportListToCsv` |
