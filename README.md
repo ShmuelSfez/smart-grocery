@@ -50,7 +50,10 @@ smart-grocery/
 │   └── sheet.js              # /api/sheet (strict Google Sheets CSV export fetcher, shared with serve.mjs)
 ├── extension/                # Optional desktop Chrome Extension (Manifest V3, v2.3.0)
 ├── tests/                    # 25 unit tests + 628-list DV regression suite (tests/regression/)
-├── gemini/                   # Project definition (agents.md) & skills (code-infra, dv-regression)
+├── docs/                     # Web architecture & cloud economics guide (docs/web-dev-and-scaling-guide.md)
+├── AGENTS.md                 # Master AI agent & engineering contract (+ web/AGENTS.md, tests/regression/AGENTS.md)
+├── .agents/                  # Auto-discovered workspace rules & skills (code-infra, dv-regression, price-pipeline-ops, release-and-deploy)
+├── gemini/                   # Legacy compatibility pointers to AGENTS.md and .agents/
 ├── serve.mjs                 # Local dev server (web/, local /data/v1/, /api/sheet, dev-only /api/room)
 └── vercel.json               # Vercel routing + strict CSP & security headers
 ```
@@ -96,7 +99,7 @@ npx vercel --prod
 ---
 
 ## Contributing & AI Agents
-- Read `gemini/agents.md` and `gemini/skills/code-infra/SKILL.md` before making changes.
+- Read `AGENTS.md`, `.agents/skills/code-infra/SKILL.md`, and `docs/web-dev-and-scaling-guide.md` before making changes.
 - Follow **pull → test (`npm test` + `node --check`) → small focused commit → push**.
 - Keep `web/js/codec.js` and `extension/codec.js` byte-identical, rebuild `web/shufersal-extension.zip` on extension/codec changes, and bump `?v=N` in `web/index.html` on frontend changes.
 - Maintain all non-affiliation disclaimers (independent unofficial comparison tool, not affiliated with any supermarket chain).
