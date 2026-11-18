@@ -15,7 +15,12 @@ Every stimulus list runs in zero-dependency Node (`D6`) through the **exact prod
    - `parsePricesXml` + `parsePromosXml` + `serializeBranchItems` (`pipeline/build.mjs`) build the DUT's `branchData` from the frozen online-store XML snapshot (`StoreType=2`).
    - `matchLineAcrossChains(line, branchData)` in `web/js/prices.js` matches each checked, non-ambiguous line across Shufersal (`413`), Rami Levy (`39`), and Carrefour (`471`).
 3. **Pricing & Basket Ranking Layer:**
-   - `compareBasket(lines, LIVE_CHAIN_IDS, deliveryChains, { includeDelivery: true })` in `web/js/pricing.js`.
+   - `compareBasket(lines, LIVE_CHAIN_IDS, deliveryChains, { includeDelivery: true })` in `web/js/pricing.js` (delegating weighted items to `resolveWeightedChargeKg` in `web/js/produce.js`).
+   - **Israeli Weighted-Produce Piece-Weight vs. Bare-Default Specification (`match.weighted === true`):**
+     1. **Explicit weight (`unit === 'kg'` or `'g'`, e.g., `"1.5 ק״ג גזר"`, `"500 גרם עגבניות"`):** exact weight in kilograms (`qty` or `qty / 1000`, `estimated: false`, `mode: 'explicit_kg' | 'explicit_g'`).
+     2. **Explicit count (`unit === 'unit'` with `qtyExplicit === true` or `qty !== 1`, e.g., `"3 גזרים"`, `"5 מלפפונים"`, `"1 אבטיח"`):** `pieces × pieceKg` rounded to `0.01 kg` (minimum `0.05 kg`, fallback `pieceKg = 0.20 kg` when not in the produce table; `estimated: true`, `mode: 'pieces_estimate'`).
+     3. **Bare weighted produce (`unit === 'unit'`, `qty === 1`, `!qtyExplicit`, e.g., `"גזר"`, `"עגבניות"`, `"שום"`, `"פלפל חריף"`):** household default weight `bareKg` (`1.00 kg` staples, `0.25 kg` garlic/hot peppers/ginger, `0.30 kg` root parsley/celery/horseradish, `0.50 kg` lemons/avocado/mushrooms/cherry tomatoes/green beans/apricots/plums/kiwi/jerusalem artichoke, whole-head weight for squash `0.90` / cauliflower `1.00` / cabbage `1.20` / pineapple `1.30` / melon `1.80` / watermelon `6.00`, fallback `1.00 kg`; `estimated: true`, `mode: 'bare_default_kg'`).
+     4. **Packaged produce (`unit === 'pack'`, e.g., `"3 חבילות גזר"`):** `matchLineAcrossChains` gives a `+18` score bonus to non-weighted (`!entry.weighted`) catalog items matching `/(?:^|\s)(ארוז|מארז|סלסל|שקית)/`; if the matched entry is still `weighted`, `resolveWeightedChargeKg` charges `packs × 1.0 kg` (`estimated: true`, `mode: 'pack_estimate'`).
    - When delivery is enabled and one complete chain publishes a numeric delivery fee while another complete chain's fee is `null` (unknown / address-dependent), `cheapestId` and `savings` compare complete chains on **apples-to-apples product `subtotal`** (`comparedOnSubtotalOnly: true`), while still displaying known delivery fees on each card.
 
 ---

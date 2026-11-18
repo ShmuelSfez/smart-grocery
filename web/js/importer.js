@@ -76,6 +76,7 @@ export function applyItemsToList(existingList, incomingItems, { mappings = {}, o
         canonicalName: amb ? amb.term : (syn?.canonicalName || finalName),
         qty: it.qty || 1,
         unit: it.unit || 'unit',
+        qtyExplicit: Boolean(it.qtyExplicit || (Number(it.qty) > 0 && Number(it.qty) !== 1)),
         category: resolveCat(finalName, it.category),
         note: it.note || '',
         checked: itemChecked,
@@ -190,6 +191,7 @@ export function importFromText(rawText, overrides = {}) {
 
       candidates.push({
         ...parsed,
+        qtyExplicit: Boolean(parsed.qtyExplicit),
         checked: !bought,
         raw: segRaw,
       });

@@ -73,6 +73,100 @@ function round2(n) {
   return Math.round(n * 100) / 100;
 }
 
+// Standalone reference table for the Israeli Weighted-Produce Specification in spec.md (Section 1.3).
+// Zero imports from web/js/*: verified independently against DUT pricing.js / produce.js in S10.
+const REF_PRODUCE_SPEC = [
+  [['פלפל חריף', 'פלפלים חריפים', 'צילי', 'חלפיניו'], 0.03, 0.25],
+  [['עגבניות שרי', 'עגבניית שרי', 'שרי תמר'], 0.02, 0.50],
+  [['ארטישוק ירושלמי', 'קסביה'], 0.12, 0.50],
+  [['תפוח אדמה', 'תפוחי אדמה', 'תפוא'], 0.18, 1.00],
+  [['תפוח עץ', 'תפוחי עץ', 'תפוחים', 'תפוח'], 0.18, 1.00],
+  [['שעועית ירוקה', 'שעועית צהובה'], 0.01, 0.50],
+  [['שורש פטרוזיליה', 'שורש סלרי', 'חזרת'], 0.15, 0.30],
+  [['שום'], 0.06, 0.25],
+  [['גינגר', 'זנגביל'], 0.08, 0.25],
+  [['פטריות', 'פטריה', 'שמפיניון', 'פורטובלו'], 0.03, 0.50],
+  [['לימון', 'לימונים', 'ליים'], 0.11, 0.50],
+  [['קלמנטינה', 'קלמנטינות', 'מנדרינה', 'מנדרינות'], 0.10, 1.00],
+  [['משמש', 'משמשים'], 0.07, 0.50],
+  [['שזיף', 'שזיפים'], 0.08, 0.50],
+  [['קיווי'], 0.09, 0.50],
+  [['גזר', 'גזרים'], 0.12, 1.00],
+  [['מלפפון', 'מלפפונים'], 0.13, 1.00],
+  [['עגבניה', 'עגבניות'], 0.15, 1.00],
+  [['בננה', 'בננות'], 0.15, 1.00],
+  [['אפרסק', 'אפרסקים', 'נקטרינה', 'נקטרינות'], 0.15, 1.00],
+  [['בצל', 'בצלים'], 0.16, 1.00],
+  [['קישוא', 'קישואים', 'זוקיני'], 0.16, 1.00],
+  [['אגס', 'אגסים'], 0.18, 1.00],
+  [['אפרסמון', 'אפרסמונים'], 0.18, 1.00],
+  [['פלפל', 'פלפלים', 'גמבה', 'גמבות'], 0.19, 1.00],
+  [['סלק', 'סלקים'], 0.20, 1.00],
+  [['לפת', 'לפתות'], 0.20, 1.00],
+  [['אבוקדו'], 0.22, 0.50],
+  [['תפוז', 'תפוזים'], 0.22, 1.00],
+  [['בטטה', 'בטטות'], 0.25, 1.00],
+  [['קולרבי', 'קולורבי'], 0.25, 1.00],
+  [['שומר'], 0.30, 1.00],
+  [['רימון', 'רימונים'], 0.30, 1.00],
+  [['חציל', 'חצילים'], 0.35, 1.00],
+  [['מנגו'], 0.35, 1.00],
+  [['אשכולית', 'אשכוליות'], 0.35, 1.00],
+  [['פומלית', 'פומלה'], 0.45, 1.00],
+  [['ענבים'], 0.50, 1.00],
+  [['דלורית'], 0.90, 0.90],
+  [['כרובית', 'כרוביות'], 1.00, 1.00],
+  [['כרוב'], 1.20, 1.20],
+  [['אננס'], 1.30, 1.30],
+  [['מלון', 'מלונים'], 1.80, 1.80],
+  [['אבטיח', 'אבטיחים'], 6.00, 6.00],
+];
+
+function normRefHeb(raw) {
+  return String(raw || '')
+    .toLowerCase()
+    .replace(/["״'׳`]/g, '')
+    .replace(/[^\p{L}\p{N}\s]/gu, ' ')
+    .replace(/\s+/g, ' ')
+    .trim()
+    .replace(/מ(?=\s|$)/g, 'ם')
+    .replace(/נ(?=\s|$)/g, 'ן')
+    .replace(/צ(?=\s|$)/g, 'ץ')
+    .replace(/פ(?=\s|$)/g, 'ף')
+    .replace(/כ(?=\s|$)/g, 'ך');
+}
+
+function matchRefProduceSpec(text) {
+  const n = normRefHeb(text);
+  if (!n) return null;
+  const pad = ` ${n} `;
+  for (const [terms, pieceKg, bareKg] of REF_PRODUCE_SPEC) {
+    for (const term of terms) {
+      if (pad.includes(` ${term} `)) return { pieceKg, bareKg };
+      if (!term.includes(' ') && (pad.includes(` ה${term} `) || pad.includes(` ל${term} `) || pad.includes(` ב${term} `))) {
+        return { pieceKg, bareKg };
+      }
+    }
+  }
+  return null;
+}
+
+function refWeightedKg(line, catalogItemName) {
+  const rawQ = Number(line.qty) > 0 ? Number(line.qty) : 1;
+  const u = line.unit || 'unit';
+  if (u === 'kg') return rawQ;
+  if (u === 'g') return Math.round((rawQ / 1000) * 1000) / 1000;
+  if (u === 'pack') return Math.max(1, Math.round(rawQ)) * 1.0;
+
+  const explicitCount = Boolean(line.qtyExplicit) || rawQ !== 1;
+  const specHit = matchRefProduceSpec(line.name) || matchRefProduceSpec(catalogItemName);
+  if (explicitCount) {
+    const pieceKg = specHit ? specHit.pieceKg : 0.20;
+    return Math.max(0.05, round2(Math.max(1, rawQ) * pieceKg));
+  }
+  return specHit ? specHit.bareKg : 1.0;
+}
+
 function parseSnapshotPrices(xml) {
   const byNormCode = new Map();
   const uniqueItems = [];
@@ -229,7 +323,7 @@ export function refEvaluateBasket(checkedLines, dutMatches, refSnap, deliveryCfg
       const rawQ = Number(line.qty) > 0 ? Number(line.qty) : 1;
       let chgQty;
       if (item.weighted) {
-        chgQty = line.unit === 'g' ? rawQ / 1000 : rawQ;
+        chgQty = refWeightedKg(line, item.name);
       } else {
         chgQty = (line.unit === 'kg' || line.unit === 'g') ? 1 : Math.max(1, Math.round(rawQ));
       }

@@ -144,11 +144,21 @@ export function parseItem(raw) {
   const name = tokens.join(' ').replace(/^[\s,.;:-]+|[\s,.;:-]+$/g, '').trim();
   if (!name) return null;
 
-  if (qty === null) qty = 1;
+  let qtyExplicit = true;
+  if (qty === null) {
+    qty = 1;
+    qtyExplicit = false;
+  }
   if (!unit) unit = 'unit';
   if (unit === 'g' && qty >= 1000) { qty = qty / 1000; unit = 'kg'; }
   const out = { name, qty: Math.round(qty * 1000) / 1000, unit };
   if (uncertain) out.note = 'אולי (?)';
+  Object.defineProperty(out, 'qtyExplicit', {
+    value: qtyExplicit,
+    enumerable: false,
+    writable: true,
+    configurable: true,
+  });
   return out;
 }
 

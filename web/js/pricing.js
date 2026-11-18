@@ -1,5 +1,6 @@
 // Basket price comparison: pure functions, no DOM and no network.
 // Rule: never invent a price. A missing price is "missing" and the chain's total is marked incomplete.
+import { resolveWeightedChargeKg } from './produce.js';
 
 /**
  * A "match" describes how one list line is priced at one chain:
@@ -13,10 +14,8 @@
 export function chargeQty(line, match) {
   const qty = Number(line.qty) > 0 ? Number(line.qty) : 1;
   if (match && match.weighted) {
-    if (line.unit === 'kg') return { qty, estimated: false };
-    if (line.unit === 'g') return { qty: qty / 1000, estimated: false };
-    // Counted ("3 tomatoes") but sold by weight: weight unknown, assume qty kg and say so.
-    return { qty, estimated: true };
+    const res = resolveWeightedChargeKg(line, match);
+    return { qty: res.qty, estimated: res.estimated, mode: res.mode };
   }
   if (line.unit === 'kg' || line.unit === 'g') {
     // A weight was requested for an item sold per unit: buy one unit and say so.

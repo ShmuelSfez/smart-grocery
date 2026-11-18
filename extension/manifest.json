@@ -1,13 +1,14 @@
 {
   "manifest_version": 3,
-  "name": "העגלה החכמה – מילוי סל ברמי לוי ושופרסל (לא רשמי)",
+  "name": "העגלה החכמה – מילוי סל בשופרסל, רמי לוי וקרפור (לא רשמי)",
   "short_name": "SmartCart",
-  "version": "2.3.0",
-  "description": "כלי עצמאי ובלתי רשמי להעברת רשימת קניות מהעגלה החכמה לשופרסל (בלחיצת אישור) ולרמי לוי (במצב מודרך).",
+  "version": "3.0.0",
+  "description": "כלי עצמאי ובלתי רשמי למילוי סל בלחיצה אחת ומעבר לתשלום בשופרסל, רמי לוי וקרפור ישראל.",
   "permissions": ["storage"],
   "host_permissions": [
     "https://www.shufersal.co.il/*",
-    "https://www.rami-levy.co.il/*"
+    "https://www.rami-levy.co.il/*",
+    "https://www.carrefour.co.il/*"
   ],
   "action": {
     "default_popup": "popup.html",
@@ -18,8 +19,19 @@
   "content_scripts": [
     {
       "matches": [
+        "https://*.vercel.app/*",
+        "http://localhost/*",
+        "http://127.0.0.1/*",
+        "https://shmuelsfez.github.io/*"
+      ],
+      "js": ["bridge.js"],
+      "run_at": "document_start"
+    },
+    {
+      "matches": [
         "https://www.shufersal.co.il/*",
-        "https://www.rami-levy.co.il/*"
+        "https://www.rami-levy.co.il/*",
+        "https://www.carrefour.co.il/*"
       ],
       "js": ["capture.js"],
       "run_at": "document_start"
@@ -27,7 +39,8 @@
     {
       "matches": [
         "https://www.shufersal.co.il/*",
-        "https://www.rami-levy.co.il/*"
+        "https://www.rami-levy.co.il/*",
+        "https://www.carrefour.co.il/*"
       ],
       "js": ["codec.js", "panel.js"],
       "run_at": "document_idle"

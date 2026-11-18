@@ -8,7 +8,7 @@
   <link rel="manifest" href="manifest.webmanifest" />
   <link rel="icon" href="icon.svg" type="image/svg+xml" />
   <link rel="apple-touch-icon" href="icon.svg" />
-  <link rel="stylesheet" href="styles.css?v=24" />
+  <link rel="stylesheet" href="styles.css?v=25" />
 </head>
 <body>
   <header class="topbar">
@@ -99,7 +99,7 @@
   </main>
 
   <footer class="bottombar">
-    <button class="btn primary big" id="btnSend">🛍️ שלח סל לרשת המשתלמת <span id="sendCount"></span></button>
+    <button class="btn primary big" id="btnSend">🛍️ שלח סל לרשת המשתלמת לתשלום <span id="sendCount"></span></button>
     <div class="bottom-actions">
       <button class="icon-btn" id="btnShare" title="שתף" aria-label="שתף">📤</button>
       <button class="icon-btn" id="btnClear" title="נקה רשימה" aria-label="נקה רשימה">🗑️</button>
@@ -195,22 +195,50 @@
     </form>
   </dialog>
 
-  <!-- Send dialog -->
-  <dialog id="dlgSend">
+  <!-- Send / Checkout dialog -->
+  <dialog id="dlgSend" class="dlg-wide">
     <form method="dialog" class="dlg">
-      <h3 id="sendModalTitle">🛍️ שליחת הסל לרשת</h3>
-      <div id="sendDesktop">
-        <p id="sendDesktopDesc">ייפתח אתר הרשת עם חלונית התוסף מוכנה – לחץ בה "הוסף לסל" לאישור (ברמי לוי: חיפוש מודרך פריט-פריט).</p>
+      <div class="dlg-head-row">
+        <h3 id="sendModalTitle">🛍️ השלמת הזמנה ברשת</h3>
+        <button value="cancel" class="icon-btn" aria-label="סגור">✕</button>
       </div>
-      <div id="sendMobile" hidden>
-        <p>השלב של מילוי הסל האוטומטי רץ על <b>מחשב עם כרום והתוסף</b>. שלח לעצמך את הקישור ופתח אותו במחשב:</p>
+
+      <div id="sendDesktop" class="ext-setup-box">
+        <div class="ext-setup-head">
+          <b>🧩 מילוי סל אוטומטי בקליק אחד (התקנה חד-פעמית ב-15 שניות)</b>
+          <a href="shufersal-extension.zip" download="shufersal-extension.zip" class="btn primary dl-link ext-dl-btn">⬇️ הורד את התוסף (shufersal-extension.zip)</a>
+        </div>
+        <ol class="steps compact-steps">
+          <li>חלץ את הקובץ לתיקייה במחשב.</li>
+          <li>פתח בכרום <code>chrome://extensions</code> והפעל <b>מצב פיתוח (Developer mode)</b> <button type="button" class="chip-btn mini-btn" id="btnCopyExtUrl">📋 העתק כתובת</button></li>
+          <li>לחץ <b>טען פריט unpacked (Load unpacked)</b> ובחר את התיקייה שחילצת.</li>
+        </ol>
+        <button type="button" id="sendGo" class="btn primary full-w">התקנתי את התוסף — שלח סל לתשלום ↗</button>
       </div>
+
+      <div id="sendMobile" class="ext-setup-box" hidden>
+        <b>💻 רוצה מילוי סל אוטומטי בקליק אחד?</b>
+        <p class="muted">שלח לעצמך את קישור הסל ופתח בכרום במחשב (עם התוסף), או הזמן עכשיו ישירות מהנייד ברשימה למטה:</p>
+        <div class="dlg-actions wrap start-align">
+          <button type="button" id="sendCopyMobile" class="btn">🔗 העתק קישור למחשב</button>
+          <button type="button" id="sendWaMobile" class="btn">💬 שלח לעצמי בוואטסאפ</button>
+        </div>
+      </div>
+
+      <div id="sendQuickBox" class="quick-order-box">
+        <div class="quick-order-head">
+          <b id="sendQuickTitle">⚡ הזמנה מהירה ללא תוסף</b>
+          <a id="sendChainSiteLink" href="https://www.shufersal.co.il/online/he/" target="_blank" rel="noopener" class="cov-link">פתח אתר הרשת ↗</a>
+        </div>
+        <p class="muted" id="sendQuickHint">לחץ ליד כל מוצר כדי לפתוח אותו ישירות באתר הרשת, להוסיף לסל ולסמן ✓:</p>
+        <div id="sendQuickList" class="quick-order-list"></div>
+      </div>
+
       <label class="check"><input type="checkbox" id="sendRecord" checked /> לשמור כקנייה בהיסטוריה (לשיפור ההצעות)</label>
       <div class="dlg-actions wrap">
-        <button value="cancel" class="btn">ביטול</button>
+        <button value="cancel" class="btn">סגור</button>
         <button type="button" id="sendCopy" class="btn">🔗 העתק קישור לסל</button>
         <button type="button" id="sendWa" class="btn">💬 שלח לעצמי בוואטסאפ</button>
-        <button type="button" id="sendGo" class="btn primary">פתח את האתר והוסף לסל</button>
       </div>
     </form>
   </dialog>
@@ -297,21 +325,21 @@
   <!-- Extension install dialog -->
   <dialog id="dlgExt">
     <form method="dialog" class="dlg">
-      <h3>🧩 התקנת התוסף לכרום (תומך בשופרסל ורמי לוי)</h3>
+      <h3>🧩 התקנת התוסף לכרום (שופרסל, רמי לוי וקרפור)</h3>
       <ol class="steps">
         <li><a href="shufersal-extension.zip" download="shufersal-extension.zip"><b>הורד את קובץ התוסף (shufersal-extension.zip)</b></a> וחלץ אותו לתיקייה במחשב.</li>
-        <li>פתח בכרום את הכתובת <code>chrome://extensions</code> והפעל <b>Developer mode</b> (למעלה מימין).</li>
-        <li>לחץ <b>Load unpacked</b> ובחר את התיקייה שחילצת (או לחץ ↻ אם כבר מותקן).</li>
+        <li>פתח בכרום את הכתובת <code>chrome://extensions</code> והפעל <b>Developer mode (מצב פיתוח)</b> (למעלה מימין).</li>
+        <li>לחץ <b>Load unpacked (טען פריט unpacked)</b> ובחר את התיקייה שחילצת (או לחץ ↻ אם כבר מותקן).</li>
       </ol>
       <div class="dlg-actions">
-        <a href="shufersal-extension.zip" download="shufersal-extension.zip" class="btn primary dl-link">⬇️ הורד את התוסף</a>
+        <a href="shufersal-extension.zip" download="shufersal-extension.zip" class="btn primary dl-link">⬇️ הורד את התוסף (v3.0)</a>
         <button value="cancel" class="btn">סגור</button>
       </div>
     </form>
   </dialog>
 
   <div id="toast" class="toast" hidden></div>
-  <script src="js/codec.js?v=24"></script>
-  <script type="module" src="js/app.js?v=24"></script>
+  <script src="js/codec.js?v=25"></script>
+  <script type="module" src="js/app.js?v=25"></script>
 </body>
 </html>

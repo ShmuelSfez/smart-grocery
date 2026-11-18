@@ -504,6 +504,40 @@ export function buildDirectedCases(dictionary) {
       skippedMin: 0,
       forbidden: [],
     },
+    // --- GROUP 8: Israeli Weighted-Produce Piece-Weight vs. Bare-Default Specification ---
+    {
+      tag: 'produce_piece_weight_explicit_counts',
+      channel: 'text',
+      layout: 'lines',
+      rarity: 'common_only',
+      noise: 'clean',
+      payload: '3 גזרים\n5 מלפפונים\n1.5 ק"ג תפוחי אדמה',
+      expectedItems: [expReal('carrots', 3, 'unit'), expReal('cucumbers', 5, 'unit'), expReal('potatoes', 1.5, 'kg')],
+      skippedMin: 0,
+      forbidden: [],
+    },
+    {
+      tag: 'produce_bare_household_defaults',
+      channel: 'text',
+      layout: 'lines',
+      rarity: 'common_only',
+      noise: 'clean',
+      payload: 'גזר\nשום\nלימון',
+      expectedItems: [expReal('carrots', 1, 'unit'), expReal('garlic', 1, 'unit'), expReal('lemons', 1, 'unit')],
+      skippedMin: 0,
+      forbidden: [],
+    },
+    {
+      tag: 'produce_packaged_vs_single_head',
+      channel: 'text',
+      layout: 'lines',
+      rarity: 'common_only',
+      noise: 'clean',
+      payload: '3 חבילות גזר\n1 כרובית\nכרוב לבן',
+      expectedItems: [expReal('carrots', 3, 'pack'), expReal('cauliflower', 1, 'unit'), expReal('cabbage_white', 1, 'unit')],
+      skippedMin: 0,
+      forbidden: [],
+    },
   ];
 
   for (const sc of specialCases) {

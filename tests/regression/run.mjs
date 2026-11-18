@@ -450,7 +450,7 @@ async function main() {
         ? Object.fromEntries(LIVE_CHAIN_IDS.map((cid) => [cid, null]))
         : matchLineAcrossChains(it, branchData);
       lineMatches.set(it.id, matches);
-      cmpLines.push({ id: it.id, qty: it.qty, unit: it.unit, matches });
+      cmpLines.push({ id: it.id, name: it.name, qty: it.qty, unit: it.unit, qtyExplicit: Boolean(it.qtyExplicit), matches });
     }
     const cmp = compareBasket(cmpLines, LIVE_CHAIN_IDS, deliveryChains, { includeDelivery: true });
 

@@ -10,7 +10,7 @@ These rules apply whenever reading or modifying files under `web/` (`index.html`
    - All modules under `web/js/` (except `web/js/codec.js`) are native browser ES modules loaded directly via `<script type="module" src="js/app.js?v=N">`.
    - Always include explicit `.js` extensions in relative `import` statements (e.g., `import { compareBasket } from './pricing.js';`).
 2. **Keep Domain Modules Pure & Node-Compatible:**
-   - `chains.js`, `parser.js`, `synonyms.js`, `categories.js`, `sheets.js`, `xlsx.js`, `zip.js`, `importer.js`, `prices.js`, `pricing.js`, `suggest.js`, and `recipes.js` are imported directly in Node 20 unit tests (`tests/*.test.mjs`) and the DV regression runner (`tests/regression/run.mjs`).
+   - `chains.js`, `produce.js`, `parser.js`, `synonyms.js`, `categories.js`, `sheets.js`, `xlsx.js`, `zip.js`, `importer.js`, `prices.js`, `pricing.js`, `suggest.js`, and `recipes.js` are imported directly in Node 20 unit tests (`tests/*.test.mjs`) and the DV regression runner (`tests/regression/run.mjs`).
    - Do **not** touch `document`, `window`, or `navigator` at module top-level inside these pure modules. Keep all DOM rendering and event wiring inside `web/js/app.js`.
 3. **Strict Dependency Direction (Zero Test/Pipeline Imports):**
    - Files in `web/**` must **never** import anything from `tests/**` or `pipeline/**`.
@@ -53,8 +53,9 @@ These rules apply whenever reading or modifying files under `web/` (`index.html`
      - `<script type="module" src="js/app.js?v=N"></script>`
 2. **Service Worker Scope (`web/sw.js`):**
    - Keep `web/sw.js` **network-first** and restricted strictly to static app-shell assets. It must **never** cache `/api/*`, `/data/*` price feeds, or `.zip` downloads so stale prices are never served from SW cache.
-3. **`codec.js` → `extension/codec.js` & `shufersal-extension.zip` Sync:**
-   - After editing `web/js/codec.js` (or anything in `extension/`), copy `web/js/codec.js` to `extension/codec.js` (enforced byte-for-byte by `tests/core.test.mjs`) and rebuild `web/shufersal-extension.zip`.
+3. **`codec.js` → `extension/codec.js` & `shufersal-extension.zip` Sync (`v3.0.0`):**
+   - `extension/bridge.js` sets `document.documentElement.dataset.smartcartExt = '3.0.0'` on SmartCart origins so `web/js/app.js` detects desktop Chrome Extension presence automatically (opening the checkout modal with 15s installer + Quick-Order Checklist when absent or on mobile).
+   - After editing `web/js/codec.js` (or anything in `extension/`), copy `web/js/codec.js` to `extension/codec.js` (enforced byte-for-byte by `tests/core.test.mjs`) and rebuild `web/shufersal-extension.zip` with archive-root forward-slash entries.
 
 ---
 

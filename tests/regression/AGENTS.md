@@ -22,9 +22,9 @@ These rules apply whenever reading, running, or modifying SmartCart's Design-Ver
 ## 2. Oracle Independence (`refmodel/price-model.mjs`)
 
 1. **Zero Production Imports in Reference Model & Dictionary:**
-   - `tests/regression/refmodel/price-model.mjs` and `tests/regression/dictionary/items.json` must **never** import anything from `web/js/*` or `pipeline/*` (specifically never `pipeline/parse.mjs`, `pipeline/promos.mjs`, `web/js/prices.js`, or `web/js/pricing.js`).
+   - `tests/regression/refmodel/price-model.mjs` and `tests/regression/dictionary/items.json` must **never** import anything from `web/js/*` or `pipeline/*` (specifically never `pipeline/parse.mjs`, `pipeline/promos.mjs`, `web/js/prices.js`, `web/js/pricing.js`, or `web/js/produce.js`).
 2. **Independent Implementation & Startup Self-Checks:**
-   - `price-model.mjs` maintains its own standalone linear XML block scanner (`extractBlocksLinear`), promotion eligibility filter, catalog availability oracle (`refComputeAvailability`), and basket calculator (`refEvaluateBasket`).
+   - `price-model.mjs` maintains its own standalone linear XML block scanner (`extractBlocksLinear`), promotion eligibility filter, catalog availability oracle (`refComputeAvailability`), weighted-produce piece-weight vs. bare-default specification calculator (`refWeightedKg`, using `line.name` and `line.qtyExplicit`), and basket calculator (`refEvaluateBasket`).
    - Preserve startup self-checks (`TB_SELF_CHECK_ERROR` if any chain in the snapshot parses `< 1,000` priced items or `0` active promotions when `<Promotion>` blocks exist) so silent oracle blindness is impossible.
 
 ---

@@ -10,6 +10,7 @@ import { parseXlsxBuffer } from './xlsx.js';
 import { checkAmbiguousTerm } from './synonyms.js';
 import { CHAINS, CHAIN_BY_ID, LIVE_CHAIN_IDS } from './chains.js';
 import { compareBasket, lineCost } from './pricing.js';
+import { resolveWeightedChargeKg, isKnownWeightedProduceName, lookupBareDefaultKg } from './produce.js';
 import {
   loadMeta,
   loadCities,
@@ -29,6 +30,18 @@ const $ = (id) => document.getElementById(id);
 const key = normalizeName;
 const uid = () => (crypto.randomUUID ? crypto.randomUUID() : Date.now().toString(36) + Math.random().toString(36).slice(2));
 const isMobile = /Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent);
+const hasExtension = () => Boolean(document.documentElement.dataset.smartcartExt);
+const quickOrderedIds = new Set();
+
+function syncExtBadge() {
+  const btn = $('btnExt');
+  if (!btn) return;
+  if (hasExtension()) {
+    btn.textContent = '🧩 התוסף לכרום מחובר ✓';
+    btn.classList.add('ext-connected');
+  }
+}
+document.addEventListener('smartcart-ext-ready', syncExtBadge);
 
 let list = store.getList();
 let history = store.getHistory();
@@ -180,7 +193,14 @@ function computeChainTotals() {
       : matchLineAcrossChains(it, activeBranchData);
     if (it.ambiguous) ambiguousCount++;
     lineMatches.set(it.id, matches);
-    lines.push({ id: it.id, qty: it.qty, unit: it.unit, matches });
+    lines.push({
+      id: it.id,
+      name: it.name,
+      qty: it.qty,
+      unit: it.unit,
+      qtyExplicit: Boolean(it.qtyExplicit),
+      matches,
+    });
   }
 
   const withDelivery = includeDelivery && deliveryMode === 'delivery';
@@ -273,9 +293,25 @@ function render() {
   const partialTag = activeInfo && !activeInfo.complete ? ' (חלקי)' : '';
   const delLabel = calc.withDelivery && typeof activeInfo?.deliveryFee === 'number' ? ' כולל משלוח' : '';
   const priceTag = activeTotal > 0 ? ` · ₪${activeTotal.toFixed(2)}${partialTag}${delLabel}` : '';
-  const sendVerb = activeChain.cartFill === 'none' ? 'פתח את אתר ' : 'שלח סל ל';
-  $('btnSend').innerHTML = `${activeChain.emoji} ${sendVerb}<b>${activeChain.name}</b> <span id="sendCount">${toSend ? `(${toSend} מוצרים${priceTag})` : ''}</span>`;
-  $('btnSend').disabled = toSend === 0;
+  const sendBtn = $('btnSend');
+  if (sendBtn) {
+    sendBtn.textContent = '';
+    sendBtn.append(document.createTextNode(
+      activeChain.cartFill === 'none'
+        ? `${activeChain.emoji} פתח את אתר `
+        : `${activeChain.emoji} שלח סל ל`,
+    ));
+    const bChain = document.createElement('b');
+    bChain.textContent = activeChain.name;
+    sendBtn.append(bChain);
+    sendBtn.append(document.createTextNode(activeChain.cartFill === 'none' ? ' ' : ' לתשלום '));
+    const cntSpan = document.createElement('span');
+    cntSpan.id = 'sendCount';
+    cntSpan.textContent = toSend ? `(${toSend} מוצרים${priceTag})` : '';
+    sendBtn.append(cntSpan);
+    sendBtn.disabled = toSend === 0;
+  }
+  syncExtBadge();
   renderSuggestions();
 }
 
@@ -508,6 +544,79 @@ function renderComparisonDashboard(calc) {
   }
 }
 
+function renderProducePills(it, matches, activeMatch) {
+  const anyChainMatchIsWeighted = LIVE_CHAIN_IDS.some((cid) => Boolean(matches?.[cid]?.weighted));
+  if (!it.checked || it.ambiguous || (!isKnownWeightedProduceName(it.name) && !anyChainMatchIsWeighted)) {
+    return null;
+  }
+  const wrap = document.createElement('div');
+  wrap.className = 'produce-pills';
+  const lbl = document.createElement('span');
+  lbl.className = 'produce-pills-label';
+  lbl.textContent = '⚖️ כמות:';
+  wrap.append(lbl);
+
+  const addPill = (label, isActive, onClick) => {
+    const btn = document.createElement('button');
+    btn.type = 'button';
+    btn.className = 'produce-pill' + (isActive ? ' active' : '');
+    btn.textContent = label;
+    btn.onclick = onClick;
+    wrap.append(btn);
+  };
+
+  const isCounted = Boolean(it.qtyExplicit || it.produceBaseQty || (it.unit === 'unit' && it.qty !== 1));
+  if (isCounted) {
+    const n = Number(it.produceBaseQty) > 0
+      ? Number(it.produceBaseQty)
+      : (it.unit !== 'g' ? Number(it.qty) || 1 : 1);
+    const estKg = resolveWeightedChargeKg(
+      { name: it.name, qty: n, unit: 'unit', qtyExplicit: true },
+      activeMatch || { weighted: true, productName: it.product?.name || it.name },
+    ).qty;
+
+    addPill(`${n} יח׳ (≈${estKg} ק״ג)`, it.unit === 'unit', () => {
+      Object.assign(it, { unit: 'unit', qty: n, qtyExplicit: true, produceBaseQty: n });
+      saveList();
+    });
+    addPill(`${n} ק״ג`, it.unit === 'kg', () => {
+      Object.assign(it, { unit: 'kg', qty: n, qtyExplicit: true, produceBaseQty: n });
+      saveList();
+    });
+    addPill(`${n} מארזים`, it.unit === 'pack', () => {
+      Object.assign(it, { unit: 'pack', qty: n, qtyExplicit: true, produceBaseQty: n });
+      saveList();
+    });
+  } else {
+    const bareKg = lookupBareDefaultKg(it.name || activeMatch?.productName || '');
+    const isInitialBare = it.unit === 'unit' && it.qty === 1;
+    if (bareKg === 0.5) {
+      addPill('0.5 ק״ג (ברירת מחדל)', isInitialBare || (it.unit === 'kg' && it.qty === 0.5), () => {
+        Object.assign(it, { unit: 'kg', qty: 0.5, qtyExplicit: false, produceBaseQty: null });
+        saveList();
+      });
+      addPill('1 ק״ג', it.unit === 'kg' && it.qty === 1, () => {
+        Object.assign(it, { unit: 'kg', qty: 1, qtyExplicit: false, produceBaseQty: null });
+        saveList();
+      });
+    } else {
+      addPill('0.5 ק״ג', it.unit === 'kg' && it.qty === 0.5, () => {
+        Object.assign(it, { unit: 'kg', qty: 0.5, qtyExplicit: false, produceBaseQty: null });
+        saveList();
+      });
+      addPill(`${bareKg} ק״ג (ברירת מחדל)`, isInitialBare || (it.unit === 'kg' && it.qty === bareKg), () => {
+        Object.assign(it, { unit: 'kg', qty: bareKg, qtyExplicit: false, produceBaseQty: null });
+        saveList();
+      });
+    }
+    addPill('מארז', it.unit === 'pack', () => {
+      Object.assign(it, { unit: 'pack', qty: 1, qtyExplicit: false, produceBaseQty: null });
+      saveList();
+    });
+  }
+  return wrap;
+}
+
 function renderItem(it, activeChainId, allLineMatches) {
   const row = document.createElement('div');
   row.className = 'item' + (it.checked ? '' : ' excluded');
@@ -524,10 +633,20 @@ function renderItem(it, activeChainId, allLineMatches) {
   main.querySelector('.qty span').textContent = formatQty(it.qty, it.unit);
   main.querySelector('input').onchange = (e) => { it.checked = e.target.checked; saveList(); };
   main.querySelector('.name').onclick = () => openEdit(it);
-  main.querySelector('.plus').onclick = () => { it.qty = Math.round((it.qty + stepFor(it.unit)) * 1000) / 1000; saveList(); };
+  main.querySelector('.plus').onclick = () => {
+    it.qty = Math.round((it.qty + stepFor(it.unit)) * 1000) / 1000;
+    it.qtyExplicit = true;
+    if (it.unit !== 'g') it.produceBaseQty = it.qty;
+    saveList();
+  };
   main.querySelector('.minus').onclick = () => {
     const s = stepFor(it.unit);
-    if (it.qty - s >= s - 1e-9) { it.qty = Math.round((it.qty - s) * 1000) / 1000; saveList(); }
+    if (it.qty - s >= s - 1e-9) {
+      it.qty = Math.round((it.qty - s) * 1000) / 1000;
+      it.qtyExplicit = true;
+      if (it.unit !== 'g') it.produceBaseQty = it.qty;
+      saveList();
+    }
   };
   main.querySelector('.del').onclick = () => {
     const idx = list.indexOf(it);
@@ -569,6 +688,9 @@ function renderItem(it, activeChainId, allLineMatches) {
     row.append(ab);
     return row;
   }
+
+  const producePillsEl = renderProducePills(it, matches, activeMatch);
+  if (producePillsEl) row.append(producePillsEl);
 
   if (!pickerOpen && it.checked) {
     const p = it.product;
@@ -627,8 +749,10 @@ function renderItem(it, activeChainId, allLineMatches) {
       }
       const pr = document.createElement('span');
       pr.className = 'cp-price';
-      pr.textContent = `₪${activeLine ? activeLine.cost.toFixed(2) : activeMatch.price.toFixed(2)}`
-        + (activeLine?.estimated ? ' (הערכת משקל)' : '');
+      const estSuffix = activeLine?.estimated
+        ? (activeMatch.weighted ? ` (≈${activeLine.qty} ק״ג · הערכת משקל)` : ' (הערכת משקל)')
+        : '';
+      pr.textContent = `₪${activeLine ? activeLine.cost.toFixed(2) : activeMatch.price.toFixed(2)}${estSuffix}`;
       meta.append(pr);
     } else if ((deliveryMode === 'delivery' || activeCity) && !loadingBranches) {
       const pr = document.createElement('span');
@@ -865,6 +989,8 @@ function sanitizeRoomList(rawList) {
       name: cleanName,
       qty,
       unit,
+      qtyExplicit: Boolean(raw.qtyExplicit),
+      produceBaseQty: Number(raw.produceBaseQty) > 0 ? Number(raw.produceBaseQty) : null,
       category: CATEGORY_BY_ID[catId] ? catId : catFor(cleanName),
       note: String(raw.note || '').trim().slice(0, 120),
       checked: raw.checked !== false,
@@ -1374,10 +1500,16 @@ $('dlgEdit').addEventListener('close', () => {
     overrides[key(name)] = cat;
     store.setCatOverrides(overrides);
   }
+  const nextQty = Math.max(0.001, parseFloat($('editQty').value) || 1);
+  const nextUnit = $('editUnit').value;
+  if (nextQty !== editing.qty || nextUnit !== editing.unit) {
+    editing.qtyExplicit = true;
+    if (nextUnit !== 'g') editing.produceBaseQty = nextQty;
+  }
   Object.assign(editing, {
     name, category: cat,
-    qty: Math.max(0.001, parseFloat($('editQty').value) || 1),
-    unit: $('editUnit').value,
+    qty: nextQty,
+    unit: nextUnit,
     note: $('editNote').value.trim(),
   });
   const nextAmb = editing.product ? null : checkAmbiguousTerm(name);
@@ -1716,6 +1848,20 @@ if ($('shufUser')) {
 }
 
 // ---------- Send to Selected Supermarket ----------
+function directChainProductUrl(chainId, item, match) {
+  const codeOrName = match?.code
+    || (item.product?.code ? String(item.product.code).replace(/^P_/, '') : '')
+    || item.name;
+  const prodName = match?.productName || item.product?.name || item.name;
+  if (chainId === 'ramilevy') {
+    return `https://www.rami-levy.co.il/he/online/search?q=${encodeURIComponent(codeOrName)}`;
+  }
+  if (chainId === 'carrefour') {
+    return `https://www.carrefour.co.il/search/${encodeURIComponent(prodName)}`;
+  }
+  return `https://www.shufersal.co.il/online/he/search?text=${encodeURIComponent(codeOrName)}`;
+}
+
 async function chainOrderLink(includeEmailHint = true) {
   const { activeChainId, lineMatches } = computeChainTotals();
   const chain = CHAIN_BY_ID[activeChainId] || CHAINS[0];
@@ -1725,21 +1871,36 @@ async function chainOrderLink(includeEmailHint = true) {
   const items = checkedItems.map((i) => {
     const m = lineMatches.get(i.id)?.[activeChainId];
     let prod = i.product || null;
+    const isWeighted = Boolean(
+      m?.weighted
+      || prod?.sellingMethod === 'BY_WEIGHT'
+      || (!m && !prod && isKnownWeightedProduceName(i.name)),
+    );
     if (!prod && m && m.code) {
       prod = {
         code: activeChainId === 'shufersal' ? `P_${m.code}` : m.code,
         name: m.productName || i.name,
         brand: m.brand || '',
-        sellingMethod: m.weighted ? 'BY_WEIGHT' : 'BY_UNIT',
+        sellingMethod: isWeighted ? 'BY_WEIGHT' : 'BY_UNIT',
       };
     } else if (prod) {
       const chainCode = prod.chainCodes?.[activeChainId]
         || (m?.code ? (activeChainId === 'shufersal' ? `P_${m.code}` : m.code) : prod.code);
-      prod = { ...prod, code: chainCode };
+      prod = {
+        ...prod,
+        code: chainCode,
+        sellingMethod: isWeighted ? 'BY_WEIGHT' : (prod.sellingMethod || 'BY_UNIT'),
+      };
     }
+    const rawKg = isWeighted
+      ? resolveWeightedChargeKg(i, m || { weighted: true, productName: prod?.name || i.name }).qty
+      : i.qty;
+    const estKg = Math.max(0.1, Math.round(rawKg * 10) / 10);
     return {
       ...i,
       name: i.note ? `${i.name} ${i.note}` : i.name,
+      qty: isWeighted ? estKg : i.qty,
+      unit: isWeighted ? 'kg' : i.unit,
       product: prod,
     };
   });
@@ -1756,31 +1917,125 @@ function recordIfWanted() {
   store.setHistory(history);
 }
 
+function openSendModal() {
+  const calc = computeChainTotals();
+  const { activeChainId, lineMatches, perChain } = calc;
+  const chain = CHAIN_BY_ID[activeChainId] || CHAINS[0];
+  const checkedItems = list.filter((i) => i.checked);
+  const info = perChain[activeChainId];
+  const totalTxt = info?.hasData ? ` · ₪${info.total.toFixed(2)}` : '';
+
+  if ($('sendModalTitle')) {
+    $('sendModalTitle').textContent = `${chain.emoji} הזמנת סל ב${chain.name}${totalTxt}`;
+  }
+  if ($('sendDesktop')) $('sendDesktop').hidden = isMobile;
+  if ($('sendMobile')) $('sendMobile').hidden = !isMobile;
+  if ($('sendGo')) {
+    $('sendGo').textContent = `התקנתי את התוסף — שלח סל ל${chain.name} ↗`;
+  }
+  if ($('sendQuickTitle')) {
+    $('sendQuickTitle').textContent = `⚡ הזמנה מהירה ללא תוסף (${checkedItems.length} מוצרים ב${chain.name})`;
+  }
+  if ($('sendQuickHint')) {
+    $('sendQuickHint').textContent = `לחץ ליד כל מוצר כדי לפתוח אותו ישירות ב${chain.name}, להוסיף לסל ולסמן ✓:`;
+  }
+  if ($('sendChainSiteLink')) {
+    $('sendChainSiteLink').href = chain.url;
+    $('sendChainSiteLink').textContent = `פתח את אתר ${chain.name} ↗`;
+  }
+
+  const qList = $('sendQuickList');
+  if (qList) {
+    qList.textContent = '';
+    for (const it of checkedItems) {
+      const m = lineMatches.get(it.id)?.[activeChainId];
+      const lc = m ? lineCost(it, m) : null;
+      const isWeighted = Boolean(
+        m?.weighted
+        || it.product?.sellingMethod === 'BY_WEIGHT'
+        || (!m && !it.product && isKnownWeightedProduceName(it.name)),
+      );
+      const estKg = isWeighted
+        ? resolveWeightedChargeKg(it, m || { weighted: true, productName: it.name }).qty
+        : null;
+      const qtyTxt = isWeighted && it.unit !== 'kg'
+        ? `${formatQty(it.qty, it.unit)} (≈${estKg} ק״ג)`
+        : formatQty(it.qty, it.unit);
+
+      const row = document.createElement('div');
+      const isDone = quickOrderedIds.has(it.id);
+      row.className = 'qo-row' + (isDone ? ' done' : '');
+
+      const cb = document.createElement('input');
+      cb.type = 'checkbox';
+      cb.className = 'qo-check';
+      cb.checked = isDone;
+      cb.title = 'סמן לאחר הוספה לסל';
+      cb.onchange = () => {
+        if (cb.checked) quickOrderedIds.add(it.id);
+        else quickOrderedIds.delete(it.id);
+        row.classList.toggle('done', cb.checked);
+      };
+
+      const infoCol = document.createElement('div');
+      infoCol.className = 'qo-info';
+      const titleEl = document.createElement('span');
+      titleEl.className = 'qo-title';
+      titleEl.textContent = qtyTxt ? `${it.name} · ${qtyTxt}` : it.name;
+
+      const subEl = document.createElement('span');
+      subEl.className = 'qo-sub';
+      subEl.textContent = m?.productName || it.product?.name || 'חיפוש לפי שם ברשת';
+
+      const prEl = document.createElement('span');
+      prEl.className = 'qo-price';
+      prEl.textContent = lc
+        ? `₪${lc.cost.toFixed(2)}`
+        : (m ? `₪${m.price.toFixed(2)}` : 'אין מחיר בסניף');
+      subEl.append(prEl);
+      infoCol.append(titleEl, subEl);
+
+      const link = document.createElement('a');
+      link.className = 'btn qo-link';
+      link.href = directChainProductUrl(activeChainId, it, m);
+      link.target = '_blank';
+      link.rel = 'noopener';
+      link.textContent = `פתח מוצר ב${chain.name} ↗`;
+      link.onclick = () => {
+        quickOrderedIds.add(it.id);
+        cb.checked = true;
+        row.classList.add('done');
+        recordIfWanted();
+      };
+
+      row.append(cb, infoCol, link);
+      qList.append(row);
+    }
+  }
+
+  $('dlgSend').showModal();
+}
+
 $('btnSend').onclick = async () => {
   const { activeChainId } = computeChainTotals();
   const chain = CHAIN_BY_ID[activeChainId] || CHAINS[0];
-  if (isMobile) {
-    $('sendDesktop').hidden = true;
-    $('sendMobile').hidden = false;
-    $('sendGo').hidden = true;
-    $('dlgSend').showModal();
+  if (!isMobile && hasExtension()) {
+    const btn = $('btnSend');
+    btn.disabled = true;
+    btn.textContent = `${chain.emoji} שולח סל ל${chain.name}…`;
+    try {
+      const url = await chainOrderLink(true);
+      recordIfWanted();
+      window.open(url, '_blank', 'noopener');
+    } finally {
+      btn.disabled = false;
+      render();
+    }
     return;
   }
-  const btn = $('btnSend');
-  const orig = btn.innerHTML;
-  btn.disabled = true;
-  btn.textContent = `${chain.emoji} שולח סל ל${chain.name}…`;
-  try {
-    const url = await chainOrderLink(true);
-    recordIfWanted();
-    window.open(url, '_blank', 'noopener');
-    render();
-  } finally {
-    btn.disabled = false;
-    btn.innerHTML = orig;
-    render();
-  }
+  openSendModal();
 };
+
 $('sendGo').onclick = async () => {
   const url = await chainOrderLink(true);
   recordIfWanted();
@@ -1788,17 +2043,30 @@ $('sendGo').onclick = async () => {
   $('dlgSend').close();
   render();
 };
-$('sendCopy').onclick = async () => {
+
+const copyBasketLink = async () => {
   const url = await chainOrderLink(false);
   await navigator.clipboard.writeText(url);
   recordIfWanted();
   toast('הקישור הועתק – פתח אותו בכרום במחשב');
 };
-$('sendWa').onclick = async () => {
+
+const sendBasketWa = async () => {
   const url = await chainOrderLink(false);
   recordIfWanted();
   window.open('https://wa.me/?text=' + encodeURIComponent('🛒 הסל המשתלם שלי (לפתוח בכרום במחשב):\n' + url), '_blank', 'noopener');
 };
+
+$('sendCopy').onclick = copyBasketLink;
+if ($('sendCopyMobile')) $('sendCopyMobile').onclick = copyBasketLink;
+$('sendWa').onclick = sendBasketWa;
+if ($('sendWaMobile')) $('sendWaMobile').onclick = sendBasketWa;
+if ($('btnCopyExtUrl')) {
+  $('btnCopyExtUrl').onclick = async () => {
+    await navigator.clipboard.writeText('chrome://extensions');
+    toast('הועתק! הדבק chrome://extensions בשורת הכתובת בכרום');
+  };
+}
 
 // ---------- share ----------
 function listAsText() {

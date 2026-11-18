@@ -8,7 +8,8 @@ import { checkAmbiguousTerm, resolveGrocerySynonym } from '../web/js/synonyms.js
 import { parseXlsxBuffer } from '../web/js/xlsx.js';
 import { listZipEntries } from '../web/js/zip.js';
 import { parseGrid, isSectionHeaderText } from '../web/js/sheets.js';
-import { compareBasket } from '../web/js/pricing.js';
+import { chargeQty, compareBasket } from '../web/js/pricing.js';
+import { buildCatalogBundle, matchLineAcrossChains } from '../web/js/prices.js';
 import { parsePromosXml } from '../pipeline/promos.mjs';
 import { writeZip } from './regression/lib/zip-writer.mjs';
 
@@ -175,4 +176,64 @@ test('pricing: compares on apples-to-apples subtotal when delivery fees are asym
   assert.equal(cmp.comparedOnSubtotalOnly, true);
   assert.equal(cmp.cheapestId, 'shufersal'); // 95 < 100 apples-to-apples subtotal
   assert.equal(cmp.savings, 5);
+});
+
+test('produce weight pipeline: preserves qtyExplicit across text/sheets/applyItemsToList and prices pieces vs bare defaults', () => {
+  const imp = importFromText('3 גזרים\n5 מלפפונים\nפלפל חריף\n1.5 ק״ג גזר\n1 אבטיח ?');
+  assert.equal(imp.error, null);
+  const { nextList } = applyItemsToList([], imp.added);
+
+  const carrots3 = nextList.find((x) => x.name === 'גזרים' && x.unit === 'unit');
+  assert.equal(carrots3.qty, 3);
+  assert.equal(carrots3.unit, 'unit');
+  assert.equal(carrots3.qtyExplicit, true);
+  assert.equal(chargeQty(carrots3, { weighted: true }).qty, 0.36);
+
+  const carrotsKg = nextList.find((x) => x.name === 'גזר' && x.unit === 'kg');
+  assert.equal(carrotsKg.qty, 1.5);
+  assert.equal(carrotsKg.unit, 'kg');
+  assert.equal(carrotsKg.qtyExplicit, true);
+  assert.equal(chargeQty(carrotsKg, { weighted: true }).qty, 1.5);
+
+  const cukes5 = nextList.find((x) => x.name === 'מלפפונים');
+  assert.equal(cukes5.qty, 5);
+  assert.equal(cukes5.qtyExplicit, true);
+  assert.equal(chargeQty(cukes5, { weighted: true }).qty, 0.65);
+
+  const hotPepperBare = nextList.find((x) => x.name === 'פלפל חריף');
+  assert.equal(hotPepperBare.qty, 1);
+  assert.equal(hotPepperBare.qtyExplicit, false);
+  assert.equal(chargeQty(hotPepperBare, { weighted: true }).qty, 0.25);
+
+  const watermelon1 = nextList.find((x) => x.name === 'אבטיח');
+  assert.equal(watermelon1.qty, 1);
+  assert.equal(watermelon1.qtyExplicit, true);
+  assert.equal(chargeQty(watermelon1, { weighted: true }).qty, 6);
+
+  // Bare "גזר" in free text AND in structured sheet table (empty vs non-empty qtyCol)
+  const bareText = importFromText('גזר');
+  assert.equal(bareText.added[0].qtyExplicit, false);
+  assert.equal(chargeQty(bareText.added[0], { weighted: true }).qty, 1.0);
+
+  const sheetRes = importFromSheetText('מוצר,כמות,יחידה\nגזר,,\nעגבניה,1,יח\'');
+  const { nextList: sheetList } = applyItemsToList([], sheetRes.added);
+  const bareCarrot = sheetList.find((x) => x.name === 'גזר');
+  const oneTomato = sheetList.find((x) => x.name === 'עגבניה');
+  assert.equal(bareCarrot.qtyExplicit, false);
+  assert.equal(chargeQty(bareCarrot, { weighted: true }).qty, 1.0);
+  assert.equal(oneTomato.qtyExplicit, true);
+  assert.equal(chargeQty(oneTomato, { weighted: true }).qty, 0.15);
+
+  // Packaged unit ("3 חבילות גזר") gives +18 bonus to non-weighted packaged catalog entries
+  const catalog = buildCatalogBundle({
+    '100': ['גזר במשקל', '', 1, 'ק"ג', 1],
+    '200': ['גזר ארוז בשקית', '', 1, 'יח', 0],
+  });
+  const branchData = {
+    shufersal: { catalog, storePrices: { '100': [6.9, 6.9], '200': [8.9, 8.9] } },
+  };
+  const packImp = importFromText('3 חבילות גזר');
+  const packMatch = matchLineAcrossChains(packImp.added[0], branchData);
+  assert.equal(packMatch.shufersal.code, '200');
+  assert.equal(packMatch.shufersal.weighted, false);
 });

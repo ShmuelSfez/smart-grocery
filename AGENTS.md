@@ -28,7 +28,7 @@ smart-grocery/
 │   ├── styles.css            # Mobile-first RTL styles (strict CSP — no inline styles)
 │   ├── sw.js                 # Network-first service worker for static app shell only
 │   ├── data/                 # Human-verified delivery.json, delivery-coverage.json, sponsored.json
-│   ├── js/                   # Pure domain/pricing modules + app.js + shared codec.js
+│   ├── js/                   # Pure domain/pricing/produce modules + app.js + shared codec.js
 │   └── shufersal-extension.zip
 ├── pipeline/                 # Node 20+ Price Transparency ingestion & orphan gh-pages publisher
 │   ├── build.mjs             # Fetches, decodes, normalizes & writes data/v1/
@@ -38,7 +38,7 @@ smart-grocery/
 │   ├── cities.mjs            # CBS locality code (סמל ישוב) -> Hebrew city resolver
 │   └── sources/              # shufersal.mjs, ramilevy.mjs, carrefour.mjs
 ├── api/sheet.js              # SSRF-guarded Google Sheets CSV export proxy (shared with serve.mjs)
-├── extension/                # Optional desktop Chrome Extension MV3 (v2.3.0 — FROZEN for POC)
+├── extension/                # Desktop Chrome Extension MV3 (v3.0.0 — 3-chain 1-click cart fill)
 ├── tests/                    # 25 Node built-in unit tests + 628-list DV regression
 │   └── regression/           # DV testbench, XML oracle & scoreboard (tests/regression/AGENTS.md)
 ├── docs/                     # Architecture & scaling reference (docs/web-dev-and-scaling-guide.md)
@@ -77,13 +77,14 @@ Additional targeted commands:
    - Pinned products missing an exact barcode at another chain use the closest normalized Hebrew name match badged `"חלופה"` (`kind: 'substitute'`).
    - Bare ambiguous hypernyms (`סודה`, `פלפל`, `שמנת`, `נייר`, etc.) stay unpriced behind 1-click disambiguation chips and block `cheapestId` (`null`) until resolved.
    - Bought lines (`✅`, `[x]`, `~~...~~`, Excel `<strike/>`) import with `checked: false` (visible on list, excluded from basket totals).
+   - **Weighted Produce (`web/js/produce.js`):** Explicit weights charge exact kg; counted produce (`"3 גזרים"`) multiplies piece count by realistic Israeli piece weight (`resolveWeightedChargeKg`); bare produce (`"גזר"`, `"שום"`) uses household default kg, with 1-click UI weight-mode pills on list items.
    - **All-Customer Promotions Only (v1):** Keep only active, unconditional, non-coupon deals open to all customers (`ClubID` empty or starting with `0`).
    - **Verified Delivery & Asymmetric Fee Fairness:** `web/data/delivery.json` and `web/data/delivery-coverage.json` contain only human-verified values with `lastChecked` (`null` = `"לא ידוע"`). When complete chains mix known numeric fees with `null` fees, rank complete chains on product `subtotal` (`comparedOnSubtotalOnly: true`). Keep `web/data/sponsored.json` `enabled: false`.
 3. **Security, Privacy & Scope Guardrails:**
    - **Zero Passwords:** Never request, store, or encode supermarket passwords anywhere.
    - **XSS & Strict CSP:** Never pass untrusted strings to `innerHTML`. Keep CSP free of `'unsafe-inline'` in `vercel.json` and `serve.mjs`. Keep `SLCodec` (32 KB encoded / 256 KB streaming decompressed / 200 items / allowlisted image hosts) and `XLSX_LIMITS` bounded.
    - **No Private Store Scraping:** Never scrape private supermarket APIs from `serve.mjs` or `api/`. All price data comes from official Price Transparency portals via `pipeline/`.
-   - **Frozen Desktop Extension (`extension/` v2.3.0):** Do not add new features during POC. Never auto-submit carts on `#smartlist=` load (`autoAdd: false`), never overwrite saved `mappings` or `shufAuth` from untrusted links, and keep Rami Levy in guided search-and-add mode only.
+   - **3-Chain Desktop Extension (`extension/` v3.0.0):** Supports 1-click cart fill + checkout jump on **Shufersal**, **Rami Levy** (`/api/catalog` + safe-merged `/api/v2/cart`), and **Carrefour Israel** (Self-Point `/v2/retailers/1540/...`), plus `bridge.js` auto-detection (`dataset.smartcartExt = '3.0.0'`). Never auto-submit carts on `#smartlist=` load (`autoAdd: false` — always wait for explicit user click), never overwrite saved `mappings` or `shufAuth` from untrusted links, and always merge (never wipe) existing carts.
    - **Family Sync (`FEATURES.familySync`):** Keep restricted to `localhost` / `127.0.0.1` until backed by authenticated storage.
    - **Legal Separation:** Preserve non-affiliation disclaimers in `web/index.html` and `extension/manifest.json`.
 

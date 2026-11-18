@@ -1,9 +1,18 @@
-// Runs at document_start on shufersal.co.il and rami-levy.co.il: grabs "#smartlist=<code>" from the URL
-// and stores it so the panel can display it. Never adds to cart automatically – user must click in the panel.
+// Runs at document_start on shufersal.co.il, rami-levy.co.il, and carrefour.co.il:
+// grabs "#smartlist=<code>" from the URL and stores it so panel.js can resolve items.
+// Never adds to cart automatically – user must explicitly click the add button in the panel.
 (function () {
   const m = location.hash.match(/smartlist=([^&]+)/);
   if (!m) return;
-  chrome.storage.local.set({ pending: { code: m[1], ts: Date.now(), items: null, autoAdd: false, v: 2 } });
+  const host = location.hostname;
+  const chain = host.includes('rami-levy.co.il')
+    ? 'ramilevy'
+    : host.includes('carrefour.co.il')
+      ? 'carrefour'
+      : 'shufersal';
+  chrome.storage.local.set({
+    pending: { code: m[1], chain, ts: Date.now(), items: null, autoAdd: false, v: 3 },
+  });
   try {
     history.replaceState(null, '', location.pathname + location.search);
   } catch (e) { /* ignore */ }

@@ -271,12 +271,14 @@ export function canMergeResolvedConcepts(resA, resB) {
 export function mergeUnitsIfCompatible(prev, incoming) {
   if (prev.unit === incoming.unit) {
     prev.qty = Math.round((prev.qty + incoming.qty) * 1000) / 1000;
+    prev.qtyExplicit = true;
     return true;
   }
   // Both 'unit' and 'pack' represent retail item counts (vs 'kg'/'g' weights)
   if ((prev.unit === 'unit' || prev.unit === 'pack') && (incoming.unit === 'unit' || incoming.unit === 'pack')) {
     prev.unit = 'unit';
     prev.qty = Math.round((prev.qty + incoming.qty) * 1000) / 1000;
+    prev.qtyExplicit = true;
     return true;
   }
   if ((prev.unit === 'kg' || prev.unit === 'g') && (incoming.unit === 'kg' || incoming.unit === 'g')) {
@@ -284,6 +286,7 @@ export function mergeUnitsIfCompatible(prev, incoming) {
       + (incoming.unit === 'kg' ? incoming.qty * 1000 : incoming.qty);
     prev.unit = totalG >= 1000 ? 'kg' : 'g';
     prev.qty = Math.round((totalG >= 1000 ? totalG / 1000 : totalG) * 1000) / 1000;
+    prev.qtyExplicit = true;
     return true;
   }
   return false;
@@ -314,6 +317,7 @@ export function mergeGroceryCandidates(candidates, overrides = {}) {
         canonicalName: amb.term,
         qty: it.qty || 1,
         unit: it.unit || 'unit',
+        qtyExplicit: Boolean(it.qtyExplicit || (Number(it.qty) > 0 && Number(it.qty) !== 1)),
         category: it.category || categorize(amb.term, overrides),
         checked,
         note: it.note || '',
@@ -348,6 +352,7 @@ export function mergeGroceryCandidates(candidates, overrides = {}) {
       canonicalName: syn.canonicalName,
       qty: it.qty || 1,
       unit: it.unit || 'unit',
+      qtyExplicit: Boolean(it.qtyExplicit || (Number(it.qty) > 0 && Number(it.qty) !== 1)),
       category: it.category || categorize(syn.canonicalName || chosenName, overrides),
       checked,
       note: it.note || '',
@@ -402,9 +407,18 @@ export function analyzeSheetGrid(grid, overrides = {}, opts = {}) {
 
       let qty = parsed.qty || 1;
       let unit = parsed.unit || 'unit';
-      if (qtyCol >= 0 && row[qtyCol]) {
-        const qVal = parseFloat(String(row[qtyCol]).replace(',', '.'));
-        if (Number.isFinite(qVal) && qVal > 0) qty = qVal;
+      let qtyExplicit = Boolean(parsed.qtyExplicit);
+      if (qtyCol >= 0) {
+        const rawQty = String(row[qtyCol] ?? '').trim();
+        if (rawQty) {
+          const qVal = parseFloat(rawQty.replace(',', '.'));
+          if (Number.isFinite(qVal) && qVal > 0) {
+            qty = qVal;
+            qtyExplicit = true;
+          }
+        } else if (!parsed.qtyExplicit) {
+          qtyExplicit = false;
+        }
       }
       if (unitCol >= 0 && row[unitCol]) {
         const uVal = parseUnitToken(row[unitCol]);
@@ -424,6 +438,7 @@ export function analyzeSheetGrid(grid, overrides = {}, opts = {}) {
         name: parsed.name,
         qty: Math.round(qty * 1000) / 1000,
         unit,
+        qtyExplicit,
         note,
         checked: !isBought,
         category: categorize(parsed.name, overrides),
@@ -482,6 +497,7 @@ export function analyzeSheetGrid(grid, overrides = {}, opts = {}) {
 
       candidates.push({
         ...parsed,
+        qtyExplicit: Boolean(parsed.qtyExplicit),
         checked: !isBought,
         category: categorize(parsed.name, overrides),
         raw: rawCell,

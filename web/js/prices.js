@@ -423,7 +423,9 @@ function isBetterTieBreak(candEntry, prevEntry, tokenCount) {
   return candEntry.normBarcode < prevEntry.normBarcode;
 }
 
-function scanSingleNormalizedQuery(queryNorm, chainBundle, preferWeighted) {
+const PACKAGED_ENTRY_RE = /(?:^|\s)(ארוז|מארז|סלסל|שקית)/;
+
+function scanSingleNormalizedQuery(queryNorm, chainBundle, preferWeighted, preferPackaged = false) {
   const rawTokens = queryNorm.split(' ').filter(Boolean);
   if (!rawTokens.length) return { best: null, bestScore: 0 };
   const tokenVariants = rawTokens.map(expandHebrewToken);
@@ -441,6 +443,10 @@ function scanSingleNormalizedQuery(queryNorm, chainBundle, preferWeighted) {
     // Prefer weighted items when user asked by kg/g (+22 bonus instead of hard-filtering out packaged fresh produce!)
     if (preferWeighted !== null && entry.weighted === preferWeighted) {
       sc += 22;
+    }
+    // Prefer non-weighted packaged entries when user explicitly requested packs ("3 חבילות גזר" / "2 מארזים")
+    if (preferPackaged && !entry.weighted && PACKAGED_ENTRY_RE.test(entry.normName)) {
+      sc += 18;
     }
     if (sc > bestScore || (sc === bestScore && bestEntry && isBetterTieBreak(entry, bestEntry, rawTokens.length))) {
       bestScore = sc;
@@ -460,9 +466,9 @@ function scanSingleNormalizedQuery(queryNorm, chainBundle, preferWeighted) {
   return { best, bestScore };
 }
 
-function findBestInSingleChain(queryText, chainBundle, preferWeighted = null) {
+function findBestInSingleChain(queryText, chainBundle, preferWeighted = null, preferPackaged = false) {
   const { catalog, storePrices } = chainBundle;
-  const cacheKey = `${preferWeighted}::${String(queryText || '').trim().toLowerCase()}`;
+  const cacheKey = `${preferWeighted}::${preferPackaged}::${String(queryText || '').trim().toLowerCase()}`;
 
   let byStore = catalogMemo.get(catalog);
   if (!byStore) {
@@ -491,7 +497,7 @@ function findBestInSingleChain(queryText, chainBundle, preferWeighted = null) {
   let overallScore = 0;
   for (let i = 0; i < candidatePhrases.length; i++) {
     const { nq, isFallback } = candidatePhrases[i];
-    const { best, bestScore } = scanSingleNormalizedQuery(nq, chainBundle, preferWeighted);
+    const { best, bestScore } = scanSingleNormalizedQuery(nq, chainBundle, preferWeighted, preferPackaged);
     const adjScore = i === 0 ? bestScore : Math.max(1, bestScore - 8);
     if (best && adjScore > overallScore) {
       overallScore = adjScore;
@@ -519,6 +525,7 @@ export function matchLineAcrossChains(line, branchData) {
   const preferWeighted = pinned
     ? (pinned.sellingMethod === 'BY_WEIGHT' || Boolean(pinned.weighted))
     : (line.unit === 'kg' || line.unit === 'g' ? true : null);
+  const preferPackaged = line.unit === 'pack' && preferWeighted !== true;
 
   for (const cid of LIVE_CHAIN_IDS) {
     const bundle = branchData[cid];
@@ -546,13 +553,13 @@ export function matchLineAcrossChains(line, branchData) {
       }
 
       // 2. Substitute: closest name match in this chain (try pinned product name, then generic item name)
-      const subByProdName = findBestInSingleChain(pinned.name, bundle, preferWeighted);
-      const sub = subByProdName || findBestInSingleChain(line.name, bundle, preferWeighted);
+      const subByProdName = findBestInSingleChain(pinned.name, bundle, preferWeighted, preferPackaged);
+      const sub = subByProdName || findBestInSingleChain(line.name, bundle, preferWeighted, preferPackaged);
       matches[cid] = sub ? { ...sub, kind: 'substitute' } : null;
     } else {
       // Generic item: best name match in each chain (mark fallback synonym matches as 'substitute' per H3)
-      const best = findBestInSingleChain(line.searchQuery || line.name, bundle, preferWeighted)
-        || (preferWeighted !== null ? findBestInSingleChain(line.searchQuery || line.name, bundle, null) : null);
+      const best = findBestInSingleChain(line.searchQuery || line.name, bundle, preferWeighted, preferPackaged)
+        || (preferWeighted !== null ? findBestInSingleChain(line.searchQuery || line.name, bundle, null, preferPackaged) : null);
       matches[cid] = best ? { ...best, kind: best.viaFallback ? 'substitute' : 'exact', genericMatch: true } : null;
     }
   }

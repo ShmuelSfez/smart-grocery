@@ -27,11 +27,19 @@ function save(key, value) {
 
 export const store = {
   getList() {
-    const list = load(KEYS.list, []);
+    const raw = load(KEYS.list, []);
+    const list = Array.isArray(raw) ? raw : [];
     if (!localStorage.getItem(KEYS.migratedChecked)) {
-      for (const it of list) it.checked = true;
+      for (const it of list) {
+        if (it && typeof it === 'object') it.checked = true;
+      }
       save(KEYS.list, list);
       localStorage.setItem(KEYS.migratedChecked, '1');
+    }
+    for (const it of list) {
+      if (!it || typeof it !== 'object') continue;
+      it.qtyExplicit = Boolean(it.qtyExplicit);
+      it.produceBaseQty = Number(it.produceBaseQty) > 0 ? Number(it.produceBaseQty) : null;
     }
     return list;
   },
@@ -62,17 +70,22 @@ export const store = {
   importAll(data) {
     if (!data || typeof data !== 'object' || data.version !== 1) throw new Error('קובץ גיבוי לא תקין');
     if (Array.isArray(data.list)) {
-      const cleanList = data.list.slice(0, 500).filter((x) => x && typeof x === 'object' && typeof x.name === 'string' && x.name.trim()).map((x) => ({
-        id: typeof x.id === 'string' && x.id.length <= 64 ? x.id : String(Date.now() + Math.random()),
-        name: x.name.trim().slice(0, 120),
-        qty: Math.max(0.01, Math.min(1000, Number(x.qty) || 1)),
-        unit: ['unit', 'kg', 'g', 'pack'].includes(x.unit) ? x.unit : 'unit',
-        category: typeof x.category === 'string' ? x.category.slice(0, 30) : 'other',
-        note: typeof x.note === 'string' ? x.note.slice(0, 120) : '',
-        checked: x.checked !== false,
-        product: (typeof window !== 'undefined' && window.SLCodec?.sanitizeProduct) ? window.SLCodec.sanitizeProduct(x.product) : null,
-        addedAt: Number.isFinite(Number(x.addedAt)) ? Number(x.addedAt) : Date.now(),
-      }));
+      const cleanList = data.list
+        .slice(0, 500)
+        .filter((x) => x && typeof x === 'object' && typeof x.name === 'string' && x.name.trim())
+        .map((x) => ({
+          id: typeof x.id === 'string' && x.id.length <= 64 ? x.id : String(Date.now() + Math.random()),
+          name: x.name.trim().slice(0, 120),
+          qty: Math.max(0.01, Math.min(1000, Number(x.qty) || 1)),
+          unit: ['unit', 'kg', 'g', 'pack'].includes(x.unit) ? x.unit : 'unit',
+          qtyExplicit: Boolean(x.qtyExplicit),
+          produceBaseQty: Number(x.produceBaseQty) > 0 ? Number(x.produceBaseQty) : null,
+          category: typeof x.category === 'string' ? x.category.slice(0, 30) : 'other',
+          note: typeof x.note === 'string' ? x.note.slice(0, 120) : '',
+          checked: x.checked !== false,
+          product: (typeof window !== 'undefined' && window.SLCodec?.sanitizeProduct) ? window.SLCodec.sanitizeProduct(x.product) : null,
+          addedAt: Number.isFinite(Number(x.addedAt)) ? Number(x.addedAt) : Date.now(),
+        }));
       save(KEYS.list, cleanList);
     }
     if (data.history && typeof data.history === 'object' && !Array.isArray(data.history)) save(KEYS.history, data.history);
