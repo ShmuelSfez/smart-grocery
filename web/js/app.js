@@ -215,6 +215,9 @@ function render() {
   const activeChain = CHAIN_BY_ID[activeChainId] || CHAINS[0];
   renderComparisonDashboard(calc);
 
+  if ($('authBar')) {
+    $('authBar').hidden = activeChain.cartFill !== 'auto';
+  }
   if ($('authLabel')) {
     $('authLabel').textContent = `👤 אימייל לחיבור ב${activeChain.name}:`;
   }
@@ -245,7 +248,7 @@ function render() {
   const partialTag = activeInfo && !activeInfo.complete ? ' (חלקי)' : '';
   const delLabel = includeDelivery && typeof activeInfo?.deliveryFee === 'number' ? ' כולל משלוח' : '';
   const priceTag = activeTotal > 0 ? ` · ₪${activeTotal.toFixed(2)}${partialTag}${delLabel}` : '';
-  const sendVerb = activeChain.cartFill === 'none' ? 'פתח את אתר' : 'שלח סל ל';
+  const sendVerb = activeChain.cartFill === 'none' ? 'פתח את אתר ' : 'שלח סל ל';
   $('btnSend').innerHTML = `${activeChain.emoji} ${sendVerb}<b>${activeChain.name}</b> <span id="sendCount">${toSend ? `(${toSend} מוצרים${priceTag})` : ''}</span>`;
   $('btnSend').disabled = toSend === 0;
   renderSuggestions();

@@ -13,6 +13,7 @@
   font-family: system-ui, -apple-system, "Segoe UI", "Rubik", "Assistant", Arial, sans-serif;
 }
 * { box-sizing: border-box; }
+[hidden] { display: none !important; }
 html, body { margin: 0; background: var(--bg); color: var(--text); }
 body { padding-bottom: 100px; }
 button { font: inherit; cursor: pointer; }

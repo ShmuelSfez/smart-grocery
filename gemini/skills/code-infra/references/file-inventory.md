@@ -1,7 +1,7 @@
 # Codebase File Inventory (Auto-Generated)
 
-- **Updated:** 2026-11-18T01:32:29.497Z
-- **Latest Commit:** `0b001fb 2026-11-18 Support standard deflate in SLCodec and verify 256 KB decompression cap`
+- **Updated:** 2026-11-18T01:38:31.267Z
+- **Latest Commit:** `a5066e1 2026-11-18 Add .vercelignore to exclude local pipeline data from Vercel uploads`
 - **Unit Tests (`npm test`):** 18 pass, 0 fail
 
 | File | Lines / Size | Exports |
@@ -9,6 +9,7 @@
 | `.github/workflows/ci.yml` | binary (621 B) | — |
 | `.github/workflows/prices.yml` | binary (1242 B) | — |
 | `.gitignore` | binary (41 B) | — |
+| `.vercelignore` | binary (68 B) | — |
 | `README.md` | 102 | — |
 | `api/sheet.js` | 92 | `extractSheetExportUrl`, `fetchGoogleCsv`, `default` |
 | `extension/capture.js` | 11 | — |
@@ -47,12 +48,12 @@
 | `web/icon.svg` | binary (195 B) | — |
 | `web/index.html` | 314 | — |
 | `web/js/ai.js` | 57 | `aiToItems` |
-| `web/js/app.js` | 1624 | — |
+| `web/js/app.js` | 1627 | — |
 | `web/js/categories.js` | 154 | `CATEGORIES`, `CATEGORY_BY_ID`, `categorize` |
 | `web/js/chains.js` | 14 | `CHAINS`, `CHAIN_BY_ID`, `LIVE_CHAIN_IDS` |
 | `web/js/codec.js` | 139 | — |
 | `web/js/parser.js` | 177 | `UNITS`, `parseItem`, `splitItems`, `parseMany`, `normalizeName`, `formatQty` |
-| `web/js/prices.js` | 430 | `PROD_DATA_BASE`, `LOCAL_DATA_BASE`, `normalizeBarcode`, `normalizeSearchText`, `expandHebrewToken`, `buildCatalogBundle`, `scoreEntry`, `searchCatalogProducts`, `matchLineAcrossChains`, `loadMeta`, `loadCities`, `loadChainCatalog`, `loadBranchPrices`, `findMatchingCity`, `branchesInCity` |
+| `web/js/prices.js` | 434 | `PROD_DATA_BASE`, `LOCAL_DATA_BASE`, `normalizeBarcode`, `normalizeSearchText`, `expandHebrewToken`, `buildCatalogBundle`, `scoreEntry`, `searchCatalogProducts`, `matchLineAcrossChains`, `loadMeta`, `loadCities`, `loadChainCatalog`, `loadBranchPrices`, `findMatchingCity`, `branchesInCity` |
 | `web/js/pricing.js` | 117 | `chargeQty`, `applyPromo`, `lineCost`, `compareBasket` |
 | `web/js/recipes.js` | 85 | `RECIPES`, `scaleRecipe` |
 | `web/js/sheets.js` | 181 | `parseGrid`, `analyzeSheetGrid`, `exportListToCsv` |
@@ -60,5 +61,5 @@
 | `web/js/suggest.js` | 66 | `STARTER_ITEMS`, `recordPurchase`, `runningOut`, `frequent` |
 | `web/manifest.webmanifest` | 16 | — |
 | `web/shufersal-extension.zip` | binary (18637 B) | — |
-| `web/styles.css` | 323 | — |
+| `web/styles.css` | 324 | — |
 | `web/sw.js` | 50 | — |

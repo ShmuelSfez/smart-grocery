@@ -1,7 +1,7 @@
-data/
-pipeline/
-tests/
-exports/
-extension/
-gemini/
-serve.mjs
+/data/
+/pipeline/
+/tests/
+/exports/
+/extension/
+/gemini/
+/serve.mjs
