@@ -304,7 +304,7 @@ http.createServer(async (req, res) => {
       return res.end(JSON.stringify({ error: 'Too many requests' }));
     }
     const roomId = (u.searchParams.get('id') || '').replace(/[^a-zA-Z0-9_-]/g, '').slice(0, 32);
-    if (!roomId || roomId.length < 4) {
+    if (!roomId || roomId.length < 16) {
       res.writeHead(400, { ...SEC_HEADERS, 'content-type': 'application/json; charset=utf-8' });
       return res.end(JSON.stringify({ error: 'Invalid room ID' }));
     }
@@ -319,9 +319,22 @@ http.createServer(async (req, res) => {
         if (FAMILY_ROOMS.size > 1000 && !FAMILY_ROOMS.has(roomId)) {
           FAMILY_ROOMS.delete(FAMILY_ROOMS.keys().next().value);
         }
+        const cleanItems = (Array.isArray(body.list) ? body.list : []).slice(0, 200)
+          .filter((it) => it && typeof it === 'object' && String(it.name || '').trim())
+          .map((it) => ({
+            id: String(it.id || '').slice(0, 64),
+            name: String(it.name || '').trim().slice(0, 120),
+            qty: Math.max(0.01, Math.min(1000, Number(it.qty) || 1)),
+            unit: ['unit', 'kg', 'g', 'pack'].includes(it.unit) ? it.unit : 'unit',
+            category: String(it.category || '').slice(0, 30),
+            note: String(it.note || '').trim().slice(0, 120),
+            checked: it.checked !== false,
+            product: it.product && typeof it.product === 'object' ? it.product : null,
+            addedAt: Number(it.addedAt) || Date.now(),
+          }));
         const state = {
           updatedAt: Date.now(),
-          list: Array.isArray(body.list) ? body.list.slice(0, 200) : [],
+          list: cleanItems,
           selectedChain: String(body.selectedChain || 'auto').slice(0, 20),
         };
         FAMILY_ROOMS.set(roomId, state);

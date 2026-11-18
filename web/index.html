@@ -8,7 +8,7 @@
   <link rel="manifest" href="manifest.webmanifest" />
   <link rel="icon" href="icon.svg" type="image/svg+xml" />
   <link rel="apple-touch-icon" href="icon.svg" />
-  <link rel="stylesheet" href="styles.css?v=16" />
+  <link rel="stylesheet" href="styles.css?v=17" />
 </head>
 <body>
   <header class="topbar">
@@ -20,7 +20,7 @@
       </div>
     </div>
     <div class="top-actions">
-      <button class="pill-btn" id="btnFamily" title="שיתוף סל בזמן אמת עם המשפחה">👨‍👩‍👧‍👦 סנכרון משפחתי</button>
+      <button class="pill-btn" id="btnFamily" title="שיתוף סל בזמן אמת עם המשפחה" hidden>👨‍👩‍👧‍👦 סנכרון משפחתי</button>
       <button class="icon-btn" id="btnSettings" title="הגדרות" aria-label="הגדרות">⚙️</button>
     </div>
   </header>
@@ -212,7 +212,7 @@
     <form method="dialog" class="dlg">
       <h3>📤 שיתוף הרשימה</h3>
       <div class="dlg-actions wrap col">
-        <button type="button" id="shareFamilyRoom" class="btn primary">👨‍👩‍👧‍👦 צור חדר משפחתי חי (סנכרון בזמן אמת)</button>
+        <button type="button" id="shareFamilyRoom" class="btn primary" hidden>👨‍👩‍👧‍👦 צור חדר משפחתי חי (סנכרון בזמן אמת)</button>
         <button type="button" id="shareWaText" class="btn">💬 וואטסאפ (כטקסט עם השוואת מחירים)</button>
         <button type="button" id="shareLink" class="btn">🔗 העתק קישור לרשימה</button>
         <button type="button" id="shareNative" class="btn">📲 שיתוף…</button>
@@ -303,7 +303,7 @@
   </dialog>
 
   <div id="toast" class="toast" hidden></div>
-  <script src="js/codec.js?v=16"></script>
-  <script type="module" src="js/app.js?v=16"></script>
+  <script src="js/codec.js?v=17"></script>
+  <script type="module" src="js/app.js?v=17"></script>
 </body>
 </html>

@@ -640,22 +640,85 @@ function renderSuggestions() {
   }
 }
 
-// ---------- Real-Time Family Sync ----------
+// ---------- Real-Time Family Sync (feature-flagged: local dev only until DB-backed in Phase 2) ----------
+const FEATURES = {
+  familySync: location.hostname === 'localhost' || location.hostname === '127.0.0.1',
+};
+
+function isValidRoomId(id) {
+  return typeof id === 'string' && /^[A-Za-z0-9_-]{16,32}$/.test(id);
+}
+
+function generateRoomId() {
+  const bytes = new Uint8Array(12); // 96-bit CSPRNG -> 24 hex chars
+  crypto.getRandomValues(bytes);
+  return Array.from(bytes, (b) => b.toString(16).padStart(2, '0')).join('');
+}
+
+function sanitizeRoomList(rawList) {
+  if (!Array.isArray(rawList)) return null;
+  const out = [];
+  for (const raw of rawList.slice(0, 200)) {
+    if (!raw || typeof raw !== 'object') continue;
+    const cleanName = String(raw.name || '').trim().slice(0, 120);
+    if (!cleanName) continue;
+    const unit = ['unit', 'kg', 'g', 'pack'].includes(raw.unit) ? raw.unit : 'unit';
+    const qty = Math.max(0.01, Math.min(1000, Number(raw.qty) || 1));
+    const catId = String(raw.category || '').slice(0, 30);
+    let product = window.SLCodec?.sanitizeProduct ? window.SLCodec.sanitizeProduct(raw.product) : null;
+    if (product && raw.product?.chainPrices && typeof raw.product.chainPrices === 'object') {
+      const cp = {};
+      for (const cid of LIVE_CHAIN_IDS) {
+        const v = Number(raw.product.chainPrices[cid]);
+        if (Number.isFinite(v) && v > 0 && v < 100000) cp[cid] = Math.round(v * 100) / 100;
+      }
+      product = { ...product, chainPrices: cp };
+    }
+    out.push({
+      id: typeof raw.id === 'string' && raw.id.length <= 64 ? raw.id : uid(),
+      name: cleanName,
+      qty,
+      unit,
+      category: CATEGORY_BY_ID[catId] ? catId : catFor(cleanName),
+      note: String(raw.note || '').trim().slice(0, 120),
+      checked: raw.checked !== false,
+      product,
+      addedAt: Number.isFinite(Number(raw.addedAt)) ? Number(raw.addedAt) : Date.now(),
+    });
+  }
+  return out;
+}
+
 const urlParams = new URLSearchParams(location.search);
-let currentRoomId = urlParams.get('room') || settings.familyRoomId || '';
+const initialRoomParam = urlParams.get('room') || settings.familyRoomId || '';
+let currentRoomId = FEATURES.familySync && isValidRoomId(initialRoomParam) ? initialRoomParam : '';
 let lastRoomUpdatedAt = 0;
+let roomPollTimer = null;
+
+function syncRoomPolling() {
+  if (roomPollTimer) {
+    clearInterval(roomPollTimer);
+    roomPollTimer = null;
+  }
+  if (FEATURES.familySync && currentRoomId) {
+    roomPollTimer = setInterval(pollFamilyRoom, 2500);
+  }
+}
 
 function updateFamilyBanner() {
+  if ($('btnFamily')) $('btnFamily').hidden = !FEATURES.familySync;
+  if ($('shareFamilyRoom')) $('shareFamilyRoom').hidden = !FEATURES.familySync;
   const banner = $('familyBanner');
   if (!banner) return;
-  banner.hidden = !currentRoomId;
-  if (currentRoomId) {
-    $('familyText').textContent = `🟢 חדר משפחתי חי (#${currentRoomId}) – מתעדכן בזמן אמת בכל המכשירים`;
+  const active = FEATURES.familySync && Boolean(currentRoomId);
+  banner.hidden = !active;
+  if (active) {
+    $('familyText').textContent = `🟢 חדר משפחתי מקומי (#${currentRoomId.slice(0, 8)}…) – מתעדכן בזמן אמת`;
   }
 }
 
 async function pushFamilyRoom() {
-  if (!currentRoomId) return;
+  if (!FEATURES.familySync || !currentRoomId) return;
   try {
     const res = await fetch(`/api/room?id=${encodeURIComponent(currentRoomId)}`, {
       method: 'POST',
@@ -670,15 +733,19 @@ async function pushFamilyRoom() {
 }
 
 async function pollFamilyRoom() {
-  if (!currentRoomId) return;
+  if (!FEATURES.familySync || !currentRoomId) return;
   try {
     const res = await fetch(`/api/room?id=${encodeURIComponent(currentRoomId)}`);
     if (!res.ok) return;
     const data = await res.json();
     if (data.updatedAt && data.updatedAt > lastRoomUpdatedAt) {
+      const cleanList = sanitizeRoomList(data.list);
+      if (!cleanList) return;
       lastRoomUpdatedAt = data.updatedAt;
-      list = Array.isArray(data.list) ? data.list : list;
-      if (data.selectedChain) selectedChainMode = data.selectedChain;
+      list = cleanList;
+      if (data.selectedChain === 'auto' || LIVE_CHAIN_IDS.includes(data.selectedChain)) {
+        selectedChainMode = data.selectedChain;
+      }
       store.setList(list);
       render();
     }
@@ -686,36 +753,41 @@ async function pollFamilyRoom() {
 }
 
 function startOrCopyFamilyRoom() {
+  if (!FEATURES.familySync) return;
   if (!currentRoomId) {
-    currentRoomId = Math.random().toString(36).slice(2, 8);
+    currentRoomId = generateRoomId();
     settings = { ...settings, familyRoomId: currentRoomId };
     store.setSettings(settings);
     const newUrl = `${location.pathname}?room=${currentRoomId}${location.hash}`;
     window.history.replaceState(null, '', newUrl);
     updateFamilyBanner();
+    syncRoomPolling();
     pushFamilyRoom();
   }
   const shareUrl = `${location.origin}${location.pathname}?room=${currentRoomId}`;
   navigator.clipboard.writeText(shareUrl).catch(() => {});
-  toast('🔗 קישור החדר המשפחתי הועתק! שלח לבן/בת הזוג לסנכרון חי.');
+  toast('🔗 קישור החדר המשפחתי הועתק!');
 }
 
-if ($('btnFamily')) $('btnFamily').onclick = startOrCopyFamilyRoom;
-if ($('btnCopyRoom')) $('btnCopyRoom').onclick = startOrCopyFamilyRoom;
-if ($('shareFamilyRoom')) $('shareFamilyRoom').onclick = () => { $('dlgShare').close(); startOrCopyFamilyRoom(); };
-if ($('btnLeaveRoom')) {
-  $('btnLeaveRoom').onclick = () => {
-    currentRoomId = '';
-    delete settings.familyRoomId;
-    store.setSettings(settings);
-    window.history.replaceState(null, '', location.pathname);
-    updateFamilyBanner();
-    toast('יצאת מהחדר המשפחתי');
-  };
+if (FEATURES.familySync) {
+  if ($('btnFamily')) $('btnFamily').onclick = startOrCopyFamilyRoom;
+  if ($('btnCopyRoom')) $('btnCopyRoom').onclick = startOrCopyFamilyRoom;
+  if ($('shareFamilyRoom')) $('shareFamilyRoom').onclick = () => { $('dlgShare').close(); startOrCopyFamilyRoom(); };
+  if ($('btnLeaveRoom')) {
+    $('btnLeaveRoom').onclick = () => {
+      currentRoomId = '';
+      delete settings.familyRoomId;
+      store.setSettings(settings);
+      window.history.replaceState(null, '', location.pathname);
+      syncRoomPolling();
+      updateFamilyBanner();
+      toast('יצאת מהחדר המשפחתי');
+    };
+  }
 }
-setInterval(pollFamilyRoom, 2500);
 updateFamilyBanner();
-if (currentRoomId) pollFamilyRoom();
+syncRoomPolling();
+if (FEATURES.familySync && currentRoomId) pollFamilyRoom();
 
 // ---------- add bar + autocomplete ----------
 const addInput = $('addInput');
