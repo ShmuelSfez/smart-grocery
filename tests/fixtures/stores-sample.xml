@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Chain>
+  <ChainID>7290027600007</ChainID>
+  <ChainName>שופרסל</ChainName>
+  <SubChains>
+    <SubChain>
+      <SubChainID>001</SubChainID>
+      <Stores>
+        <Store>
+          <StoreID>00374</StoreID>
+          <StoreName>שלי הרצליה- הבנים</StoreName>
+          <Address>הבנים 46</Address>
+          <City>6400</City>
+        </Store>
+        <Store>
+          <StoreID>001</StoreID>
+          <StoreName>תלפיות</StoreName>
+          <Address>האומן 15</Address>
+          <City>3000</City>
+        </Store>
+        <Store>
+          <StoreID>012</StoreID>
+          <StoreName>בר כוכבא</StoreName>
+          <Address>בר כוכבא 63</Address>
+          <City>פתח תקוה</City>
+        </Store>
+      </Stores>
+    </SubChain>
+  </SubChains>
+</Chain>

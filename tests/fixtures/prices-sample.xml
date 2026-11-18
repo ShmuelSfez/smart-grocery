@@ -1,0 +1,36 @@
+<Root>
+  <ChainID>7290058140886</ChainID>
+  <SubChainID>001</SubChainID>
+  <StoreID>001</StoreID>
+  <Items>
+    <Item>
+      <ItemCode>7290004127329</ItemCode>
+      <ItemName>קוטג&apos; 5% שומן 250 גרם</ItemName>
+      <ManufactureName>תנובה</ManufactureName>
+      <UnitQty>גרם</UnitQty>
+      <Quantity>250.00</Quantity>
+      <bIsWeighted>0</bIsWeighted>
+      <ItemPrice>5.80</ItemPrice>
+      <UnitOfMeasurePrice>2.32</UnitOfMeasurePrice>
+    </Item>
+    <Item>
+      <ItemCode>101</ItemCode>
+      <ItemName>עגבניה חממה</ItemName>
+      <ManufactureName>לא ידוע</ManufactureName>
+      <UnitQty>ק&quot;ג</UnitQty>
+      <Quantity>1.00</Quantity>
+      <bIsWeighted>1</bIsWeighted>
+      <ItemPrice>6.90</ItemPrice>
+      <UnitOfMeasurePrice>6.90</UnitOfMeasurePrice>
+    </Item>
+    <Item>
+      <ItemCode>99999</ItemCode>
+      <ItemName>פריט עם מחיר אפס</ItemName>
+      <ManufactureName>בדיקה</ManufactureName>
+      <Quantity>1.00</Quantity>
+      <bIsWeighted>0</bIsWeighted>
+      <ItemPrice>0.00</ItemPrice>
+      <UnitOfMeasurePrice>0.00</UnitOfMeasurePrice>
+    </Item>
+  </Items>
+</Root>
