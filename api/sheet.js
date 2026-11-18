@@ -28,7 +28,7 @@ export function extractSheetExportUrl(input) {
   return `https://docs.google.com/spreadsheets/d/${id}/export?format=csv&gid=${gid}`;
 }
 
-function fetchGoogleCsv(targetUrl, hops = 0) {
+export function fetchGoogleCsv(targetUrl, hops = 0) {
   if (hops > 4) return Promise.reject(new Error('Too many redirects'));
   const parsed = new URL(targetUrl);
   if (!/(^|\.)(google\.com|googleusercontent\.com)$/i.test(parsed.hostname)) {
