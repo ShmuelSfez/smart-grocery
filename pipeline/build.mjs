@@ -43,13 +43,17 @@ async function runPool(items, concurrency, worker) {
 
 function selectStoresToProcess(stores, priceFiles, limitStores) {
   const withPrices = stores.filter((s) => priceFiles.has(s.storeId));
-  if (!limitStores || withPrices.length <= limitStores) return withPrices;
+  // Online (delivery) stores are always built: they are the default price source in delivery mode
+  const online = withPrices.filter((s) => s.type === 'online');
+  const physical = withPrices.filter((s) => s.type !== 'online');
+  if (!limitStores || physical.length <= limitStores) return [...online, ...physical];
   // When --limit-stores=N is set (smoke test), pick stores from priority cities first so common cities overlap!
-  const chosen = [];
-  const usedIds = new Set();
+  const chosen = [...online];
+  const usedIds = new Set(online.map((s) => s.storeId));
+  const limit = online.length + limitStores;
   for (const city of PRIORITY_CITIES) {
-    for (const s of withPrices) {
-      if (chosen.length >= limitStores) break;
+    for (const s of physical) {
+      if (chosen.length >= limit) break;
       if (s.city === city && !usedIds.has(s.storeId)) {
         chosen.push(s);
         usedIds.add(s.storeId);
@@ -57,8 +61,8 @@ function selectStoresToProcess(stores, priceFiles, limitStores) {
       }
     }
   }
-  for (const s of withPrices) {
-    if (chosen.length >= limitStores) break;
+  for (const s of physical) {
+    if (chosen.length >= limit) break;
     if (!usedIds.has(s.storeId)) {
       chosen.push(s);
       usedIds.add(s.storeId);
@@ -95,7 +99,10 @@ async function buildChain(chainId, cityMap, outRoot, limitStores) {
     try {
       const priceBuf = await pf.download();
       const { items } = parsePricesXml(decodeFeedBuffer(priceBuf));
-      if (!items.length) return;
+      if (!items.length) {
+        // A published price file with zero parsable items is a failure, never a silent skip
+        throw new Error(`zero items parsed from ${pf.filename}`);
+      }
 
       let promosByItem = new Map();
       const prf = feeds.promoFiles.get(store.storeId);
@@ -127,7 +134,7 @@ async function buildChain(chainId, cityMap, outRoot, limitStores) {
       }
 
       fs.writeFileSync(path.join(storesDir, `${store.storeId}.json`), JSON.stringify(branchPrices));
-      writtenStores.push(store);
+      writtenStores.push({ ...store, itemsCount: items.length });
       if (pf.stamp > latestStamp) latestStamp = pf.stamp;
     } catch (err) {
       branchFailures++;
@@ -165,6 +172,7 @@ async function main() {
 
   const cityMap = await loadCityMap({ fetchRemote: true });
   const citiesIndex = {};
+  const onlineIndex = {};
   const metaChains = {};
   let succeededChains = 0;
 
@@ -174,6 +182,18 @@ async function main() {
       metaChains[chainId] = meta;
       succeededChains++;
       for (const s of stores) {
+        if (s.type === 'online') {
+          if (!onlineIndex[chainId]) onlineIndex[chainId] = [];
+          onlineIndex[chainId].push({
+            storeId: s.storeId,
+            name: s.name,
+            address: s.address,
+            city: s.city,
+            itemsCount: s.itemsCount,
+            quick: /קוויק|quick/i.test(s.name),
+          });
+          continue;
+        }
         if (!citiesIndex[s.city]) citiesIndex[s.city] = [];
         citiesIndex[s.city].push({
           chain: s.chain,
@@ -181,6 +201,9 @@ async function main() {
           name: s.name,
           address: s.address,
         });
+      }
+      if (!onlineIndex[chainId]?.length) {
+        console.warn(`[${chainId}] WARNING: no online (StoreType=2) store built – delivery mode has no price list for this chain`);
       }
     } catch (err) {
       console.error(`[${chainId}] FAILED: ${err.message}`);
@@ -207,6 +230,11 @@ async function main() {
   };
 
   fs.writeFileSync(path.join(outRoot, 'cities.json'), JSON.stringify(sortedCities));
+  // Online stores per chain: standard delivery store first (most items, not "quick"), quick-commerce last
+  for (const list of Object.values(onlineIndex)) {
+    list.sort((a, b) => (a.quick - b.quick) || (b.itemsCount - a.itemsCount));
+  }
+  fs.writeFileSync(path.join(outRoot, 'online.json'), JSON.stringify(onlineIndex));
   fs.writeFileSync(path.join(outRoot, 'meta.json'), JSON.stringify(meta, null, 2) + '\n');
 
   // Write GitHub Actions Job Summary if running in Actions

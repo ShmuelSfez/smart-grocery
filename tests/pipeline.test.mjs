@@ -12,6 +12,7 @@ import { decodeFeedBuffer, extractFileMeta, parseStoresXml, parsePricesXml } fro
 import { parsePromosXml } from '../pipeline/promos.mjs';
 import { buildCatalogBundle, searchCatalogProducts, matchLineAcrossChains } from '../web/js/prices.js';
 import { compareBasket } from '../web/js/pricing.js';
+import { writeZip } from './regression/lib/zip-writer.mjs';
 
 await import('../web/js/codec.js');
 const { decodePayload, sanitizeProduct } = globalThis.SLCodec;
@@ -44,8 +45,17 @@ test('parse: decodes gzip + UTF-16LE feeds and parses Stores and PriceFull XML',
     name: 'שלי הרצליה- הבנים',
     address: 'הבנים 46',
     city: 'הרצליה',
+    type: 'branch',
   });
   assert.equal(stores[2].city, 'פתח תקווה');
+  assert.equal(stores[1].type, 'online');
+
+  // ZIP archive disguised as .gz (Rami Levy online store) decodes like gzip
+  const pricesXmlForZip = fs.readFileSync(path.join(FIXTURES, 'prices-sample.xml'), 'utf8');
+  for (const deflate of [true, false]) {
+    const zipBuf = writeZip([{ name: 'PriceFull7290058140886-039-202611180519.xml', data: pricesXmlForZip }], { deflate });
+    assert.equal(parsePricesXml(decodeFeedBuffer(zipBuf)).items.length, 2);
+  }
 
   const pricesXml = fs.readFileSync(path.join(FIXTURES, 'prices-sample.xml'), 'utf8');
   const { xmlStoreId, items } = parsePricesXml(pricesXml);

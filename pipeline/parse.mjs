@@ -2,11 +2,17 @@
 // (Stores, PriceFull) across Shufersal, Rami Levy, and Carrefour.
 import zlib from 'node:zlib';
 import { resolveCityName } from './cities.mjs';
+import { isZip, listZipEntries } from '../web/js/zip.js';
 
 export function decodeFeedBuffer(buf) {
   if (!Buffer.isBuffer(buf)) buf = Buffer.from(buf);
   if (buf.length >= 2 && buf[0] === 0x1f && buf[1] === 0x8b) {
     buf = zlib.gunzipSync(buf);
+  } else if (isZip(buf)) {
+    // Some portals (e.g. Rami Levy's online store) publish ZIP archives with a .gz extension
+    const entry = listZipEntries(buf).find((e) => /\.xml$/i.test(e.name)) || listZipEntries(buf)[0];
+    if (!entry) throw new Error('Empty ZIP feed');
+    buf = entry.method === 8 ? zlib.inflateRawSync(entry.data) : Buffer.from(entry.data);
   }
   let text;
   if (buf.length >= 2 && buf[0] === 0xff && buf[1] === 0xfe) {
@@ -103,12 +109,15 @@ export function parseStoresXml(xml, chainId, cityMap) {
     const rawCity = getTag(block, ['City', 'CITY']);
     const city = resolveCityName(rawCity, cityMap, name);
     if (!name && !city) continue;
+    // StoreType 2 = online / fulfilment store (per the Price Transparency regulations), 1 = physical branch
+    const storeType = getTag(block, ['StoreType', 'STORETYPE']);
     byId.set(storeId, {
       chain: chainId,
       storeId,
       name: name || `סניף ${storeId}`,
       address,
       city: city || 'כללי',
+      type: storeType === '2' ? 'online' : 'branch',
     });
   }
   return [...byId.values()];

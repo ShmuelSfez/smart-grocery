@@ -14,6 +14,7 @@
         </Store>
         <Store>
           <StoreID>001</StoreID>
+          <StoreType>2</StoreType>
           <StoreName>תלפיות</StoreName>
           <Address>האומן 15</Address>
           <City>3000</City>
