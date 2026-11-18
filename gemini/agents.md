@@ -1,59 +1,54 @@
 # SmartCart (העגלה החכמה) — Vision, Goals & Agent Guide
 
-## 1. Project Definition & What We Aim For
-**SmartCart (העגלה החכמה)** is a Hebrew-first grocery shopping platform built around **three non-negotiable pillars**:
+## 1. Project Definition & Product Decisions
+**SmartCart (העגלה החכמה)** is a Hebrew-first grocery planning & price-comparison web app (**web-only POC**) built around **three non-negotiable pillars**:
 
 1. **Extreme Ease of Use (UX First):**
-   - Anyone—even non-technical shoppers—should be able to go from a messy WhatsApp note, Google Sheet, or a few taps to a complete supermarket basket in under 60 seconds.
-   - Zero clutter, zero friction, mobile-first RTL layout, automatic aisle sorting, and smart filtering that understands what belongs in a supermarket cart vs. what doesn't (e.g., skipping DIY/hardware or furniture in imported sheets).
-2. **A Clear List of All Prices in One Place:**
-   - Give the user a single, transparent view of **all prices**: per-item prices across brands, full-basket totals across Israeli supermarket chains (**Rami Levy, Shufersal, Carrefour, Victory, Yochananof**), delivery fees, free-delivery thresholds, area/city coverage, and earliest delivery windows.
-   - Send the finalized basket directly into the chosen supermarket's cart via the Chrome extension so the user never copy-pastes products manually.
-3. **Commercial Readiness (Built to Scale & Monetize):**
-   - Designed from day one to evolve into a commercial SaaS product serving 500k+ Israeli households.
-   - **Monetization paths:**
-     - **Freemium Pro (₪15–₪25/mo):** Free single-store list & cart fill; paid tier for live 5-chain price comparison, real-time family sync, and hosted AI meal planning.
-     - **Sponsored Brand Placement:** Highlighted brand suggestions (`⭐ ממומן`) when users add generic items like `"חלב"` or `"פסטה"`.
-     - **Legal Data Foundation:** Transition from live search scraping to scheduled ingestion of Israel's official **Price Transparency Law (חוק שקיפות מחירים)** daily XML/GZ catalogs.
-
-- **GitHub:** https://github.com/ShmuelSfez/smart-grocery
-- **Live Production (Vercel):** https://smart-grocery-kappa.vercel.app
-- **Local Dev URL:** http://localhost:5173
+   - Go from a messy WhatsApp note, Google Sheet, or quick typing to an aisle-sorted shopping list in under 60 seconds.
+   - Mobile-first RTL layout, zero build step, smart Google Sheets filtering (skipping DIY/hardware, furniture, and non-grocery rows), and zero auto-saving of unchosen products.
+2. **100% Real, Honest Prices Only:**
+   - Single source of truth: Israel's official **Price Transparency Law (חוק שקיפות מחירים)** feeds (`Stores`, `PriceFull`, `PromoFull`) for **Shufersal, Rami Levy, and Carrefour**. (**Victory** and **Yochananof** display `"בקרוב"` until wired in.)
+   - **Never invent, extrapolate, or copy prices across chains.** Missing prices show `"אין נתון"`, incomplete baskets are marked `"חלקי"` (never `"🏆 הכי זול"`), barcode mismatches on pinned items use closest name match badged `"חלופה"`, and quantity-to-weight estimates are explicitly labeled.
+   - **All-Customer Promotions Only (v1):** Include active non-coupon deals open to everyone (`ClubID` starting with `0`). Leave club/credit-card deals for a future team decision.
+   - **Verified Configs Only:** Delivery fees live in `web/data/delivery.json` with a visible `lastChecked` date (`null` = `"לא ידוע"`, excluded from totals). Sponsored badges live in `web/data/sponsored.json` (`enabled: false` until real signed placements exist).
+3. **Commercial Readiness (Path from POC to SaaS):**
+   - For the non-commercial POC, static price files (`data/v1/`) are published to GitHub Pages (`https://shmuelsfez.github.io/smart-grocery/data/v1`) and the frontend runs on Vercel (`https://smart-grocery-kappa.vercel.app`).
+   - **Before charging money:** Move static feed hosting from GitHub Pages to Cloudflare R2 / DB, upgrade Vercel from Hobby to Pro, and move Gemini AI calls behind a server proxy.
 
 ---
 
-## 2. Commercial & Technical Roadmap
-- **Phase 1 (Done):** Core zero-build PWA, Hebrew/English parser, Google Sheets smart import/export, 5-chain & delivery comparison UI, Chrome Extension MV3 (`Shufersal` & `Rami Levy`), security hardening, Vercel deployment, GitHub repo.
-- **Phase 2 (Next — Data & Distribution):** Publish Chrome Extension to the Chrome Web Store (\$5 one-time + Privacy Policy); replace cloud search fallback with hourly XML/GZ Price Transparency ingestion into Postgres/Supabase.
-- **Phase 3 (Sync & Accounts):** Persistent real-time family sync rooms via Supabase Realtime + user auth + server-side `/api/ai` proxy.
-- **Phase 4 (Revenue & Expansion):** Freemium billing (Meshulam / PayPlus / Stripe), sponsored brand admin console, and cart-fill extension adapters for Carrefour, Victory, and Yochananof (`optional_host_permissions`).
+## 2. Scope & Feature Guardrails
+- **Chrome Extension (`extension/`):** Frozen as an **optional desktop bonus** (`v2.3.0`). Do **not** add new features to it during the POC. Security rules:
+  - Never auto-submit items to a cart on `#smartlist=` load—always require an explicit user click on `"הוסף לסל"`.
+  - Never overwrite saved `mappings` or `shufAuth` from incoming untrusted `#smartlist=` links.
+  - Rami Levy uses **guided search-and-add** mode only (never call `/api/v2/cart` which overwrites the user's existing cart).
+- **Family Sync (`FEATURES.familySync`):** Disabled in production (`localhost` only) until built properly with a database and access control in a future phase. Room IDs use `crypto.getRandomValues` (≥16 chars) and incoming room items are strictly sanitized.
+- **No Private Store Scraping:** Never scrape supermarket private website APIs from `serve.mjs` or `api/`. All price data comes from the official Price Transparency portals via `pipeline/`.
 
 ---
 
 ## 3. Codebase Map & Skills
-- **`gemini/skills/code-infra/`**: Living guide to the entire codebase architecture and how to read it efficiently (scheduled to refresh weekly).
-- **`web/`**: Static frontend (no bundler; ES modules + `SLCodec` classic script).
-- **`api/`**: Vercel serverless endpoints (`/api/search`, `/api/sheet`).
-- **`extension/`**: Chrome Extension MV3 (`manifest.json`, `capture.js`, `panel.js`, `codec.js`, `popup.*`).
-- **`serve.mjs`**: Local Node server (static `web/` + `/api/search` + `/api/sheet` + `/api/room`).
-- **`tests/`**: Node built-in test runner (`npm test`).
+- **`gemini/skills/code-infra/`**: Living architecture & code-reading guide (scheduled to refresh weekly and verify `README.md` stays aligned with the code).
+- **`web/`**: Zero-build static PWA (`index.html`, `styles.css`, `sw.js`, `data/*.json`, `js/*.js`).
+- **`pipeline/`**: Node 20 ingestion pipeline (`build.mjs`, `publish-pages.mjs`, `parse.mjs`, `promos.mjs`, `cities.mjs`, `sources/*.mjs`).
+- **`api/sheet.js`**: Strict Google Sheets CSV export fetcher (shared with `serve.mjs`).
+- **`extension/`**: Optional desktop Chrome Extension MV3 (`manifest.json`, `capture.js`, `panel.js`, `codec.js`, `popup.*`).
+- **`tests/`**: Node built-in test runner (`core.test.mjs`, `pricing.test.mjs`, `pipeline.test.mjs` + `fixtures/`).
 
 ---
 
 ## 4. Non-Negotiable Engineering & Security Guardrails
-1. **Zero Passwords Policy:** Never ask for, store, or encode third-party supermarket passwords in `web/`, URL hashes, or `chrome.storage`. Only optional email hints may pre-fill official login pages.
-2. **Untrusted Input & XSS:** Never pass product strings, sheet cells, or URL payload fields to `innerHTML`. Keep `SLCodec` bounded (256 KB decompressed limit, item/string caps, allowlisted image hosts only).
+1. **Zero Passwords Policy:** Never ask for, store, or encode supermarket passwords anywhere.
+2. **Untrusted Input & XSS:** Never pass untrusted strings to `innerHTML`. Keep CSP free of `'unsafe-inline'`. Keep `SLCodec` bounded (256 KB decompressed limit, item/string caps, allowlisted image hosts).
 3. **Keep Shared Code & Zip Synced:** After any change to `web/js/codec.js` or `extension/`, copy `web/js/codec.js` → `extension/codec.js` and rebuild `web/shufersal-extension.zip`.
-4. **Cache Busting:** Bump `?v=N` on CSS/JS tags in `web/index.html` whenever frontend assets change.
-5. **Keep UX Frictionless & Build-Free:** Preserve vanilla ES modules with zero required build step. Verify every edit with `npm test` and `node --check`.
+4. **Cache Busting:** Bump `?v=N` on CSS/JS tags in `web/index.html` whenever frontend assets change. Keep `web/sw.js` network-first for static shell files only (never cache `/api/*` or `/data/*`).
+5. **Zero Frontend Build Step:** Keep `web/` pure ES modules; verify every edit with `npm test` and `node --check`.
 6. **Legal & Trademark Separation:** Maintain non-affiliation disclaimers in `web/index.html` and `extension/manifest.json`.
 
 ---
 
-## 5. Team & Git Workflow (Commits & Pushes)
-Other developers and collaborators will join this repository on **https://github.com/ShmuelSfez/smart-grocery**. Keep history clean and tracked from now on:
+## 5. Team & Git Workflow
 1. **Sync Before Editing:** Always `git pull --rebase origin main` before starting work.
-2. **Small, Descriptive Commits:** Every completed task, bug fix, or feature gets its own focused commit and push (never bundle unrelated edits). Use short imperative messages (e.g., `Add Rami Levy unit-weight rounding fix`).
-3. **Branch / PR Ready:** Once collaborators join, create feature branches (`feat/...`, `fix/...`) instead of pushing unreviewed large refactors straight to `main`.
-4. **Green Before Push:** Always run `npm test` (and `node --check` on modified JS files) before committing and pushing.
-5. **Deploy Sync:** After pushing changes that affect `web/` or `api/`, deploy to production (`npx vercel --prod`) or keep Vercel Git integration connected to `main`.
+2. **Small, Focused Commits:** Commit each logical change separately with a clear imperative message.
+3. **Green Before Push:** Always run `npm test` and `node --check` on modified JS/MJS files before committing and pushing.
+4. **Deploy Sync:** Deploy `web/` or `api/` changes to Vercel (`npx vercel --prod`). Never commit generated `/data/` price files to `main` (`publish-pages.mjs` publishes them as a single orphan commit to `gh-pages`).

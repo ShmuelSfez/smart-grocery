@@ -1,44 +1,64 @@
 # Codebase File Inventory (Auto-Generated)
 
-- **Updated:** 2026-11-16T20:07:24.686Z
-- **Latest Commit:** `0a863b8 2026-11-16 Document team Git commit and push workflow in gemini/agents.md`
-- **Unit Tests (`npm test`):** 7 pass, 0 fail
+- **Updated:** 2026-11-18T01:32:29.497Z
+- **Latest Commit:** `0b001fb 2026-11-18 Support standard deflate in SLCodec and verify 256 KB decompression cap`
+- **Unit Tests (`npm test`):** 18 pass, 0 fail
 
 | File | Lines / Size | Exports |
 | :--- | :--- | :--- |
-| `.gitignore` | binary (45 B) | — |
-| `README.md` | 91 | — |
-| `api/search.js` | 304 | `default` |
-| `api/sheet.js` | 92 | `extractSheetExportUrl`, `default` |
+| `.github/workflows/ci.yml` | binary (621 B) | — |
+| `.github/workflows/prices.yml` | binary (1242 B) | — |
+| `.gitignore` | binary (41 B) | — |
+| `README.md` | 102 | — |
+| `api/sheet.js` | 92 | `extractSheetExportUrl`, `fetchGoogleCsv`, `default` |
 | `extension/capture.js` | 11 | — |
-| `extension/codec.js` | 138 | — |
+| `extension/codec.js` | 139 | — |
 | `extension/icons/128.png` | binary (2070 B) | — |
 | `extension/icons/16.png` | binary (438 B) | — |
 | `extension/icons/48.png` | binary (984 B) | — |
 | `extension/manifest.json` | 37 | — |
-| `extension/panel.js` | 631 | — |
+| `extension/panel.js` | 666 | — |
 | `extension/popup.html` | 42 | — |
 | `extension/popup.js` | 65 | — |
-| `gemini/agents.md` | 60 | — |
-| `gemini/skills/code-infra/SKILL.md` | 47 | — |
-| `gemini/skills/code-infra/references/architecture.md` | 41 | — |
-| `gemini/skills/code-infra/scripts/update-map.mjs` | 86 | — |
+| `gemini/agents.md` | 55 | — |
+| `gemini/skills/code-infra/SKILL.md` | 48 | — |
+| `gemini/skills/code-infra/references/architecture.md` | 40 | — |
+| `gemini/skills/code-infra/scripts/update-map.mjs` | 87 | — |
 | `package.json` | 2 | — |
-| `serve.mjs` | 379 | — |
+| `pipeline/build.mjs` | 236 | — |
+| `pipeline/cities.mjs` | 106 | `cleanCityString`, `loadLocalCityMap`, `loadCityMap`, `resolveCityName` |
+| `pipeline/data/cbs-cities.json` | 1319 | — |
+| `pipeline/parse.mjs` | 157 | `decodeFeedBuffer`, `unescapeXml`, `normalizeStoreId`, `extractFileMeta`, `getTag`, `parseStoresXml`, `parsePricesXml` |
+| `pipeline/promos.mjs` | 149 | `parsePromosXml` |
+| `pipeline/publish-pages.mjs` | 34 | — |
+| `pipeline/sources/carrefour.mjs` | 98 | `listFeeds` |
+| `pipeline/sources/ramilevy.mjs` | 134 | `listFeeds` |
+| `pipeline/sources/shufersal.mjs` | 97 | `listFeeds` |
+| `serve.mjs` | 170 | — |
 | `tests/core.test.mjs` | 129 | — |
-| `vercel.json` | 23 | — |
+| `tests/fixtures/prices-sample.xml` | binary (1160 B) | — |
+| `tests/fixtures/promos-sample.xml` | binary (4793 B) | — |
+| `tests/fixtures/stores-sample.xml` | binary (844 B) | — |
+| `tests/pipeline.test.mjs` | 197 | — |
+| `tests/pricing.test.mjs` | 72 | — |
+| `vercel.json` | 22 | — |
+| `web/data/delivery.json` | 10 | — |
+| `web/data/sponsored.json` | 6 | — |
 | `web/icon.svg` | binary (195 B) | — |
-| `web/index.html` | 316 | — |
+| `web/index.html` | 314 | — |
 | `web/js/ai.js` | 57 | `aiToItems` |
-| `web/js/app.js` | 1375 | `CHAINS` |
+| `web/js/app.js` | 1624 | — |
 | `web/js/categories.js` | 154 | `CATEGORIES`, `CATEGORY_BY_ID`, `categorize` |
-| `web/js/codec.js` | 138 | — |
+| `web/js/chains.js` | 14 | `CHAINS`, `CHAIN_BY_ID`, `LIVE_CHAIN_IDS` |
+| `web/js/codec.js` | 139 | — |
 | `web/js/parser.js` | 177 | `UNITS`, `parseItem`, `splitItems`, `parseMany`, `normalizeName`, `formatQty` |
+| `web/js/prices.js` | 430 | `PROD_DATA_BASE`, `LOCAL_DATA_BASE`, `normalizeBarcode`, `normalizeSearchText`, `expandHebrewToken`, `buildCatalogBundle`, `scoreEntry`, `searchCatalogProducts`, `matchLineAcrossChains`, `loadMeta`, `loadCities`, `loadChainCatalog`, `loadBranchPrices`, `findMatchingCity`, `branchesInCity` |
+| `web/js/pricing.js` | 117 | `chargeQty`, `applyPromo`, `lineCost`, `compareBasket` |
 | `web/js/recipes.js` | 85 | `RECIPES`, `scaleRecipe` |
-| `web/js/sheets.js` | 176 | `parseGrid`, `analyzeSheetGrid`, `exportListToCsv` |
+| `web/js/sheets.js` | 181 | `parseGrid`, `analyzeSheetGrid`, `exportListToCsv` |
 | `web/js/store.js` | 66 | `store` |
 | `web/js/suggest.js` | 66 | `STARTER_ITEMS`, `recordPurchase`, `runningOut`, `frequent` |
 | `web/manifest.webmanifest` | 16 | — |
-| `web/shufersal-extension.zip` | binary (18109 B) | — |
-| `web/styles.css` | 301 | — |
-| `web/sw.js` | 17 | — |
+| `web/shufersal-extension.zip` | binary (18637 B) | — |
+| `web/styles.css` | 323 | — |
+| `web/sw.js` | 50 | — |

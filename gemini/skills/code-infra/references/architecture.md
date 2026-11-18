@@ -2,39 +2,38 @@
 
 ## 1. End-to-End Data Flows
 
-### Flow A: Adding Items & Comparing All Supermarket Prices
-1. User enters free text (`2 חלב, סלק לפחות 5`), selects a recipe, or imports from Google Sheets (`web/js/app.js`).
-2. `parser.js` extracts `{ name, qty, unit, note }`; `categories.js` assigns an aisle (`produce`, `dairy`, etc.).
-3. `app.js` calls `GET /api/search?q=<name>&limit=9` (rate-limited, coalesced, 10-min TTL cached):
-   - **Local (`serve.mjs`):** Queries Shufersal (`/online/he/search/results`) and Rami Levy (`/api/catalog`) live, matches by barcode, computes 5-chain price matrix (`ramilevy`, `yochananof`, `victory`, `carrefour`, `shufersal`), and flags sponsored brands.
-   - **Cloud (`api/search.js` on Vercel):** Attempts live queries; if supermarket WAFs block Vercel cloud IPs, serves `FALLBACK_CATALOG` (and marks `estimated: true`) until Phase 2 XML feed DB ingestion replaces scraping.
-4. `computeChainTotals()` combines item quantities, selected brands, city coverage (`CITY_DELIVERY_PROFILES`), delivery fees, free-delivery thresholds, and preference (`cheapest` vs `fastest`) to pick the optimal chain automatically.
+### Flow A: Daily Official Price Transparency Pipeline (`pipeline/` → GitHub Pages `data/v1/`)
+1. `pipeline/build.mjs` runs `sources/shufersal.mjs` (`prices.shufersal.co.il`), `sources/ramilevy.mjs` (`url.publishedprices.co.il`), and `sources/carrefour.mjs` (`prices.carrefour.co.il`, merging today + yesterday folders so early-morning runs never miss branches).
+2. `parse.mjs` gunzips and decodes UTF-8 / UTF-16LE / Windows-1255 XML for `Stores` and `PriceFull`; `cities.mjs` maps numeric CBS locality codes (`סמל ישוב`, e.g. `6400` → `הרצליה`) using `pipeline/data/cbs-cities.json` (+ live `data.gov.il` refresh).
+3. `promos.mjs` parses `PromoFull` and keeps **only** active, unconditional, non-coupon promotions open to all customers (`ClubID` empty or starting with `0`), producing `{ type: 'price', price }` or `{ type: 'bundle', qty, price }`.
+4. Output written to `data/v1/` (gitignored on `main`, published to orphan `gh-pages` via `pipeline/publish-pages.mjs`):
+   - `meta.json` — build timestamp and per-chain branch/product/promo counts.
+   - `cities.json` — `cityName -> [{ chain, storeId, name, address }]` (only branches with valid price files).
+   - `<chain>/catalog.json` — `code -> [name, manufacturer, qty, unit, weighted]`.
+   - `<chain>/stores/<storeId>.json` — `code -> [price, unitPrice, promo?]`.
 
-### Flow B: Google Sheets Smart Import & Export
-1. User clicks **📊 ייבוא / ייצוא Google Sheets** (`#dlgSheets` in `web/index.html`).
-2. Either:
-   - Fetches via `GET /api/sheet?url=<google-sheet-url>` (strictly restricted to `docs.google.com/spreadsheets/d/<id>/export?format=csv`); if private (`403 PRIVATE_SHEET`), opens `#dlgSheetPerm` permission guide modal; OR
-   - Reads pasted TSV directly from clipboard or uploaded `.csv` file.
-3. `sheets.js` (`parseGrid` + `analyzeSheetGrid`) tracks active column headers top-down and splits cells into:
-   - `relevant`: Supermarket items with normalized names, quantities, and aisles.
-   - `skipped`: Column/section headers (`ציוד בניה`, `קניות כלליות`, `שמואל`, etc.) plus item-level rules for tools/hardware, furniture, durable kitchenware, electronics, and clothing.
-4. Export builds a UTF-8 BOM CSV (`exportListToCsv`) or clipboard TSV.
+### Flow B: Browser City/Branch Selection & Honest Basket Comparison (`web/js/prices.js` + `pricing.js`)
+1. On boot, `app.js` loads `web/data/delivery.json`, `web/data/sponsored.json`, `meta.json`, and `cities.json` (using `/data/v1` locally if built, else `https://shmuelsfez.github.io/smart-grocery/data/v1`).
+2. When the user selects a city (and optionally changes any chain's `סניף ▾` dropdown), `prices.js` loads `<chain>/catalog.json` (cached per chain) and `<chain>/stores/<storeId>.json`. Failed requests are evicted from cache rather than cached as empty.
+3. `matchLineAcrossChains()` implements **Q15 hybrid matching**:
+   - **Pinned product:** matches exact normalized barcode (`kind: 'exact'`); if a chain lacks that barcode, picks the closest normalized Hebrew name match in that branch (`kind: 'substitute'`).
+   - **Generic unpinned item:** picks each chain's best stem-aware name match without mutating `it.product` or `mappings`.
+4. `compareBasket()` in `pricing.js` computes per-chain subtotals, all-customer promo savings, verified delivery fees, missing items, substitutes, and weight estimates. Only chains with `complete === true` (zero missing items) are eligible for `cheapestId`.
 
-### Flow C: 1-Click Cart Fill via Chrome Extension
-1. Clicking **שלח סל ל...** encodes selected items + chosen product codes + optional email hint (`auth.user`, never passwords) via `SLCodec.encodeList()` into `#smartlist=<payload>` on the target store URL (`shufersal.co.il` or `rami-levy.co.il`).
-2. Inside the store tab:
-   - `extension/capture.js` (`document_start`) saves `#smartlist=` into `chrome.storage.local` (`pending`) and cleans the URL hash.
-   - `extension/panel.js` (`document_idle`) decodes `pending` via `SLCodec.decodePayload()`:
-     - On **Shufersal**: if not logged in, redirects to `/online/he/login` and pre-fills `#j_username` (email only); once logged in, reloads once to refresh CSRF and POSTs `/online/he/cart/addGrid`.
-     - On **Rami Levy**: searches `/api/catalog` if needed and POSTs `/api/v2/cart`.
-     - Items with placeholder codes (`SEARCH_*` from cloud fallback) are re-searched live inside the user's residential browser session before adding.
+### Flow C: Google Sheets Smart Import & Export (`web/js/sheets.js` + `api/sheet.js`)
+1. `GET /api/sheet?url=<google-sheet-url>` (shared between Vercel `api/sheet.js` and local `serve.mjs`) fetches only `docs.google.com/spreadsheets/d/<id>/export?format=csv` and validates every redirect hop.
+2. `analyzeSheetGrid()` separates supermarket items from section headers, hardware/DIY (`ציוד בניה`), furniture, electronics, and durable kitchenware.
 
-### Flow D: Real-Time Family Sync (Local Prototype)
-- `?room=<id>` polls `GET /api/room?id=<id>` every 2.5s and pushes changes via `POST /api/room?id=<id>` in `serve.mjs` (in-memory `Map`, pending Phase 3 Supabase Realtime migration on Vercel).
+### Flow D: Optional Desktop Cart Fill (`extension/` v2.3.0)
+1. `capture.js` stores `#smartlist=` with `autoAdd: false`.
+2. `panel.js` never auto-submits on page load and never overwrites saved `mappings` or `shufAuth` from incoming link payloads:
+   - **Shufersal:** previews items and POSTs `/online/he/cart/addGrid` **only** when the user clicks `"הוסף לסל"`.
+   - **Rami Levy:** runs in **guided search-and-add** mode (`/he/online/search?q=...` + manual checkoff) so existing carts are never overwritten.
 
 ---
 
-## 2. Security & Deployment Boundaries
-- **CSP & Headers:** Configured identically in `serve.mjs` (`SEC_HEADERS`) and `vercel.json` (`headers`). Allowlisted image hosts: `res.cloudinary.com`, `*.shufersal.co.il`, `img.rami-levy.co.il`.
-- **Decompression Bomb Protection:** `SLCodec.streamBytesBounded()` aborts above 256 KB decompressed output; max 200 items per payload.
-- **No Server Secrets Committed:** AI key stays optional in user's browser `localStorage` until Phase 3 server proxy (`/api/ai`).
+## 2. Security & Quality Boundaries
+- **Strict CSP (No `'unsafe-inline'`):** Configured in `serve.mjs` and `vercel.json`. `connect-src` allows `'self'`, `https://shmuelsfez.github.io`, and `https://generativelanguage.googleapis.com`.
+- **Decompression Bomb Cap:** `SLCodec` enforces a 32 KB encoded cap, 256 KB streaming decompressed cap (`deflate` `'d'`, legacy `deflate-raw` `'z'`, plain `'p'`), 200-item cap, and image host allowlist.
+- **Feature-Flagged Family Sync:** `FEATURES.familySync` is enabled only on `localhost`/`127.0.0.1`, uses 96-bit `crypto.getRandomValues` room IDs, sanitizes room payloads, and never polls when inactive.
+- **PWA Shell Caching:** `web/sw.js` uses network-first caching strictly for static shell files and excludes `/api/*` and `/data/*`.

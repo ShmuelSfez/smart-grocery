@@ -14,24 +14,25 @@ Use this skill to quickly understand how **SmartCart (העגלה החכמה)** i
 ## Optimal Code Reading Order (Read in ~3 Minutes)
 Follow this order instead of scanning files randomly:
 
-0. **Project Overview & Goals (`README.md` + `gemini/agents.md`)**
-   - Skim `README.md` for user-facing features, directory overview, and setup commands, and `gemini/agents.md` for commercial vision and strict security/engineering guardrails.
-1. **System Entry & Routing (`serve.mjs` + `vercel.json`)**
-   - Read `serve.mjs` (local dev server) and `vercel.json` (production rewrites + CSP headers) to see every HTTP route (`/`, `/api/search`, `/api/sheet`, `/api/room`) and security boundary.
-2. **Core Domain Logic (`web/js/`) — Pure, Testable Modules First**
-   - `web/js/parser.js` — Parses free text (`2 חלב`, `1.5 ק"ג עגבניות`, `סלק לפחות 5`, `כרובית?`) into `{ name, qty, unit, note }`.
-   - `web/js/categories.js` — Head-noun aware Hebrew/English aisle classifier.
-   - `web/js/sheets.js` — Parses CSV/TSV grids, filters non-supermarket columns/items (`ציוד בניה`, furniture, headers), and exports UTF-8 BOM CSV.
-   - `web/js/codec.js` — Bounded deflate-raw URL codec (`SLCodec`) shared byte-for-byte with `extension/codec.js`.
-   - `web/js/suggest.js`, `web/js/recipes.js`, `web/js/store.js`, `web/js/ai.js` — Purchase-interval predictions, scalable meals, `localStorage` persistence, and optional Gemini helper.
-3. **Frontend Orchestration (`web/index.html`, `web/styles.css`, `web/js/app.js`)**
-   - Start from `web/index.html` dialog/section IDs, then read `web/js/app.js` top-to-bottom by section comments (`render`, `Location & Delivery`, `Real-Time Family Sync`, `Smart Google Sheets`, `Send to Selected Supermarket`).
-4. **Serverless Cloud Endpoints (`api/search.js`, `api/sheet.js`)**
-   - Production Vercel equivalents of `/api/search` (multi-chain search + cloud WAF fallback catalog) and `/api/sheet` (strict Google Sheets CSV export fetcher).
-5. **Chrome Extension (`extension/`)**
-   - `extension/manifest.json` → `extension/capture.js` (grabs `#smartlist=` at `document_start`) → `extension/panel.js` (same-origin search, official login redirect, `/cart/addGrid` or `/api/v2/cart` submission) → `extension/popup.html` & `extension/popup.js`.
-6. **Tests (`tests/core.test.mjs`)**
-   - Run `npm test` (`node --test tests/`) to verify parser, categories, suggestions, recipes, codec, and sheet relevance filtering.
+0. **Project Overview & Guardrails (`README.md` + `gemini/agents.md`)**
+   - Skim `README.md` for user-facing features, setup commands, and data architecture, and `gemini/agents.md` for non-negotiable honesty/security rules (real Price Transparency data only, frozen desktop extension, zero passwords).
+1. **System Entry & Routing (`serve.mjs` + `vercel.json` + `api/sheet.js`)**
+   - Read `serve.mjs` (local dev server serving `web/`, local `/data/v1/`, `/api/sheet`, and localhost-only `/api/room`) and `vercel.json` (production rewrites + strict CSP allowing `https://shmuelsfez.github.io` for price feeds).
+2. **Pure Domain & Pricing Logic (`web/js/`) — Read Pure Modules First**
+   - `web/js/chains.js` — Live (`shufersal`, `ramilevy`, `carrefour`) vs `soon` (`victory`, `yochananof`) chain definitions.
+   - `web/js/pricing.js` — Pure basket comparison (`chargeQty`, `applyPromo`, `lineCost`, `compareBasket`). Never invents prices; only complete baskets can win `cheapestId`.
+   - `web/js/prices.js` — Loads `meta.json`, `cities.json`, `<chain>/catalog.json`, and `<chain>/stores/<storeId>.json`; implements Hebrew stem-aware product search and Q15 hybrid matching (exact barcode when pinned, closest name match flagged `substitute`, or per-chain best match for generic items).
+   - `web/js/parser.js`, `web/js/categories.js`, `web/js/sheets.js`, `web/js/codec.js` — Free-text quantity/unit parser, head-noun aisle classifier, Google Sheets relevance analyzer, and bounded deflate URL codec (`SLCodec`).
+3. **Price Transparency Pipeline (`pipeline/`)**
+   - `pipeline/sources/{shufersal,ramilevy,carrefour}.mjs` — Official Price Transparency portal adapters.
+   - `pipeline/parse.mjs`, `pipeline/promos.mjs`, `pipeline/cities.mjs` — Gzip + UTF-8/UTF-16LE/Windows-1255 XML decoders, active all-customer promotion extractor, and CBS locality code mapper.
+   - `pipeline/build.mjs` & `pipeline/publish-pages.mjs` — Builds `data/v1/` and publishes a single-commit orphan snapshot to `gh-pages`.
+4. **Frontend UI & PWA Shell (`web/index.html`, `web/styles.css`, `web/js/app.js`, `web/sw.js`)**
+   - City autocomplete + per-chain branch pickers (`#branchPickers`), honest basket comparison cards, product picker without silent auto-saving, and network-first app-shell service worker.
+5. **Optional Desktop Chrome Extension (`extension/`, frozen for POC)**
+   - `extension/manifest.json` (`v2.3.0`) → `extension/capture.js` (`autoAdd: false`) → `extension/panel.js` (1-click confirmed `/cart/addGrid` on Shufersal; guided search-and-add checklist on Rami Levy).
+6. **Tests (`tests/`)**
+   - Run `npm test` (`core.test.mjs`, `pricing.test.mjs`, `pipeline.test.mjs` + `tests/fixtures/*.xml`).
 
 ## Deep Reference & Live File Inventory
 - Architecture, data flows, and invariants: [architecture.md](./references/architecture.md)
@@ -40,7 +41,7 @@ Follow this order instead of scanning files randomly:
 ## Weekly Maintenance Workflow
 Every week, keep both this skill and `README.md` synchronized with the actual codebase:
 1. Run `node gemini/skills/code-infra/scripts/update-map.mjs` from the repo root to regenerate [file-inventory.md](./references/file-inventory.md) and run `npm test`.
-2. Review `git log --since="7 days ago" --stat` for any new endpoints, modules, extension changes, or architectural shifts.
-3. **Verify `README.md` against the code:** Read `README.md` and check that its listed features, directory structure, endpoints, test counts, setup commands, and roadmap status still match the actual files and `file-inventory.md`. Update `README.md` if anything drifted.
-4. Update [architecture.md](./references/architecture.md) and this `SKILL.md` if any reading-order file, API route, or invariant changed.
+2. Review `git log --since="7 days ago" --stat` for any new endpoints, pipeline adapters, modules, or architectural shifts.
+3. **Verify `README.md` against the code:** Check that `README.md`'s listed features, directory structure, endpoints, test counts, setup commands, and roadmap status match the actual files and `file-inventory.md`. Update `README.md` if anything drifted.
+4. Update [architecture.md](./references/architecture.md) and this `SKILL.md` if any reading-order file, route, or invariant changed.
 5. Commit and push any updates (`git add README.md gemini/skills/code-infra`).

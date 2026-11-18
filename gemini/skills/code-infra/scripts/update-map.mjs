@@ -13,6 +13,7 @@ const TEXT_EXT = new Set(['.js', '.mjs', '.html', '.css', '.json', '.md', '.webm
 function walk(dir, out = []) {
   for (const ent of fs.readdirSync(dir, { withFileTypes: true })) {
     if (IGNORE_DIRS.has(ent.name)) continue;
+    if (dir === ROOT && ent.name === 'data') continue; // generated /data/v1/ is gitignored
     const full = path.join(dir, ent.name);
     if (ent.isDirectory()) walk(full, out);
     else out.push(full);
