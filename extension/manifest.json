@@ -2,8 +2,8 @@
   "manifest_version": 3,
   "name": "העגלה החכמה – מילוי סל ברמי לוי ושופרסל (לא רשמי)",
   "short_name": "SmartCart",
-  "version": "2.2.0",
-  "description": "כלי עצמאי ובלתי רשמי להשוואת סלים ומילוי אוטומטי של סל הקניות ברמי לוי ובשופרסל.",
+  "version": "2.3.0",
+  "description": "כלי עצמאי ובלתי רשמי להעברת רשימת קניות מהעגלה החכמה לשופרסל (בלחיצת אישור) ולרמי לוי (במצב מודרך).",
   "permissions": ["storage"],
   "host_permissions": [
     "https://www.shufersal.co.il/*",

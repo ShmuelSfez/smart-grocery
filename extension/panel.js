@@ -1,4 +1,8 @@
-// Content script on shufersal.co.il: connects to the user's Shufersal account on redirect and auto-fills the cart.
+// Content script on shufersal.co.il and rami-levy.co.il.
+// Security rules:
+// 1. Never auto-submit items to a cart on page load – always wait for an explicit user click in the panel.
+// 2. Never overwrite saved product mappings or email hints from untrusted incoming #smartlist= links.
+// 3. On Rami Levy, use guided search-and-add mode (never overwrite the cart via /api/v2/cart or fake success).
 (function () {
   if (window.__smartlistPanel) return;
   window.__smartlistPanel = true;
@@ -15,11 +19,11 @@
     String(name || '').toLowerCase().replace(/["״'׳`]/g, '').replace(/[^\p{L}\p{N}%.\s]/gu, ' ').replace(/\s+/g, ' ').trim();
 
   function isOnLoginPage() {
-    return location.pathname.includes('/login');
+    return !IS_RAMI && location.pathname.includes('/login');
   }
 
   function isLoggedIn() {
-    if (IS_RAMI) return true; // Rami Levy allows building the cart and logging in at checkout
+    if (IS_RAMI) return false;
     if (isOnLoginPage()) return false;
     if (document.querySelector('.title-notAnonymous')) return true;
     if (document.querySelector('a[href*="/login"] .accountLink')) return false;
@@ -63,30 +67,7 @@
   }
 
   async function apiSearch(query, limit = 12) {
-    if (IS_RAMI) {
-      const res = await fetch('/api/catalog', {
-        method: 'POST',
-        credentials: 'include',
-        headers: { 'content-type': 'application/json;charset=UTF-8', accept: 'application/json' },
-        body: JSON.stringify({ q: query, store: 331 }),
-      });
-      if (!res.ok) throw new Error('SEARCH_' + res.status);
-      const data = await res.json();
-      return (data.data || []).slice(0, limit).map((p) => {
-        const byKg = p.prop && (p.prop.sw_shakil === 1 || p.prop.by_kilo === 1);
-        return {
-          code: String(p.id),
-          name: p.name || '',
-          brand: (p.gs && p.gs.BrandName ? String(p.gs.BrandName).trim() : '') || '',
-          img: p.images && p.images.small ? `https://img.rami-levy.co.il${p.images.small}` : '',
-          price: p.price && p.price.price ? `${Number(p.price.price).toFixed(2)} ₪` : '',
-          unitDesc: byKg ? 'לפי משקל' : 'יחידה',
-          sellingMethod: byKg ? 'BY_WEIGHT' : 'BY_UNIT',
-          inStock: p.prop ? p.prop.status !== 0 : true,
-          purchasable: true,
-        };
-      });
-    }
+    if (IS_RAMI) return [];
     const url = `${BASE}/search/results?q=${encodeURIComponent(query)}:relevance&limit=${limit}&page=0`;
     const res = await fetch(url, {
       credentials: 'include',
@@ -108,26 +89,7 @@
   }
 
   async function apiAddGrid(items) {
-    if (IS_RAMI) {
-      const itemsMap = {};
-      for (const it of items) {
-        const code = String(it.productCode).replace(/^P_/, '');
-        itemsMap[code] = Number(it.quantity || 1).toFixed(2);
-      }
-      await fetch('/api/v2/cart', {
-        method: 'POST',
-        credentials: 'include',
-        headers: { 'content-type': 'application/json;charset=UTF-8', accept: 'application/json' },
-        body: JSON.stringify({
-          store: '331',
-          isClub: 0,
-          supplyAt: new Date(Date.now() + 86400000).toISOString(),
-          items: itemsMap,
-          meta: null,
-        }),
-      }).catch(() => {});
-      return { cartCodes: items.map((i) => i.productCode) };
-    }
+    if (IS_RAMI) throw new Error('GUIDED_ONLY');
     const token = await findCsrfToken();
     if (!token) throw new Error('NO_CSRF');
     const res = await fetch(`${BASE}/cart/addGrid`, {
@@ -162,29 +124,31 @@
     const pending = await get('pending');
     if (!pending || !state) return;
     pending.items = state.items.map(({ results, ...rest }) => rest);
+    pending.autoAdd = false;
     await set({ pending });
   }
 
   function qtyFor(item, p) {
-    const byUnit = p.sellingMethod === 'BY_UNIT';
+    const byUnit = !p || p.sellingMethod === 'BY_UNIT';
     if (byUnit) return item.unit === 'unit' || item.unit === 'pack' ? Math.max(1, Math.round(item.qty)) : 1;
     if (item.unit === 'kg') return item.qty;
     if (item.unit === 'g') return Math.max(0.1, Math.round(item.qty / 100) / 10);
     return item.qty || 1;
   }
 
-  function choose(item, p) {
+  // Only persist to `mappings` when the user explicitly chooses a product card (`saveMapping === true`).
+  function choose(item, p, saveMapping = false) {
     item.product = p;
     item.addQty = qtyFor(item, p);
     item.status = 'ready';
     item.results = null;
-    if (settings.remember) {
+    if (saveMapping && settings.remember) {
       mappings[item.key] = p;
       set({ mappings });
     }
   }
 
-  // ---------------- Auto-login helper on /online/he/login ----------------
+  // ---------------- Login email helper on /online/he/login ----------------
   function tryFillLoginForm() {
     if (!isOnLoginPage()) return;
     sessionStorage.setItem('sl_from_login', '1');
@@ -213,15 +177,15 @@
     }
   }
 
-  // ---------------- search queue ----------------
+  // ---------------- search queue (Shufersal only; never auto-submits to cart) ----------------
   let queueRunning = false;
-  async function runQueue(shouldAutoAdd = false) {
-    if (queueRunning) return;
+  async function runQueue() {
+    if (IS_RAMI || queueRunning) return;
     queueRunning = true;
     try {
       const worker = async () => {
         for (;;) {
-          const item = state.items.find((i) => i.status === 'todo');
+          const item = state && state.items.find((i) => i.status === 'todo');
           if (!item) return;
           item.status = 'searching';
           render();
@@ -233,13 +197,6 @@
     } finally {
       queueRunning = false;
       await persist();
-      if (shouldAutoAdd && state && state.phase === 'work' && isLoggedIn()) {
-        const hasReady = state.items.some((i) => i.status === 'ready');
-        const hasUnresolved = state.items.some((i) => ['todo', 'searching'].includes(i.status));
-        if (hasReady && !hasUnresolved) {
-          setTimeout(() => addAll(), 250);
-        }
-      }
     }
   }
 
@@ -254,7 +211,8 @@
       if (!results.length) {
         item.status = 'notfound';
       } else if (allowAutoPick) {
-        choose(item, results.find((r) => r.inStock) || results[0]);
+        // Preview candidate in panel without overwriting user's saved mappings
+        choose(item, results.find((r) => r.inStock) || results[0], false);
       } else {
         item.results = results.slice(0, 9);
         item.status = 'choose';
@@ -266,10 +224,12 @@
     render();
   }
 
-  // ---------------- add to cart ----------------
+  // ---------------- add to cart (Shufersal – explicit user click only) ----------------
   async function addAll() {
+    if (IS_RAMI) return;
     if (!isLoggedIn()) {
       state.error = 'login';
+      await persist();
       render();
       if (!isOnLoginPage()) {
         location.href = `${BASE}/login`;
@@ -295,9 +255,18 @@
       const { cartCodes } = await apiAddGrid(payload);
       const inCart = new Set(cartCodes || []);
       for (const i of ready) {
-        if (!inCart.size || inCart.has(i.product.code)) i.status = 'added';
-        else { i.status = 'error'; i.errorMsg = 'לא נכנס לסל – אולי אזל מהמלאי. בחר חלופה.'; }
+        if (inCart.has(i.product.code)) {
+          i.status = 'added';
+          // Save mapping only after user explicitly clicked addAll and Shufersal confirmed the product in cart
+          if (settings.remember && i.product) {
+            mappings[i.key] = i.product;
+          }
+        } else {
+          i.status = 'error';
+          i.errorMsg = 'לא אושר בסל של שופרסל – בדוק מלאי או בחר חלופה.';
+        }
       }
+      await set({ mappings });
       const left = state.items.filter((i) => ['choose', 'notfound', 'error', 'todo', 'searching', 'ready'].includes(i.status));
       state.phase = left.length ? 'work' : 'done';
       if (state.phase === 'done') {
@@ -305,9 +274,8 @@
         render();
         setTimeout(() => location.reload(), 800);
         return;
-      } else {
-        await persist();
       }
+      await persist();
     } catch (err) {
       state.phase = 'work';
       if (err.message === 'LOGIN_REQUIRED' || err.message === 'NO_CSRF') {
@@ -335,6 +303,7 @@
     return el;
   }
 
+  const ACCENT = IS_RAMI ? '#0f766e' : '#e2001a';
   const CSS = `
     :host { all: initial; }
     * { box-sizing: border-box; font-family: system-ui, "Segoe UI", Arial, sans-serif; }
@@ -343,11 +312,11 @@
       display: flex; flex-direction: column; direction: rtl; overflow: hidden; font-size: 14px; }
     .panel.collapsed { width: auto; }
     .panel.collapsed .body, .panel.collapsed .foot, .panel.collapsed .sub { display: none; }
-    .head { background: #e2001a; color: #fff; padding: 10px 14px; display: flex; align-items: center; gap: 8px; cursor: default; }
+    .head { background: ${ACCENT}; color: #fff; padding: 10px 14px; display: flex; align-items: center; gap: 8px; cursor: default; }
     .head b { flex: 1; font-size: 15px; }
     .head button { background: rgba(255,255,255,.18); border: 0; color: #fff; border-radius: 8px; width: 28px; height: 28px; cursor: pointer; font-size: 14px; }
-    .sub { padding: 8px 14px; background: #fff5f6; border-bottom: 1px solid #f1d5d9; font-size: 13px; display: flex; justify-content: space-between; align-items: center; gap: 8px; }
-    .bar { height: 4px; background: #f1d5d9; } .bar i { display: block; height: 100%; background: #1a9e55; transition: width .3s; }
+    .sub { padding: 8px 14px; background: #f8fafc; border-bottom: 1px solid #e2e8f0; font-size: 13px; display: flex; justify-content: space-between; align-items: center; gap: 8px; }
+    .bar { height: 4px; background: #e2e8f0; } .bar i { display: block; height: 100%; background: #1a9e55; transition: width .3s; }
     .body { overflow: auto; padding: 6px 10px; flex: 1; }
     .item { border-bottom: 1px solid #eee; padding: 8px 4px; }
     .item:last-child { border-bottom: 0; }
@@ -358,28 +327,29 @@
     .pname { font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
     .meta { font-size: 12px; color: #6e6e73; }
     .qty { width: 58px; padding: 4px; border: 1px solid #ddd; border-radius: 8px; text-align: center; font-size: 13px; }
-    .lnk { background: none; border: 0; color: #e2001a; cursor: pointer; font-size: 12px; padding: 2px 4px; }
+    .lnk { background: none; border: 0; color: ${ACCENT}; cursor: pointer; font-size: 12px; padding: 2px 4px; }
     .lnk.grey { color: #8e8e93; }
     .status { font-size: 12px; color: #6e6e73; }
-    .ok { color: #1a9e55; } .err { color: #c00; }
+    .ok { color: #1a9e55; font-weight: 600; font-size: 12px; } .err { color: #c00; }
     .grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; margin-top: 6px; }
     .card { border: 1px solid #e5e5ea; border-radius: 10px; padding: 6px; background: #fff; cursor: pointer; text-align: center; font-size: 11px; line-height: 1.25; display: flex; flex-direction: column; gap: 3px; }
-    .card:hover { border-color: #e2001a; box-shadow: 0 0 0 2px #ffd6db; }
+    .card:hover { border-color: ${ACCENT}; box-shadow: 0 0 0 2px rgba(15,118,110,.2); }
     .card img { width: 100%; height: 64px; object-fit: contain; }
     .card .n { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; min-height: 2.5em; }
-    .card .p { font-weight: 700; color: #e2001a; }
+    .card .p { font-weight: 700; color: ${ACCENT}; }
     .card.oos { opacity: .45; }
     .refine { display: flex; gap: 4px; margin-top: 6px; }
     .refine input, .login-box input { flex: 1; padding: 8px; border: 1px solid #ddd; border-radius: 8px; font-size: 13px; width: 100%; }
-    .refine button, .btn { border: 1px solid #ddd; background: #fff; border-radius: 8px; padding: 6px 10px; cursor: pointer; font-size: 13px; }
+    .refine button, .btn { border: 1px solid #ddd; background: #fff; border-radius: 8px; padding: 5px 9px; cursor: pointer; font-size: 12px; }
+    .btn.act { border-color: ${ACCENT}; color: ${ACCENT}; font-weight: 600; }
     .login-box { background: #fff8e6; border: 1px solid #ffe08a; border-radius: 12px; padding: 10px; display: flex; flex-direction: column; gap: 6px; margin-bottom: 6px; }
     .skipped { opacity: .5; }
     .foot { padding: 10px; border-top: 1px solid #eee; display: flex; flex-direction: column; gap: 6px; }
-    .primary { background: #e2001a; color: #fff; border: 0; border-radius: 12px; padding: 12px; font-size: 15px; font-weight: 700; cursor: pointer; }
+    .primary { background: ${ACCENT}; color: #fff; border: 0; border-radius: 12px; padding: 12px; font-size: 15px; font-weight: 700; cursor: pointer; }
     .primary:disabled { opacity: .45; cursor: default; }
     .done { text-align: center; padding: 20px 10px; }
     .done .big { font-size: 40px; }
-    .spin { display: inline-block; width: 12px; height: 12px; border: 2px solid #e2001a; border-top-color: transparent; border-radius: 50%; animation: s .8s linear infinite; vertical-align: middle; }
+    .spin { display: inline-block; width: 12px; height: 12px; border: 2px solid ${ACCENT}; border-top-color: transparent; border-radius: 50%; animation: s .8s linear infinite; vertical-align: middle; }
     @keyframes s { to { transform: rotate(360deg); } }
   `;
 
@@ -404,7 +374,7 @@
   }
 
   function productCard(item, p) {
-    return h('button', { class: 'card' + (p.inStock ? '' : ' oos'), title: `${p.name} ${p.brand}`, onclick: () => { choose(item, p); render(); persist(); } },
+    return h('button', { class: 'card' + (p.inStock ? '' : ' oos'), title: `${p.name} ${p.brand}`, onclick: () => { choose(item, p, true); render(); persist(); } },
       p.img ? h('img', { src: p.img, alt: '', loading: 'lazy' }) : h('div', { style: 'height:64px' }),
       h('span', { class: 'n' }, p.name),
       h('span', { class: 'meta' }, [p.brand, p.unitDesc].filter(Boolean).join(' · ')),
@@ -420,7 +390,44 @@
       h('button', { onclick: () => { item.status = 'skipped'; render(); persist(); } }, 'דלג'));
   }
 
+  function renderGuidedItem(item) {
+    const qText = item.product?.name || item.name;
+    const done = item.status === 'added';
+    const skipped = item.status === 'skipped';
+    return h('div', { class: 'item' + (skipped ? ' skipped' : '') },
+      h('div', { class: 'row' },
+        h('div', { class: 'grow' },
+          h('div', { class: 'pname' }, item.name, ' ', h('span', { class: 'want' }, fmtQty(item))),
+          item.product?.name ? h('div', { class: 'meta', title: item.product.name }, item.product.name) : null,
+        ),
+        done
+          ? h('div', { class: 'row', style: 'gap:4px' },
+              h('span', { class: 'ok' }, '✓ סומן'),
+              h('button', { class: 'lnk grey', onclick: () => { item.status = 'ready'; render(); persist(); } }, 'בטל'),
+            )
+          : skipped
+            ? h('button', { class: 'lnk', onclick: () => { item.status = 'ready'; render(); persist(); } }, 'החזר')
+            : h('div', { class: 'row', style: 'gap:4px' },
+                h('button', {
+                  class: 'btn act',
+                  onclick: async () => {
+                    await persist();
+                    location.href = `/he/online/search?q=${encodeURIComponent(qText)}`;
+                  },
+                }, '🔍 חפש'),
+                h('button', {
+                  class: 'btn',
+                  title: 'סמן לאחר שהוספת את המוצר לסל באתר רמי לוי',
+                  onclick: () => { item.status = 'added'; render(); persist(); },
+                }, '✓ הוספתי'),
+                h('button', { class: 'lnk grey', onclick: () => { item.status = 'skipped'; render(); persist(); } }, 'דלג'),
+              ),
+      ),
+    );
+  }
+
   function renderItem(item) {
+    if (IS_RAMI) return renderGuidedItem(item);
     const label = h('span', {}, h('b', {}, item.name), ' ', h('span', { class: 'want' }, fmtQty(item)));
     switch (item.status) {
       case 'ready':
@@ -460,7 +467,7 @@
         return h('div', { class: 'item' }, label, h('div', { class: 'status err' }, item.errorMsg || 'שגיאה'), refineBox(item));
       case 'skipped':
         return h('div', { class: 'item skipped' }, h('div', { class: 'row' }, h('div', { class: 'grow' }, label),
-          h('button', { class: 'lnk', onclick: () => { item.status = item.product ? 'ready' : 'todo'; render(); runQueue(false); } }, 'החזר')));
+          h('button', { class: 'lnk', onclick: () => { item.status = item.product ? 'ready' : 'todo'; render(); runQueue(); } }, 'החזר')));
       default:
         return h('div', { class: 'item' }, label);
     }
@@ -474,7 +481,9 @@
 
     const items = state.items;
     const total = items.length;
-    const resolved = items.filter((i) => ['ready', 'added', 'skipped'].includes(i.status)).length;
+    const resolved = IS_RAMI
+      ? items.filter((i) => ['added', 'skipped'].includes(i.status)).length
+      : items.filter((i) => ['ready', 'added', 'skipped'].includes(i.status)).length;
     const ready = items.filter((i) => i.status === 'ready').length;
     const added = items.filter((i) => i.status === 'added').length;
     const loggedIn = isLoggedIn();
@@ -482,15 +491,15 @@
     const panel = h('div', { class: 'panel' + (collapsed ? ' collapsed' : '') });
     panel.append(h('div', { class: 'head' },
       h('span', {}, '🛒'),
-      h('b', {}, collapsed ? `${resolved}/${total}` : 'הרשימה החכמה ← שופרסל v2'),
+      h('b', {}, collapsed ? `${resolved}/${total}` : (IS_RAMI ? 'העגלה החכמה ← רמי לוי (מודרך)' : 'העגלה החכמה ← שופרסל')),
       h('button', { title: collapsed ? 'הרחב' : 'מזער', onclick: () => { collapsed = !collapsed; render(); } }, collapsed ? '▢' : '–'),
-      h('button', { title: 'סגור ובטל את הרשימה', onclick: async () => { if (state.phase === 'done' || confirm('לבטל את מילוי הסל מהרשימה?')) { await del('pending'); unmount(); } } }, '✕'),
+      h('button', { title: 'סגור ובטל את הרשימה', onclick: async () => { if (state.phase === 'done' || confirm('לסגור ולנקות את הרשימה מהתוסף?')) { await del('pending'); unmount(); } } }, '✕'),
     ));
 
     if (state.phase === 'done') {
       panel.append(h('div', { class: 'body' }, h('div', { class: 'done' },
         h('div', { class: 'big' }, '🎉'),
-        h('h3', {}, `${added} מוצרים נוספו לסל אוטומטית!`),
+        h('h3', {}, `${added} מוצרים נוספו לסל שופרסל!`),
         h('p', {}, 'מרענן את הדף כדי להציג את הסל המעודכן…'),
       )));
       panel.append(h('div', { class: 'foot' },
@@ -500,30 +509,55 @@
       return;
     }
 
-    panel.append(h('div', { class: 'sub' },
-      h('span', {}, !loggedIn ? '🔐 ממתין להתחברות לחשבון שופרסל…' : state.phase === 'adding' ? 'מוסיף אוטומטית לסל שופרסל…' : `${resolved}/${total} מוצרים מוכנים`),
-    ));
+    const subText = IS_RAMI
+      ? `🧭 מצב מודרך: חפש והוסף באתר רמי לוי (${resolved}/${total} טופלו)`
+      : (!loggedIn
+        ? '🔐 יש להתחבר לחשבון שופרסל לפני ההוספה לסל'
+        : state.phase === 'adding'
+          ? 'מוסיף לסל שופרסל…'
+          : `${ready} מוצרים מוכנים לאישור הוספה (${resolved}/${total})`);
+
+    panel.append(h('div', { class: 'sub' }, h('span', {}, subText)));
     panel.append(h('div', { class: 'bar' }, h('i', { style: `width:${total ? (resolved / total) * 100 : 0}%` })));
 
     const body = h('div', { class: 'body' });
-    if (!loggedIn) {
+    if (IS_RAMI) {
       body.append(h('div', { class: 'login-box' },
-        h('b', {}, '👤 התחבר לחשבון שופרסל בדף זה:'),
-        h('span', { class: 'meta' }, 'הזן סיסמה בטופס של שופרסל ולחץ כניסה – מיד לאחר הכניסה כל המוצרים למטה יתווספו לסל אוטומטית!'),
+        h('b', {}, '🧭 הוספה מודרכת ברמי לוי (ללא דריסת עגלה):'),
+        h('span', { class: 'meta' }, 'לחץ "🔍 חפש" ליד כל פריט, הוסף אותו לסל באתר של רמי לוי, וסמן "✓ הוספתי". סל קיים לא יידרס.'),
+      ));
+    } else if (!loggedIn) {
+      body.append(h('div', { class: 'login-box' },
+        h('b', {}, '👤 התחבר לחשבון שופרסל:'),
+        h('span', { class: 'meta' }, 'שום מוצר לא מתווסף אוטומטית. לאחר ההתחברות תוכל לבדוק את המוצרים וללחוץ "הוסף לסל".'),
       ));
     }
 
-    const order = { choose: 0, notfound: 0, error: 0, searching: 1, todo: 1, ready: 2, skipped: 3, added: 4 };
-    [...items].sort((a, b) => order[a.status] - order[b.status]).forEach((i) => body.append(renderItem(i)));
+    const order = IS_RAMI
+      ? { ready: 0, todo: 0, skipped: 1, added: 2 }
+      : { choose: 0, notfound: 0, error: 0, searching: 1, todo: 1, ready: 2, skipped: 3, added: 4 };
+    [...items].sort((a, b) => (order[a.status] ?? 0) - (order[b.status] ?? 0)).forEach((i) => body.append(renderItem(i)));
     panel.append(body);
 
     const foot = h('div', { class: 'foot' });
     if (state.error && state.error !== 'login') {
       foot.append(h('div', { class: 'login-box' }, state.error));
     }
-    if (loggedIn) {
+    if (IS_RAMI) {
+      foot.append(h('button', {
+        class: 'primary',
+        onclick: async () => { await del('pending'); unmount(); },
+      }, resolved === total ? '🎉 סיימתי – סגור חלונית' : 'סגור חלונית'));
+    } else if (!loggedIn) {
+      if (!isOnLoginPage()) {
+        foot.append(h('button', {
+          class: 'primary',
+          onclick: () => { location.href = `${BASE}/login`; },
+        }, 'התחבר לשופרסל כדי להוסיף לסל'));
+      }
+    } else {
       const btn = h('button', { class: 'primary', disabled: !ready || state.phase === 'adding', onclick: addAll },
-        state.phase === 'adding' ? 'מוסיף לסל…' : `הוסף ${ready} מוצרים לסל עכשיו`);
+        state.phase === 'adding' ? 'מוסיף לסל…' : `הוסף ${ready} מוצרים לסל`);
       foot.append(btn);
     }
     panel.append(foot);
@@ -534,7 +568,7 @@
   async function start() {
     const m = location.hash.match(/smartlist=([^&]+)/);
     if (m) {
-      await set({ pending: { code: m[1], ts: Date.now(), items: null, autoAdd: true, v: 2 } });
+      await set({ pending: { code: m[1], ts: Date.now(), items: null, autoAdd: false, v: 2 } });
       try { history.replaceState(null, '', location.pathname + location.search); } catch (e) {}
     }
 
@@ -542,7 +576,7 @@
     if (!pending) return;
 
     // If returning right after logging in on /login, reload once so Shufersal's session/CSRF accepts POST
-    if (!isOnLoginPage() && sessionStorage.getItem('sl_from_login') === '1') {
+    if (!IS_RAMI && !isOnLoginPage() && sessionStorage.getItem('sl_from_login') === '1') {
       sessionStorage.removeItem('sl_from_login');
       sessionStorage.removeItem('sl_submitted_once');
       location.reload();
@@ -557,38 +591,43 @@
     settings = { ...settings, ...((await get('settings')) || {}) };
 
     let items = pending.items;
-    const shouldAutoAdd = pending.autoAdd !== false;
 
-    // If pending.items is missing OR came from old v1 (where items were stuck in 'choose'), decode fresh or convert to 'todo'
     if (!items || !pending.v) {
       try {
         const decoded = SLCodec.decodePayload ? await SLCodec.decodePayload(pending.code) : { items: await SLCodec.decodeList(pending.code), auth: null };
-        if (decoded.auth && decoded.auth.user) {
+        // Never overwrite an already-saved email hint with an untrusted link parameter
+        if (decoded.auth && decoded.auth.user && !shufAuth.user) {
           shufAuth = { user: decoded.auth.user };
           await set({ shufAuth });
         }
         items = decoded.items.map((it) => {
           const key = normalize(it.name);
-          const chosen = it.product || mappings[key];
-          const base = { ...it, key, status: 'todo' };
-          if (chosen && chosen.code && !/^SEARCH/i.test(chosen.code)) {
+          // Prefer user's own saved mapping; allow link's product as session preview ONLY (never overwrite mappings!)
+          const chosen = mappings[key] || it.product;
+          const base = { ...it, key, status: IS_RAMI ? 'ready' : 'todo' };
+          if (IS_RAMI) {
+            if (chosen) base.product = chosen;
+            return base;
+          }
+          if (chosen && chosen.code && !/^SEARCH/i.test(chosen.code) && String(chosen.code).startsWith('P_')) {
             base.product = chosen;
             base.addQty = qtyFor(it, chosen);
             base.status = 'ready';
-            if (it.product && settings.remember) {
-              mappings[key] = it.product;
-            }
           }
           return base;
         });
         pending.v = 2;
-        await set({ mappings, pending });
+        pending.autoAdd = false;
+        await set({ pending });
       } catch (err) {
         await del('pending');
         return;
       }
     } else {
-      items = items.map((i) => (['searching', 'choose'].includes(i.status) ? { ...i, status: 'todo' } : i));
+      items = items.map((i) => {
+        if (IS_RAMI && ['todo', 'searching', 'choose'].includes(i.status)) return { ...i, status: 'ready' };
+        return ['searching', 'choose'].includes(i.status) ? { ...i, status: 'todo' } : i;
+      });
     }
 
     state = { items, phase: 'work', error: null };
@@ -596,17 +635,13 @@
     await persist();
     render();
 
-    // If the user is not logged in yet, redirect to /online/he/login (or fill the login form if already there)
-    if (!isLoggedIn()) {
-      if (!isOnLoginPage()) {
-        location.href = `${BASE}/login`;
-        return;
-      } else {
-        tryFillLoginForm(true);
-      }
+    if (isOnLoginPage()) {
+      tryFillLoginForm();
     }
 
-    runQueue(shouldAutoAdd);
+    if (!IS_RAMI) {
+      runQueue();
+    }
   }
 
   chrome.storage.onChanged.addListener((changes, area) => {
