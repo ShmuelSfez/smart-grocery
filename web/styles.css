@@ -93,8 +93,22 @@ main { max-width: 780px; margin: 0 auto; padding: 12px; }
   display: flex; justify-content: space-between; align-items: center; gap: 10px;
   flex-wrap: wrap; padding-top: 6px; border-top: 1px solid #f1f5f9; font-size: .84rem;
 }
-.sort-pills { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
-.sort-pills .chip-btn { padding: 5px 10px; font-size: .8rem; }
+.quick-cities { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; font-size: .82rem; color: var(--muted); }
+.quick-cities .chip-btn { padding: 4px 10px; font-size: .78rem; }
+.branch-pickers {
+  display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 8px;
+  padding-top: 4px;
+}
+.branch-picker {
+  display: flex; flex-direction: column; gap: 3px; font-size: .8rem; background: #f8fafc;
+  border: 1px solid var(--line); border-radius: 10px; padding: 6px 8px;
+}
+.branch-picker b { font-size: .82rem; color: var(--text); }
+.branch-picker select {
+  padding: 5px 8px; border: 1px solid var(--line); border-radius: 8px; background: #fff;
+  font-size: .8rem; color: var(--text); width: 100%;
+}
+.branch-picker .no-branch { color: var(--muted); font-size: .78rem; padding: 4px 0; }
 
 /* Multi-Supermarket Comparison Dashboard */
 .compare-box {
@@ -123,6 +137,7 @@ main { max-width: 780px; margin: 0 auto; padding: 12px; }
 .chain-badge.soon { background: #f1f5f9; color: #475569; }
 .chain-badge.no-area { background: #fee2e2; color: #991b1b; }
 .chain-name { font-weight: 800; font-size: .92rem; color: var(--text); }
+.chain-branch { font-size: .72rem; color: var(--muted); max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .chain-total { font-size: 1.15rem; font-weight: 800; color: var(--brand-dark); font-variant-numeric: tabular-nums; }
 .chain-breakdown { font-size: .72rem; color: var(--muted); line-height: 1.25; }
 .chain-slot { font-size: .73rem; font-weight: 600; color: #0369a1; background: #f0f9ff; padding: 2px 6px; border-radius: 6px; margin-top: 2px; }
@@ -188,6 +203,9 @@ main { max-width: 780px; margin: 0 auto; padding: 12px; }
 .chain-pill { font-size: .7rem; background: #f1f5f9; color: #475569; padding: 1px 6px; border-radius: 6px; }
 .chain-pill.active { background: #ccfbf1; color: #0f766e; font-weight: 700; }
 .chain-pill.missing { background: #fff1f2; color: #9f1239; }
+.chain-pill.sub { background: #fef3c7; color: #92400e; }
+.promo-tag { background: #dcfce7; color: #166534; font-weight: 700; font-size: .7rem; padding: 1px 6px; border-radius: 6px; }
+.sub-tag { background: #fef3c7; color: #92400e; font-weight: 700; font-size: .7rem; padding: 1px 6px; border-radius: 6px; }
 .change-btn { border: 1px solid var(--line); background: #fff; color: var(--brand); border-radius: 8px; padding: 5px 10px; font-size: .78rem; font-weight: 600; white-space: nowrap; }
 .change-btn:hover { border-color: var(--brand); background: #f0fdfa; }
 

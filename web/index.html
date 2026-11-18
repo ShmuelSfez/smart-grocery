@@ -8,7 +8,7 @@
   <link rel="manifest" href="manifest.webmanifest" />
   <link rel="icon" href="icon.svg" type="image/svg+xml" />
   <link rel="apple-touch-icon" href="icon.svg" />
-  <link rel="stylesheet" href="styles.css?v=18" />
+  <link rel="stylesheet" href="styles.css?v=19" />
 </head>
 <body>
   <header class="topbar">
@@ -47,15 +47,18 @@
       <button class="chip-btn" id="btnExt">🧩 התקנת התוסף לכרום</button>
     </div>
 
-    <!-- Location & Delivery Preferences Bar -->
+    <!-- Location & Branch Selection Bar -->
     <section id="locationBar" class="location-bar">
       <div class="loc-row">
         <span class="loc-label">📍 עיר / יישוב:</span>
-        <input id="locInput" list="citiesList" type="text" placeholder="הזן עיר (למשל: הרצליה, ירושלים, תל אביב, באר שבע…)" />
+        <input id="locInput" list="citiesList" type="text" placeholder="הזן עיר מתוך קובצי השקיפות (למשל: הרצליה, ירושלים, תל אביב-יפו…)" />
         <datalist id="citiesList"></datalist>
       </div>
+      <div id="quickCities" class="quick-cities" hidden></div>
+      <div id="branchPickers" class="branch-pickers" hidden></div>
       <div class="loc-options">
         <label class="check"><input type="checkbox" id="incDelivery" checked /> חשב סה״כ כולל דמי משלוח ידועים <small id="deliveryCheckedNote" class="muted"></small></label>
+        <small id="pricesMetaNote" class="muted"></small>
       </div>
     </section>
 
@@ -64,7 +67,8 @@
       <div class="compare-head">
         <div>
           <h2>📊 השוואת סל הקניות בין רשתות</h2>
-          <p class="muted" id="compareSummary">המערכת בוחרת אוטומטית את הרשת הזולה ביותר עבור הסל שלך (לחץ על רשת כדי לבחור בה ידנית):</p>
+          <small class="muted">מחיר מדף + מבצעים לכלל הלקוחות (ללא מבצעי מועדון/אשראי)</small>
+          <p class="muted" id="compareSummary">בחר עיר למעלה כדי לטעון את מחירי הסניפים בעירך:</p>
         </div>
         <button type="button" class="chip-btn active-auto" id="btnAutoChain">🏆 בחר אוטומטית את הזולה ביותר</button>
       </div>
@@ -303,7 +307,7 @@
   </dialog>
 
   <div id="toast" class="toast" hidden></div>
-  <script src="js/codec.js?v=18"></script>
-  <script type="module" src="js/app.js?v=18"></script>
+  <script src="js/codec.js?v=19"></script>
+  <script type="module" src="js/app.js?v=19"></script>
 </body>
 </html>

@@ -7,6 +7,16 @@ import { aiToItems } from './ai.js';
 import { parseGrid, analyzeSheetGrid, exportListToCsv } from './sheets.js';
 import { CHAINS, CHAIN_BY_ID, LIVE_CHAIN_IDS } from './chains.js';
 import { compareBasket, lineCost } from './pricing.js';
+import {
+  loadMeta,
+  loadCities,
+  loadChainCatalog,
+  loadBranchPrices,
+  findMatchingCity,
+  branchesInCity,
+  searchCatalogProducts,
+  matchLineAcrossChains,
+} from './prices.js';
 
 export { CHAINS };
 
@@ -31,8 +41,18 @@ let includeDelivery = settings.includeDelivery !== false;
 let deliveryConfig = { lastChecked: null, chains: {} };
 let sponsoredCodes = new Set();
 
+let priceMeta = null;
+let citiesIndex = null;
+let activeCity = '';
+let selectedBranches = (settings.selectedBranches && typeof settings.selectedBranches === 'object') ? settings.selectedBranches : {};
+let activeBranchData = {};
+let loadingBranches = false;
+let feedLoadError = '';
+let branchLoadSeq = 0;
+
+const QUICK_CITIES = ['הרצליה', 'ירושלים', 'תל אביב-יפו', 'חיפה', 'באר שבע', 'ראשון לציון'];
+
 const searchCache = new Map();
-const searchErrors = new Set();
 const openPickers = new Set();
 
 // Drop any legacy estimated/invented items cached in localStorage from older versions
@@ -109,69 +129,34 @@ function catFor(name, given) {
   return categorize(name, overrides);
 }
 
-async function fetchOptions(query) {
-  const q = query.trim();
-  if (!q) return [];
+function hasAnyLoadedBranch() {
+  return LIVE_CHAIN_IDS.some((cid) => activeBranchData[cid]?.catalog && activeBranchData[cid]?.storePrices);
+}
+
+function searchProductsInActiveBranches(query) {
+  const q = String(query || '').trim();
+  if (!q || !hasAnyLoadedBranch()) return [];
   if (searchCache.has(q)) return searchCache.get(q);
-  const p = fetch(`/api/search?q=${encodeURIComponent(q)}&limit=9`).then((r) => {
-    if (!r.ok) throw new Error('HTTP_' + r.status);
-    return r.json();
-  });
-  searchCache.set(q, p);
-  try {
-    const res = await p;
-    const arr = Array.isArray(res) ? res : [];
-    searchErrors.delete(q);
-    searchCache.set(q, arr);
-    return arr;
-  } catch {
-    // Never cache failed searches as empty results
-    searchCache.delete(q);
-    searchErrors.add(q);
-    return null;
-  }
+  const results = searchCatalogProducts(q, activeBranchData, { limit: 12 });
+  searchCache.set(q, results);
+  return results;
 }
 
-function bestCandidateFor(it) {
-  const q = (it.searchQuery || it.name || '').trim();
-  const cached = searchCache.get(q);
-  if (!Array.isArray(cached) || !cached.length) return null;
-  return cached.find((p) => p.inStock) || cached[0];
-}
-
-function ensureOptionsLoaded(it) {
-  const q = (it.searchQuery || it.name || '').trim();
-  if (!q || searchCache.has(q) || searchErrors.has(q)) return;
-  fetchOptions(q).then(() => render());
-}
-
-function matchForChain(product, chainId, kindOverride) {
-  if (!product) return null;
-  const weighted = product.sellingMethod === 'BY_WEIGHT' || Boolean(product.weighted);
-  const price = product.chainPrices && typeof product.chainPrices[chainId] === 'number' && product.chainPrices[chainId] > 0
-    ? product.chainPrices[chainId]
-    : (product.chain === chainId && typeof product.priceNum === 'number' && product.priceNum > 0 ? product.priceNum : null);
-  if (!price) return null;
-  return {
-    price,
-    weighted,
-    promo: product.chainPromos?.[chainId] || null,
-    kind: kindOverride || product.chainKinds?.[chainId] || 'exact',
-  };
+function formatPromoBadge(promo) {
+  if (!promo) return '';
+  if (promo.type === 'bundle') return `🏷️ ${promo.qty} ב-₪${promo.price.toFixed(2)}`;
+  if (promo.type === 'price') return `🏷️ מבצע ₪${promo.price.toFixed(2)}`;
+  return '';
 }
 
 // Compute real totals per supermarket chain across all checked items (never invents missing prices)
 function computeChainTotals() {
   const checked = list.filter((i) => i.checked);
   const lines = [];
+  const lineMatches = new Map();
   for (const it of checked) {
-    ensureOptionsLoaded(it);
-    const pinned = it.product;
-    const candidate = pinned || bestCandidateFor(it);
-    const matches = {};
-    for (const cid of LIVE_CHAIN_IDS) {
-      matches[cid] = matchForChain(candidate, cid, pinned ? undefined : 'substitute');
-    }
+    const matches = matchLineAcrossChains(it, activeBranchData);
+    lineMatches.set(it.id, matches);
     lines.push({ id: it.id, qty: it.qty, unit: it.unit, matches });
   }
 
@@ -184,6 +169,7 @@ function computeChainTotals() {
   return {
     ...cmp,
     totals,
+    lineMatches,
     checkedCount: checked.length,
     activeChainId,
   };
@@ -209,7 +195,6 @@ function addItems(items, { silent = false } = {}) {
         checked: true, product: savedProd, addedAt: Date.now(),
       };
       list.push(newItem);
-      ensureOptionsLoaded(newItem);
     }
     added++;
   }
@@ -250,7 +235,7 @@ function render() {
     sec.className = 'cat';
     const selected = items.filter((i) => i.checked).length;
     sec.innerHTML = `<div class="cat-head"><span>${cat.emoji} ${cat.he}</span><span class="count">${selected}/${items.length} נבחרו</span></div>`;
-    for (const it of items) sec.append(renderItem(it, activeChainId));
+    for (const it of items) sec.append(renderItem(it, activeChainId, calc.lineMatches));
     box.append(sec);
   }
   $('emptyState').hidden = list.length > 0;
@@ -260,7 +245,8 @@ function render() {
   const partialTag = activeInfo && !activeInfo.complete ? ' (חלקי)' : '';
   const delLabel = includeDelivery && typeof activeInfo?.deliveryFee === 'number' ? ' כולל משלוח' : '';
   const priceTag = activeTotal > 0 ? ` · ₪${activeTotal.toFixed(2)}${partialTag}${delLabel}` : '';
-  $('btnSend').innerHTML = `${activeChain.emoji} שלח סל ל<b>${activeChain.name}</b> <span id="sendCount">${toSend ? `(${toSend} מוצרים${priceTag})` : ''}</span>`;
+  const sendVerb = activeChain.cartFill === 'none' ? 'פתח את אתר' : 'שלח סל ל';
+  $('btnSend').innerHTML = `${activeChain.emoji} ${sendVerb}<b>${activeChain.name}</b> <span id="sendCount">${toSend ? `(${toSend} מוצרים${priceTag})` : ''}</span>`;
   $('btnSend').disabled = toSend === 0;
   renderSuggestions();
 }
@@ -283,20 +269,30 @@ function renderComparisonDashboard(calc) {
     };
   }
 
-  const locText = userLocation ? ` (${userLocation})` : '';
+  const locText = activeCity ? ` ב${activeCity}` : '';
   if ($('compareSummary')) {
-    if (!hasItems) {
-      $('compareSummary').textContent = `הוסף מוצרים לרשימה להשוואת סלים אמיתית בין הרשתות${locText}:`;
+    if (feedLoadError) {
+      $('compareSummary').textContent = `⚠️ ${feedLoadError}`;
+    } else if (!activeCity) {
+      $('compareSummary').textContent = 'בחר עיר למעלה (למשל הרצליה, ירושלים או תל אביב-יפו) כדי לטעון מחירי סניפים רשמיים:';
+    } else if (loadingBranches) {
+      $('compareSummary').textContent = `⏳ טוען קטלוג ומחירי סניפים${locText}…`;
+    } else if (!hasItems) {
+      $('compareSummary').textContent = `הוסף מוצרים לרשימה להשוואת סלים אמיתית${locText}:`;
     } else if (cheapestId) {
       const ch = CHAIN_BY_ID[cheapestId];
       const info = perChain[cheapestId];
+      const branchName = activeBranchData[cheapestId]?.store?.name;
+      const brLabel = branchName ? ` (${branchName})` : '';
       const delNote = includeDelivery && typeof info.deliveryFee === 'number' ? ' כולל משלוח' : '';
       const savNote = savings > 0 ? ` – חיסכון של ₪${savings.toFixed(2)}` : '';
-      $('compareSummary').textContent = `🏆 הסל המלא המשתלם ביותר${locText}: ${ch.name} (₪${info.total.toFixed(2)}${delNote}${savNote}):`;
+      $('compareSummary').textContent = `🏆 הסל המלא הזול ביותר${locText}: ${ch.name}${brLabel} – ₪${info.total.toFixed(2)}${delNote}${savNote}`;
     } else {
-      $('compareSummary').textContent = `⚠️ באף רשת אין עדיין מחיר מלא לכל המוצרים שנבחרו${locText} (סלים חלקיים מסומנים למטה):`;
+      $('compareSummary').textContent = `⚠️ באף רשת${locText} אין מחיר מלא לכל המוצרים שנבחרו (סלים חלקיים מסומנים למטה):`;
     }
   }
+
+  const cityBranchesByChain = activeCity && citiesIndex ? branchesInCity(activeCity, citiesIndex) : null;
 
   for (const c of CHAINS) {
     if (c.status === 'soon') {
@@ -321,13 +317,23 @@ function renderComparisonDashboard(calc) {
 
     const info = perChain[c.id];
     const delCfg = deliveryConfig.chains?.[c.id] || {};
-    const isCheapest = hasItems && c.id === cheapestId;
+    const branchObj = activeBranchData[c.id]?.store || null;
+    const noBranchInCity = Boolean(activeCity && cityBranchesByChain && cityBranchesByChain[c.id]?.length === 0);
+    const isCheapest = hasItems && !noBranchInCity && c.id === cheapestId;
     const isSelected = c.id === activeChainId;
 
     const card = document.createElement('div');
-    card.className = 'chain-card' + (isSelected ? ' selected' : '') + (isCheapest ? ' cheapest' : '');
+    card.className = 'chain-card'
+      + (isSelected ? ' selected' : '')
+      + (isCheapest ? ' cheapest' : '')
+      + (noBranchInCity ? ' unavailable' : '');
 
-    if (isCheapest) {
+    if (noBranchInCity) {
+      const badge = document.createElement('span');
+      badge.className = 'chain-badge no-area';
+      badge.textContent = 'אין סניף בעיר';
+      card.append(badge);
+    } else if (isCheapest) {
       const badge = document.createElement('span');
       badge.className = 'chain-badge';
       badge.textContent = '🏆 הכי זול!';
@@ -335,9 +341,9 @@ function renderComparisonDashboard(calc) {
     } else if (hasItems && !info.complete && info.hasData) {
       const badge = document.createElement('span');
       badge.className = 'chain-badge partial';
-      badge.textContent = `חלקי – חסרים ${info.missing.length}`;
+      badge.textContent = `חלקי – ${info.missing.length} מוצרים חסרים`;
       card.append(badge);
-    } else if (hasItems && !info.hasData) {
+    } else if (hasItems && activeCity && !loadingBranches && !info.hasData) {
       const badge = document.createElement('span');
       badge.className = 'chain-badge no-area';
       badge.textContent = 'אין נתון';
@@ -348,6 +354,14 @@ function renderComparisonDashboard(calc) {
     name.className = 'chain-name';
     name.textContent = `${c.emoji} ${c.name}`;
     card.append(name);
+
+    if (branchObj) {
+      const br = document.createElement('span');
+      br.className = 'chain-branch';
+      br.title = `${branchObj.name}${branchObj.address ? ' · ' + branchObj.address : ''}`;
+      br.textContent = `📍 ${branchObj.name}`;
+      card.append(br);
+    }
 
     const price = document.createElement('span');
     price.className = 'chain-total';
@@ -365,11 +379,34 @@ function renderComparisonDashboard(calc) {
       }
       bd.textContent = `מוצרים: ₪${info.subtotal.toFixed(2)} · ${delText}`;
       card.append(bd);
+
+      if (info.promoSavings > 0) {
+        const ps = document.createElement('span');
+        ps.className = 'chain-breakdown ok-txt';
+        ps.textContent = `🏷️ חיסכון מבצעים: ₪${info.promoSavings.toFixed(2)}`;
+        card.append(ps);
+      }
+      if (info.substitutes.length > 0) {
+        const sb = document.createElement('span');
+        sb.className = 'chain-breakdown';
+        sb.textContent = `כולל ${info.substitutes.length} חלופות`;
+        card.append(sb);
+      }
+      if (info.estimated.length > 0) {
+        const est = document.createElement('span');
+        est.className = 'chain-breakdown';
+        est.textContent = `* הערכת משקל ל-${info.estimated.length} פריטים`;
+        card.append(est);
+      }
     }
 
     const diffEl = document.createElement('span');
     diffEl.className = 'chain-diff' + (isCheapest ? ' win' : '');
-    if (!hasItems) {
+    if (noBranchInCity) {
+      diffEl.textContent = `לא נמצא סניף ב${activeCity}`;
+    } else if (!activeCity) {
+      diffEl.textContent = 'בחר עיר לטעינת מחירים';
+    } else if (!hasItems) {
       if (typeof delCfg.fee === 'number') {
         const freeTxt = typeof delCfg.freeOver === 'number' ? ` (חינם מ-₪${delCfg.freeOver})` : '';
         const chkTxt = deliveryConfig.lastChecked ? ` · נכון ל-${deliveryConfig.lastChecked}` : '';
@@ -378,7 +415,7 @@ function renderComparisonDashboard(calc) {
         diffEl.textContent = 'דמי משלוח: לא ידוע (לפי כתובת)';
       }
     } else if (!info.hasData) {
-      diffEl.textContent = 'אין נתון למוצרים שנבחרו';
+      diffEl.textContent = loadingBranches ? 'טוען מחירים…' : 'אין נתון למוצרים שנבחרו';
     } else if (!info.complete) {
       diffEl.textContent = `סה״כ חלקי (${info.priced}/${checkedCount} מוצרים)`;
     } else if (isCheapest) {
@@ -391,30 +428,20 @@ function renderComparisonDashboard(calc) {
     }
     card.append(diffEl);
 
-    if (hasItems && info.estimated.length) {
-      const est = document.createElement('span');
-      est.className = 'chain-breakdown';
-      est.textContent = `* כולל הערכת משקל ל-${info.estimated.length} פריטים`;
-      card.append(est);
+    if (!noBranchInCity) {
+      card.onclick = () => {
+        selectedChainMode = c.id;
+        settings = { ...settings, selectedChain: c.id };
+        store.setSettings(settings);
+        render();
+        pushFamilyRoom();
+      };
     }
-
-    card.onclick = () => {
-      selectedChainMode = c.id;
-      settings = { ...settings, selectedChain: c.id };
-      store.setSettings(settings);
-      render();
-      pushFamilyRoom();
-    };
     grid.append(card);
   }
 }
 
-function itemPriceForChain(p, chainId) {
-  const m = matchForChain(p, chainId);
-  return m ? `₪${m.price.toFixed(2)}` : 'אין נתון';
-}
-
-function renderItem(it, activeChainId) {
+function renderItem(it, activeChainId, allLineMatches) {
   const row = document.createElement('div');
   row.className = 'item' + (it.checked ? '' : ' excluded');
 
@@ -444,10 +471,11 @@ function renderItem(it, activeChainId) {
   row.append(main);
 
   const pickerOpen = openPickers.has(it.id);
-  const previewProd = it.product || bestCandidateFor(it);
+  const matches = (allLineMatches && allLineMatches.get(it.id)) || (it.checked ? matchLineAcrossChains(it, activeBranchData) : {});
+  const activeMatch = matches[activeChainId] || null;
+
   if (!pickerOpen && it.checked) {
-    ensureOptionsLoaded(it);
-    const p = previewProd;
+    const p = it.product;
     const cp = document.createElement('div');
     cp.className = 'chosen-prod';
     if (p?.img && window.SLCodec?.isSafeImgUrl(p.img)) {
@@ -461,7 +489,14 @@ function renderItem(it, activeChainId) {
     info.className = 'cp-info';
     const cpName = document.createElement('span');
     cpName.className = 'cp-name';
-    cpName.textContent = it.product ? p.name : (p ? `התאמה אוטומטית: ${p.name}` : 'טרם נבחר מוצר ספציפי');
+    if (p) {
+      cpName.textContent = p.name;
+    } else if (activeMatch?.productName) {
+      cpName.textContent = `לפי שם ב${CHAIN_BY_ID[activeChainId]?.name || 'רשת'}: ${activeMatch.productName}`;
+    } else {
+      cpName.textContent = activeCity ? 'טרם נבחר מוצר ספציפי' : 'בחר עיר למעלה להשוואת מחירים';
+    }
+
     const meta = document.createElement('div');
     meta.className = 'cp-meta';
     if (p && isSponsoredProduct(p)) {
@@ -470,32 +505,63 @@ function renderItem(it, activeChainId) {
       sp.textContent = '⭐ ממומן';
       meta.append(sp);
     }
-    if (p?.brand) {
+    const brandTxt = p?.brand || activeMatch?.brand || '';
+    if (brandTxt) {
       const b = document.createElement('span');
       b.className = 'cp-brand';
-      b.textContent = p.brand;
+      b.textContent = brandTxt;
       meta.append(b);
     }
     if (p?.unitDesc) meta.append(document.createTextNode(p.unitDesc));
-    if (p) {
-      const activeMatch = matchForChain(p, activeChainId);
+
+    if (activeMatch) {
       const activeLine = lineCost(it, activeMatch);
+      if (activeMatch.kind === 'substitute') {
+        const sub = document.createElement('span');
+        sub.className = 'sub-tag';
+        sub.textContent = `חלופה: ${activeMatch.productName}`;
+        meta.append(sub);
+      }
+      const promoLabel = formatPromoBadge(activeMatch.promo);
+      if (promoLabel) {
+        const pt = document.createElement('span');
+        pt.className = 'promo-tag';
+        pt.textContent = promoLabel;
+        meta.append(pt);
+      }
       const pr = document.createElement('span');
       pr.className = 'cp-price';
-      pr.textContent = itemPriceForChain(p, activeChainId) + (activeLine?.estimated ? ' (הערכת משקל)' : '');
+      pr.textContent = `₪${activeLine ? activeLine.cost.toFixed(2) : activeMatch.price.toFixed(2)}`
+        + (activeLine?.estimated ? ' (הערכת משקל)' : '');
+      meta.append(pr);
+    } else if (activeCity && !loadingBranches) {
+      const pr = document.createElement('span');
+      pr.className = 'cp-price';
+      pr.textContent = 'אין נתון';
       meta.append(pr);
     }
     info.append(cpName, meta);
 
-    if (p) {
+    if (activeCity && hasAnyLoadedBranch()) {
       const pills = document.createElement('div');
       pills.className = 'chain-pills';
       for (const cid of LIVE_CHAIN_IDS) {
         const c = CHAIN_BY_ID[cid];
-        const m = matchForChain(p, cid);
+        const m = matches[cid];
         const pill = document.createElement('span');
-        pill.className = 'chain-pill' + (cid === activeChainId ? ' active' : '') + (!m ? ' missing' : '');
-        pill.textContent = m ? `${c.name}: ₪${m.price.toFixed(2)}` : `${c.name}: אין נתון`;
+        pill.className = 'chain-pill'
+          + (cid === activeChainId ? ' active' : '')
+          + (!m ? ' missing' : '')
+          + (m?.kind === 'substitute' ? ' sub' : '');
+        if (!m) {
+          pill.textContent = `${c.name}: אין נתון`;
+        } else {
+          const lc = lineCost(it, m);
+          const subTxt = m.kind === 'substitute' ? ' (חלופה)' : '';
+          const prmTxt = lc && lc.savings > 0 ? ' 🏷️' : '';
+          pill.textContent = `${c.name}: ₪${(lc ? lc.cost : m.price).toFixed(2)}${subTxt}${prmTxt}`;
+          if (m.productName) pill.title = m.productName;
+        }
         pills.append(pill);
       }
       info.append(pills);
@@ -504,39 +570,39 @@ function renderItem(it, activeChainId) {
     const chg = document.createElement('button');
     chg.type = 'button';
     chg.className = 'change-btn';
-    chg.textContent = it.product ? 'החלף חברה / מותג' : 'בחר מוצר';
+    chg.textContent = p ? 'החלף מוצר' : 'בחר מוצר';
     chg.onclick = () => {
+      if (!activeCity) {
+        toast('בחר עיר למעלה תחילה כדי לחפש בקטלוג הסניפים');
+        $('locInput')?.focus();
+        return;
+      }
       openPickers.add(it.id);
-      searchErrors.delete((it.searchQuery || it.name || '').trim());
-      ensureOptionsLoaded(it);
       render();
     };
     cp.append(info, chg);
     row.append(cp);
   } else if (pickerOpen && it.checked) {
-    ensureOptionsLoaded(it);
     const q = (it.searchQuery || it.name || '').trim();
-    const cached = searchCache.get(q);
+    const results = searchProductsInActiveBranches(q);
     const box = document.createElement('div');
     box.className = 'picker-box';
 
     const head = document.createElement('div');
     head.className = 'picker-head';
-    head.innerHTML = `<span>🏢 בחר מותג / מוצר (מחירי ${CHAIN_BY_ID[activeChainId]?.name || 'הרשת'}):</span>`;
+    head.innerHTML = `<span>🏢 בחר מוצר מדויק מהסניפים שנבחרו (ברקוד משותף בין הרשתות):</span>`;
     const searchWrap = document.createElement('div');
     searchWrap.className = 'picker-search';
     const inp = document.createElement('input');
     inp.type = 'text';
     inp.value = q;
-    inp.placeholder = 'חפש מותג/מוצר…';
+    inp.placeholder = 'שם מוצר או ברקוד…';
     const btnSearch = document.createElement('button');
     btnSearch.type = 'button';
     btnSearch.textContent = '🔍';
     const doSearch = () => {
       it.searchQuery = inp.value.trim() || it.name;
-      searchErrors.delete(it.searchQuery);
       searchCache.delete(it.searchQuery);
-      fetchOptions(it.searchQuery).then(() => render());
       render();
     };
     inp.onkeydown = (e) => { if (e.key === 'Enter') { e.preventDefault(); doSearch(); } };
@@ -546,28 +612,36 @@ function renderItem(it, activeChainId) {
     btnClose.textContent = 'סגור';
     btnClose.onclick = () => { openPickers.delete(it.id); render(); };
     searchWrap.append(inp, btnSearch, btnClose);
+    if (it.product) {
+      const btnUnpin = document.createElement('button');
+      btnUnpin.type = 'button';
+      btnUnpin.textContent = 'בטל נעילה';
+      btnUnpin.onclick = () => {
+        it.product = null;
+        delete mappings[key(it.name)];
+        store.setMappings(mappings);
+        openPickers.delete(it.id);
+        saveList();
+      };
+      searchWrap.append(btnUnpin);
+    }
     head.append(searchWrap);
     box.append(head);
 
-    if (searchErrors.has(q)) {
-      const errEl = document.createElement('div');
-      errEl.className = 'muted';
-      errEl.textContent = 'שגיאה זמנית בטעינת מוצרים – לחץ 🔍 לניסיון חוזר.';
-      box.append(errEl);
-    } else if (!Array.isArray(cached)) {
+    if (loadingBranches) {
       const loading = document.createElement('div');
       loading.className = 'muted';
-      loading.textContent = 'משווה מחירים ומותגים בין הרשתות…';
+      loading.textContent = 'טוען קטלוג סניפים…';
       box.append(loading);
-    } else if (!cached.length) {
+    } else if (!results.length) {
       const empty = document.createElement('div');
       empty.className = 'muted';
-      empty.textContent = 'לא נמצאו תוצאות. נסה לחפש שם אחר בתיבה למעלה.';
+      empty.textContent = 'לא נמצאו תוצאות בסניפים שנבחרו. נסה מילה אחרת או ברקוד.';
       box.append(empty);
     } else {
       const grid = document.createElement('div');
       grid.className = 'brand-grid';
-      for (const p of cached) {
+      for (const p of results) {
         const sponsored = isSponsoredProduct(p);
         const card = document.createElement('button');
         card.type = 'button';
@@ -584,10 +658,6 @@ function renderItem(it, activeChainId) {
           img.alt = '';
           img.loading = 'lazy';
           card.append(img);
-        } else {
-          const ph = document.createElement('div');
-          ph.className = 'placeholder-box';
-          card.append(ph);
         }
         if (p.brand) {
           const br = document.createElement('span');
@@ -605,9 +675,15 @@ function renderItem(it, activeChainId) {
           un.textContent = p.unitDesc;
           card.append(un);
         }
+        const priceParts = [];
+        for (const cid of LIVE_CHAIN_IDS) {
+          if (typeof p.chainPrices?.[cid] === 'number') {
+            priceParts.push(`${CHAIN_BY_ID[cid].name}: ₪${p.chainPrices[cid].toFixed(2)}`);
+          }
+        }
         const pr = document.createElement('span');
         pr.className = 'bc-price';
-        pr.textContent = itemPriceForChain(p, activeChainId);
+        pr.textContent = priceParts.join(' · ') || 'אין נתון';
         card.append(pr);
         card.onclick = () => {
           it.product = p;
@@ -1023,8 +1099,22 @@ if ($('btnSheets')) {
   };
   $('btnExportCsv').onclick = () => {
     if (!list.length) { toast('הרשימה ריקה'); return; }
-    const { activeChainId } = computeChainTotals();
-    const csv = exportListToCsv(list, CHAIN_BY_ID, activeChainId);
+    const { activeChainId, lineMatches } = computeChainTotals();
+    const enriched = list.map((it) => {
+      const m = lineMatches.get(it.id)?.[activeChainId];
+      if (!m) return it;
+      const lc = lineCost(it, m);
+      return {
+        ...it,
+        product: {
+          ...(it.product || {}),
+          name: it.product?.name || m.productName || '',
+          brand: it.product?.brand || m.brand || '',
+          chainPrices: { ...(it.product?.chainPrices || {}), [activeChainId]: lc ? lc.cost : m.price },
+        },
+      };
+    });
+    const csv = exportListToCsv(enriched, CHAIN_BY_ID, activeChainId);
     const blob = new Blob([csv], { type: 'text/csv;charset=utf-8' });
     const a = document.createElement('a');
     a.href = URL.createObjectURL(blob);
@@ -1034,13 +1124,14 @@ if ($('btnSheets')) {
   };
   $('btnCopyTsv').onclick = async () => {
     if (!list.length) { toast('הרשימה ריקה'); return; }
-    const { activeChainId } = computeChainTotals();
+    const { activeChainId, lineMatches } = computeChainTotals();
     const activeChainName = CHAIN_BY_ID[activeChainId]?.name || 'רשת';
-    const lines = [['מחלקה', 'מוצר', 'כמות', 'יחידה', `מחיר (${activeChainName})`].join('\t')];
+    const lines = [['מחלקה', 'מוצר', 'כמות', 'יחידה', `סה״כ שורה (${activeChainName})`].join('\t')];
     for (const it of list.filter((i) => i.checked)) {
       const cat = CATEGORY_BY_ID[it.category]?.he || 'אחר';
-      const m = matchForChain(it.product, activeChainId);
-      lines.push([cat, it.name, it.qty, it.unit, m ? m.price.toFixed(2) : ''].join('\t'));
+      const m = lineMatches.get(it.id)?.[activeChainId];
+      const lc = m ? lineCost(it, m) : null;
+      lines.push([cat, it.name, it.qty, it.unit, lc ? lc.cost.toFixed(2) : ''].join('\t'));
     }
     await navigator.clipboard.writeText(lines.join('\n'));
     toast('הטבלה הועתקה! פתח Google Sheets והדבק (Ctrl+V)');
@@ -1189,14 +1280,173 @@ $('btnResetHistory').onclick = () => {
   history = {}; store.setHistory(history); render(); toast('ההיסטוריה נמחקה');
 };
 
-// ---------- Location & Delivery UI ----------
+// ---------- Location, Branch Pickers & Price Transparency Loader ----------
+function renderQuickCities() {
+  const box = $('quickCities');
+  if (!box) return;
+  if (!citiesIndex || activeCity) {
+    box.hidden = true;
+    return;
+  }
+  box.innerHTML = '';
+  const lbl = document.createElement('span');
+  lbl.textContent = 'ערים נפוצות:';
+  box.append(lbl);
+  for (const c of QUICK_CITIES) {
+    if (!citiesIndex[c]) continue;
+    const b = document.createElement('button');
+    b.type = 'button';
+    b.className = 'chip-btn';
+    b.textContent = c;
+    b.onclick = () => {
+      userLocation = c;
+      if ($('locInput')) $('locInput').value = c;
+      settings = { ...settings, userLocation };
+      store.setSettings(settings);
+      syncCitySelection(c);
+    };
+    box.append(b);
+  }
+  box.hidden = false;
+}
+
+function renderBranchPickers() {
+  const box = $('branchPickers');
+  if (!box) return;
+  if (!activeCity || !citiesIndex) {
+    box.hidden = true;
+    box.innerHTML = '';
+    return;
+  }
+  const byChain = branchesInCity(activeCity, citiesIndex);
+  if (!selectedBranches[activeCity]) selectedBranches[activeCity] = {};
+
+  box.innerHTML = '';
+  for (const cid of LIVE_CHAIN_IDS) {
+    const ch = CHAIN_BY_ID[cid];
+    const branches = byChain[cid] || [];
+    const wrap = document.createElement('div');
+    wrap.className = 'branch-picker';
+    const title = document.createElement('b');
+    title.textContent = `${ch.emoji} ${ch.name} · סניף ▾`;
+    wrap.append(title);
+
+    if (!branches.length) {
+      const none = document.createElement('span');
+      none.className = 'no-branch';
+      none.textContent = 'אין סניף בעיר זו';
+      wrap.append(none);
+    } else {
+      const savedId = selectedBranches[activeCity][cid];
+      const chosenId = branches.some((b) => b.storeId === savedId) ? savedId : branches[0].storeId;
+      selectedBranches[activeCity][cid] = chosenId;
+
+      const sel = document.createElement('select');
+      sel.setAttribute('aria-label', `סניף ${ch.name}`);
+      for (const b of branches) {
+        const label = b.address ? `${b.name} (${b.address})` : b.name;
+        sel.add(new Option(label, b.storeId, false, b.storeId === chosenId));
+      }
+      sel.onchange = () => {
+        selectedBranches[activeCity][cid] = sel.value;
+        settings = { ...settings, selectedBranches };
+        store.setSettings(settings);
+        loadActiveCityBranches();
+      };
+      wrap.append(sel);
+    }
+    box.append(wrap);
+  }
+  box.hidden = false;
+}
+
+async function loadActiveCityBranches() {
+  const seq = ++branchLoadSeq;
+  if (!activeCity || !citiesIndex) {
+    activeBranchData = {};
+    searchCache.clear();
+    render();
+    return;
+  }
+  const byChain = branchesInCity(activeCity, citiesIndex);
+  loadingBranches = true;
+  feedLoadError = '';
+  render();
+
+  const nextData = {};
+  try {
+    await Promise.all(LIVE_CHAIN_IDS.map(async (cid) => {
+      const branches = byChain[cid] || [];
+      if (!branches.length) return;
+      const storeId = selectedBranches[activeCity]?.[cid] || branches[0].storeId;
+      const storeObj = branches.find((b) => b.storeId === storeId) || branches[0];
+      const [catalog, storePrices] = await Promise.all([
+        loadChainCatalog(cid),
+        loadBranchPrices(cid, storeObj.storeId),
+      ]);
+      nextData[cid] = { catalog, storePrices, store: storeObj };
+    }));
+  } catch {
+    if (seq === branchLoadSeq) {
+      feedLoadError = 'שגיאה בטעינת מחירי הסניפים. בדוק חיבור אינטרנט ונסה שוב.';
+    }
+  }
+  if (seq !== branchLoadSeq) return;
+  activeBranchData = nextData;
+  loadingBranches = false;
+  searchCache.clear();
+  render();
+}
+
+function syncCitySelection(rawInput) {
+  if (!citiesIndex) return;
+  const matched = findMatchingCity(rawInput, citiesIndex);
+  if (matched === activeCity && (hasAnyLoadedBranch() || !matched)) {
+    renderQuickCities();
+    render();
+    return;
+  }
+  activeCity = matched;
+  renderQuickCities();
+  renderBranchPickers();
+  loadActiveCityBranches();
+}
+
+async function initPriceFeeds() {
+  try {
+    const [meta, cities] = await Promise.all([loadMeta(), loadCities()]);
+    priceMeta = meta;
+    citiesIndex = cities;
+    if ($('citiesList') && cities) {
+      $('citiesList').innerHTML = '';
+      for (const c of Object.keys(cities)) {
+        const opt = document.createElement('option');
+        opt.value = c;
+        $('citiesList').append(opt);
+      }
+    }
+    if ($('pricesMetaNote') && priceMeta?.generatedAt) {
+      const d = new Date(priceMeta.generatedAt);
+      if (!Number.isNaN(d.getTime())) {
+        $('pricesMetaNote').textContent = `מחירים עודכנו ב-${d.toLocaleDateString('he-IL')} ${d.toLocaleTimeString('he-IL', { hour: '2-digit', minute: '2-digit' })}`;
+      }
+    }
+    syncCitySelection(userLocation);
+  } catch {
+    feedLoadError = 'נתוני המחירים אינם זמינים כרגע.';
+    render();
+  }
+}
+
+let cityDebounce = null;
 if ($('locInput')) {
   $('locInput').value = userLocation;
   $('locInput').addEventListener('input', () => {
     userLocation = $('locInput').value.trim();
     settings = { ...settings, userLocation };
     store.setSettings(settings);
-    render();
+    clearTimeout(cityDebounce);
+    cityDebounce = setTimeout(() => syncCitySelection(userLocation), 180);
   });
 }
 if ($('incDelivery')) {
@@ -1223,38 +1473,27 @@ if ($('shufUser')) {
 }
 
 // ---------- Send to Selected Supermarket ----------
-async function resolveOrderProducts(items) {
-  // Fetch candidates for unpicked items without mutating saved user choices
-  const resolved = new Map();
-  const queue = [...items];
-  const workers = Array.from({ length: 3 }, async () => {
-    while (queue.length) {
-      const it = queue.shift();
-      if (it.product && it.product.code) {
-        resolved.set(it.id, it.product);
-        continue;
-      }
-      const opts = await fetchOptions(it.searchQuery || it.name);
-      if (Array.isArray(opts) && opts.length) {
-        resolved.set(it.id, opts.find((p) => p.inStock) || opts[0]);
-      }
-    }
-  });
-  await Promise.all(workers);
-  return resolved;
-}
-
 async function chainOrderLink(includeEmailHint = true) {
-  const { activeChainId } = computeChainTotals();
+  const { activeChainId, lineMatches } = computeChainTotals();
   const chain = CHAIN_BY_ID[activeChainId] || CHAINS[0];
+  if (chain.cartFill === 'none') return chain.url;
+
   const checkedItems = list.filter((i) => i.checked);
-  const resolved = await resolveOrderProducts(checkedItems);
   const items = checkedItems.map((i) => {
-    const chosen = i.product || resolved.get(i.id) || null;
-    const prod = chosen ? {
-      ...chosen,
-      code: (chosen.chainCodes && chosen.chainCodes[activeChainId]) || chosen.code,
-    } : null;
+    const m = lineMatches.get(i.id)?.[activeChainId];
+    let prod = i.product || null;
+    if (!prod && m && m.code) {
+      prod = {
+        code: activeChainId === 'shufersal' ? `P_${m.code}` : m.code,
+        name: m.productName || i.name,
+        brand: m.brand || '',
+        sellingMethod: m.weighted ? 'BY_WEIGHT' : 'BY_UNIT',
+      };
+    } else if (prod) {
+      const chainCode = prod.chainCodes?.[activeChainId]
+        || (m?.code ? (activeChainId === 'shufersal' ? `P_${m.code}` : m.code) : prod.code);
+      prod = { ...prod, code: chainCode };
+    }
     return {
       ...i,
       name: i.note ? `${i.name} ${i.note}` : i.name,
@@ -1376,6 +1615,7 @@ async function importFromHash() {
 // ---------- boot ----------
 render();
 loadStaticConfigs();
+initPriceFeeds();
 importFromHash();
 window.addEventListener('hashchange', importFromHash);
 if ('serviceWorker' in navigator) {
