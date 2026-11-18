@@ -1,0 +1,6678 @@
+{
+  "version": 1,
+  "realItems": [
+    {
+      "id": "milk_3",
+      "canonical": "חלב 3%",
+      "aliases": [
+        "חלב טרי 3%",
+        "חלב בקרטון 3%",
+        "milk 3%"
+      ],
+      "category": [
+        "dairy"
+      ],
+      "defaultUnit": "unit",
+      "qtyRange": [
+        1,
+        4
+      ],
+      "mustIncludeAny": [
+        "חלב"
+      ],
+      "mustExcludeAny": [
+        "שוקולד",
+        "סבון",
+        "עוגיות",
+        "ביסקוויט",
+        "סויה",
+        "שקדים",
+        "קוקוס",
+        "שיבולת"
+      ]
+    },
+    {
+      "id": "milk_1",
+      "canonical": "חלב 1%",
+      "aliases": [
+        "חלב טרי 1%",
+        "חלב דל שומן 1%"
+      ],
+      "category": [
+        "dairy"
+      ],
+      "defaultUnit": "unit",
+      "qtyRange": [
+        1,
+        3
+      ],
+      "mustIncludeAny": [
+        "חלב"
+      ],
+      "mustExcludeAny": [
+        "שוקולד",
+        "סבון",
+        "סויה"
+      ]
+    },
+    {
+      "id": "milk_lactose_free",
+      "canonical": "חלב דל לקטוז",
+      "aliases": [
+        "חלב ללא לקטוז"
+      ],
+      "category": [
+        "dairy"
+      ],
+      "defaultUnit": "unit",
+      "qtyRange": [
+        1,
+        3
+      ],
+      "mustIncludeAny": [
+        "חלב",
+        "לקטוז"
+      ],
+      "mustExcludeAny": [
+        "שוקולד"
+      ]
+    },
+    {
+      "id": "soy_milk",
+      "canonical": "משקה סויה",
+      "aliases": [
+        "חלב סויה",
+        "סויה תנובה"
+      ],
+      "category": [
+        "dairy",
+        "drinks"
+      ],
+      "defaultUnit": "unit",
+      "qtyRange": [
+        1,
+        3
+      ],
+      "mustIncludeAny": [
+        "סויה"
+      ],
+      "mustExcludeAny": [
+        "רוטב"
+      ]
+    },
+    {
+      "id": "oat_milk",
+      "canonical": "משקה שיבולת שועל",
+      "aliases": [
+        "חלב שיבולת שועל",
+        "חלב אוטלי"
+      ],
+      "category": [
+        "dairy",
+        "drinks"
+      ],
+      "defaultUnit": "unit",
+      "qtyRange": [
+        1,
+        3
+      ],
+      "mustIncludeAny": [
+        "שיבולת",
+        "אוטלי"
+      ],
+      "mustExcludeAny": [
+        "דייסה",
+        "עוגיות"
+      ]
+    },
+    {
+      "id": "almond_milk",
+      "canonical": "משקה שקדים",
+      "aliases": [
+        "חלב שקדים"
+      ],
+      "category": [
+        "dairy",
+        "drinks"
+      ],
+      "defaultUnit": "unit",
+      "qtyRange": [
+        1,
+        2
+      ],
+      "mustIncludeAny": [
+        "שקדים"
+      ],
+      "mustExcludeAny": [
+        "קמח",
+        "מרציפן"
+      ]
+    },
+    {
+      "id": "cottage_5",
+      "canonical": "קוטג' 5%",
+      "aliases": [
+        "קוטג 5%",
+        "קוטג׳ 5%",
+        "קוטג'",
+        "קוטג",
+        "cottage cheese"
+      ],
+      "category": [
+        "dairy"
+      ],
+      "defaultUnit": "unit",
+      "qtyRange": [
+        1,
+        4
+      ],
+      "mustIncludeAny": [
+        "קוטג"
+      ],
+      "mustExcludeAny": [
+        "פשטידה"
+      ]
+    },
+    {
+      "id": "cottage_9",
+      "canonical": "קוטג' 9%",
+      "aliases": [
+        "קוטג 9%"
+      ],
+      "category": [
+        "dairy"
+      ],
+      "defaultUnit": "unit",
+      "qtyRange": [
+        1,
+        3
+      ],
+      "mustIncludeAny": [
+        "קוטג"
+      ],
+      "mustExcludeAny": []
+    },
+    {
+      "id": "white_cheese_5",
+      "canonical": "גבינה לבנה 5%",
+      "aliases": [
+        "גבינה לבנה",
+        "סקי 5%"
+      ],
+      "category": [
+        "dairy"
+      ],
+      "defaultUnit": "unit",
+      "qtyRange": [
+        1,
+        3
+      ],
+      "mustIncludeAny": [
+        "גבינה לבנה",
+        "סקי"
+      ],
+      "mustExcludeAny": [
+        "עוגת"
+      ]
+    },
+    {
+      "id": "yellow_cheese",
+      "canonical": "גבינה צהובה עמק",
+      "aliases": [
+        "גבינה צהובה",
+        "עמק פרוס",
+        "גבינת עמק"
+      ],
+      "category": [
+        "dairy"
+      ],
+      "defaultUnit": "unit",
+      "qtyRange": [
+        1,
+        2
+      ],
+      "mustIncludeAny": [
+        "גבינה צהובה",
+        "עמק",
+        "נעם",
+        "גלבוע"
+      ],
+      "mustExcludeAny": [
+        "בורקס",
+        "טוסט"
+      ]
+    },
+    {
+      "id": "bulgarian_cheese",
+      "canonical": "גבינה בולגרית 5%",
+      "aliases": [
+        "גבינה בולגרית",
+        "בולגרית פיראוס"
+      ],
+      "category": [
+        "dairy"
+      ],
+      "defaultUnit": "unit",
+      "qtyRange": [
+        1,
+        2
+      ],
+      "mustIncludeAny": [
+        "בולגרית"
+      ],
+      "mustExcludeAny": [
+        "בורקס",
+        "מאפה"
+      ]
+    },
+    {
+      "id": "feta_cheese",
+      "canonical": "גבינת פטה",
+      "aliases": [
+        "פטה כבשים",
+        "פטה עיזים"
+      ],
+      "category": [
+        "dairy"
+      ],
+      "defaultUnit": "unit",
+      "qtyRange": [
+        1,
+        2
+      ],
+      "mustIncludeAny": [
+        "פטה"
+      ],
+      "mustExcludeAny": [
+        "בורקס"
+      ]
+    },
+    {
+      "id": "tzfatit_cheese",
+      "canonical": "גבינה צפתית",
+      "aliases": [
+        "צפתית 5%"
+      ],
+      "category": [
+        "dairy"
+      ],
+      "defaultUnit": "unit",
+      "qtyRange": [
+        1,
+        2
+      ],
+      "mustIncludeAny": [
+        "צפתית"
+      ],
+      "mustExcludeAny": []
+    },
+    {
+      "id": "labneh",
+      "canonical": "לאבנה",
+      "aliases": [
+        "לבנה 5%",
+        "לאבנה פיראוס"
+      ],
+      "category": [
+        "dairy"
+      ],
+      "defaultUnit": "unit",
+      "qtyRange": [
+        1,
+        2
+      ],
+      "mustIncludeAny": [
+        "לאבנה",
+        "לבנה"
+      ],
+      "mustExcludeAny": [
+        "גבינה לבנה",
+        "שעועית",
+        "שוקולד"
+      ]
+    },
+    {
+      "id": "ricotta",
+      "canonical": "גבינת ריקוטה",
+      "aliases": [
+        "ריקוטה 5%"
+      ],
+      "category": [
+        "dairy"
+      ],
+      "defaultUnit": "unit",
+      "qtyRange": [
+        1,
+        2
+      ],
+      "mustIncludeAny": [
+        "ריקוטה"
+      ],
+      "mustExcludeAny": [
+        "רביולי"
+      ]
+    },
+    {
+      "id": "mozzarella",
+      "canonical": "גבינת מוצרלה",
+      "aliases": [
+        "מוצרלה מגורדת",
+        "כדורי מוצרלה"
+      ],
+      "category": [
+        "dairy"
+      ],
+      "defaultUnit": "unit",
+      "qtyRange": [
+        1,
+        2
+      ],
+      "mustIncludeAny": [
+        "מוצרלה"
+      ],
+      "mustExcludeAny": [
+        "פיצה",
+        "מקלות"
+      ]
+    },
+    {
+      "id": "parmesan",
+      "canonical": "גבינת פרמזן",
+      "aliases": [
+        "פרמזן מגורד"
+      ],
+      "category": [
+        "dairy"
+      ],
+      "defaultUnit": "unit",
+      "qtyRange": [
+        1,
+        2
+      ],
+      "mustIncludeAny": [
+        "פרמזן",
+        "פרמזנו"
+      ],
+      "mustExcludeAny": []
+    },
+    {
+      "id": "sweet_cream_38",
+      "canonical": "שמנת מתוקה 38%",
+      "aliases": [
+        "שמנת מתוקה",
+        "שמנת להקצפה"
+      ],
+      "category": [
+        "dairy"
+      ],
+      "defaultUnit": "unit",
+      "qtyRange": [
+        1,
+        3
+      ],
+      "mustIncludeAny": [
+        "שמנת",
+        "להקצפה"
+      ],
+      "mustExcludeAny": [
+        "חמוצה",
+        "שוקולד"
+      ]
+    },
+    {
+      "id": "cooking_cream_15",
+      "canonical": "שמנת לבישול 15%",
+      "aliases": [
+        "שמנת לבישול"
+      ],
+      "category": [
+        "dairy"
+      ],
+      "defaultUnit": "unit",
+      "qtyRange": [
+        1,
+        2
+      ],
+      "mustIncludeAny": [
+        "שמנת",
+        "בישול"
+      ],
+      "mustExcludeAny": [
+        "פטריות"
+      ]
+    },
+    {
+      "id": "sour_cream",
+      "canonical": "שמנת חמוצה 15%",
+      "aliases": [
+        "שמנת חמוצה"
+      ],
+      "category": [
+        "dairy"
+      ],
+      "defaultUnit": "unit",
+      "qtyRange": [
+        1,
+        3
+      ],
+      "mustIncludeAny": [
+        "שמנת חמוצה",
+        "שמנת תנובה"
+      ],
+      "mustExcludeAny": [
+        "ביסלי",
+        "תפוצ"
+      ]
+    },
+    {
+      "id": "butter",
+      "canonical": "חמאה תנובה",
+      "aliases": [
+        "חמאה 200 גרם",
+        "חמאה ללא מלח",
+        "butter"
+      ],
+      "category": [
+        "dairy"
+      ],
+      "defaultUnit": "unit",
+      "qtyRange": [
+        1,
+        3
+      ],
+      "mustIncludeAny": [
+        "חמאה",
+        "חמאת"
+      ],
+      "mustExcludeAny": [
+        "בוטנים",
+        "עוגיות",
+        "קרואסון",
+        "פופקורן",
+        "שיאה",
+        "קקאו"
+      ]
+    },
+    {
+      "id": "eggs_l",
+      "canonical": "ביצים L",
+      "aliases": [
+        "ביצים",
+        "תבנית ביצים",
+        "ביצים טריות",
+        "eggs"
+      ],
+      "category": [
+        "dairy"
+      ],
+      "defaultUnit": "unit",
+      "qtyRange": [
+        1,
+        3
+      ],
+      "mustIncludeAny": [
+        "ביצים",
+        "ביצה"
+      ],
+      "mustExcludeAny": [
+        "אטריות",
+        "שוקולד",
+        "קינדר",
+        "סלט"
+      ]
+    },
+    {
+      "id": "yogurt_natural",
+      "canonical": "יוגורט טבעי",
+      "aliases": [
+        "יוגורט ביו 3%",
+        "יוגורט דנונה"
+      ],
+      "category": [
+        "dairy"
+      ],
+      "defaultUnit": "unit",
+      "qtyRange": [
+        2,
+        8
+      ],
+      "mustIncludeAny": [
+        "יוגורט",
+        "דנונה",
+        "אקטיביה"
+      ],
+      "mustExcludeAny": [
+        "חטיף",
+        "גלידה"
+      ]
+    },
+    {
+      "id": "yogurt_pro",
+      "canonical": "יוגורט חלבון",
+      "aliases": [
+        "דנונה פרו",
+        "יוגורט pro",
+        "יופלה גו"
+      ],
+      "category": [
+        "dairy"
+      ],
+      "defaultUnit": "unit",
+      "qtyRange": [
+        2,
+        6
+      ],
+      "mustIncludeAny": [
+        "יוגורט",
+        "פרו",
+        "pro",
+        "גו"
+      ],
+      "mustExcludeAny": []
+    },
+    {
+      "id": "milky",
+      "canonical": "מילקי שוקולד",
+      "aliases": [
+        "מילקי",
+        "מעדן מילקי"
+      ],
+      "category": [
+        "dairy"
+      ],
+      "defaultUnit": "unit",
+      "qtyRange": [
+        2,
+        6
+      ],
+      "mustIncludeAny": [
+        "מילקי"
+      ],
+      "mustExcludeAny": []
+    },
+    {
+      "id": "leben",
+      "canonical": "אשל",
+      "aliases": [
+        "גיל תנובה",
+        "לבן אשל"
+      ],
+      "category": [
+        "dairy"
+      ],
+      "defaultUnit": "unit",
+      "qtyRange": [
+        2,
+        6
+      ],
+      "mustIncludeAny": [
+        "אשל",
+        "גיל",
+        "לבן"
+      ],
+      "mustExcludeAny": [
+        "לחם",
+        "שוקולד",
+        "קמח",
+        "סוכר",
+        "חומץ",
+        "יין"
+      ]
+    },
+    {
+      "id": "choco_bag",
+      "canonical": "שוקו בשקית",
+      "aliases": [
+        "שוקו יטבתה בקבוק"
+      ],
+      "category": [
+        "dairy"
+      ],
+      "defaultUnit": "unit",
+      "qtyRange": [
+        1,
+        6
+      ],
+      "mustIncludeAny": [
+        "שוקו"
+      ],
+      "mustExcludeAny": [
+        "שוקולית",
+        "אבקת",
+        "עוגיות",
+        "דגני"
+      ]
+    },
+    {
+      "id": "cream_cheese",
+      "canonical": "גבינת שמנת נפוליאון",
+      "aliases": [
+        "נפוליאון",
+        "גבינת שמנת פילדלפיה"
+      ],
+      "category": [
+        "dairy"
+      ],
+      "defaultUnit": "unit",
+      "qtyRange": [
+        1,
+        2
+      ],
+      "mustIncludeAny": [
+        "שמנת",
+        "נפוליאון",
+        "פילדלפיה"
+      ],
+      "mustExcludeAny": []
+    },
+    {
+      "id": "margarine",
+      "canonical": "נטורינה / מרגרינה",
+      "aliases": [
+        "מרגרינה מחמאה",
+        "מחמאה"
+      ],
+      "category": [
+        "dairy"
+      ],
+      "defaultUnit": "unit",
+      "qtyRange": [
+        1,
+        2
+      ],
+      "mustIncludeAny": [
+        "מרגרינה",
+        "מחמאה",
+        "נטורינה"
+      ],
+      "mustExcludeAny": []
+    },
+    {
+      "id": "kashkaval",
+      "canonical": "גבינת קשקבל",
+      "aliases": [
+        "קשקבל גלעד"
+      ],
+      "category": [
+        "dairy"
+      ],
+      "defaultUnit": "unit",
+      "qtyRange": [
+        1,
+        2
+      ],
+      "mustIncludeAny": [
+        "קשקבל"
+      ],
+      "mustExcludeAny": []
+    },
+    {
+      "id": "gouda",
+      "canonical": "גבינת גאודה",
+      "aliases": [
+        "גאודה פרוסה"
+      ],
+      "category": [
+        "dairy"
+      ],
+      "defaultUnit": "unit",
+      "qtyRange": [
+        1,
+        2
+      ],
+      "mustIncludeAny": [
+        "גאודה"
+      ],
+      "mustExcludeAny": []
+    },
+    {
+      "id": "pudding_choco",
+      "canonical": "מעדן דני שוקולד",
+      "aliases": [
+        "דני שוקולד"
+      ],
+      "category": [
+        "dairy"
+      ],
+      "defaultUnit": "unit",
+      "qtyRange": [
+        2,
+        6
+      ],
+      "mustIncludeAny": [
+        "דני",
+        "מעדן"
+      ],
+      "mustExcludeAny": []
+    },
+    {
+      "id": "tomatoes",
+      "canonical": "עגבניות",
+      "aliases": [
+        "עגבניה",
+        "עגבנייה",
+        "tomatoes"
+      ],
+      "category": [
+        "produce"
+      ],
+      "defaultUnit": "kg",
+      "qtyRange": [
+        1,
+        3
+      ],
+      "mustIncludeAny": [
+        "עגבני"
+      ],
+      "mustExcludeAny": [
+        "רסק",
+        "רוטב",
+        "קטשופ",
+        "מרוסקות",
+        "מיובשות",
+        "מרק",
+        "שרי"
+      ]
+    },
+    {
+      "id": "cherry_tomatoes",
+      "canonical": "עגבניות שרי",
+      "aliases": [
+        "שרי תמר"
+      ],
+      "category": [
+        "produce"
+      ],
+      "defaultUnit": "unit",
+      "qtyRange": [
+        1,
+        3
+      ],
+      "mustIncludeAny": [
+        "שרי"
+      ],
+      "mustExcludeAny": [
+        "רוטב"
+      ]
+    },
+    {
+      "id": "cucumbers",
+      "canonical": "מלפפונים",
+      "aliases": [
+        "מלפפון",
+        "מלפפון חממה",
+        "cucumbers"
+      ],
+      "category": [
+        "produce"
+      ],
+      "defaultUnit": "kg",
+      "qtyRange": [
+        1,
+        3
+      ],
+      "mustIncludeAny": [
+        "מלפפו"
+      ],
+      "mustExcludeAny": [
+        "חמוץ",
+        "חמוצים",
+        "במלח",
+        "בחומץ"
+      ]
+    },
+    {
+      "id": "red_pepper",
+      "canonical": "פלפל אדום",
+      "aliases": [
+        "גמבה",
+        "גמבה אדומה"
+      ],
+      "category": [
+        "produce"
+      ],
+      "defaultUnit": "kg",
+      "qtyRange": [
+        0.5,
+        2
+      ],
+      "mustIncludeAny": [
+        "פלפל",
+        "גמבה"
+      ],
+      "mustExcludeAny": [
+        "שחור",
+        "טחון",
+        "גרוס",
+        "קלוי",
+        "שיפקה"
+      ]
+    },
+    {
+      "id": "yellow_pepper",
+      "canonical": "פלפל צהוב",
+      "aliases": [
+        "גמבה צהובה"
+      ],
+      "category": [
+        "produce"
+      ],
+      "defaultUnit": "kg",
+      "qtyRange": [
+        0.5,
+        2
+      ],
+      "mustIncludeAny": [
+        "פלפל"
+      ],
+      "mustExcludeAny": [
+        "שחור",
+        "טחון"
+      ]
+    },
+    {
+      "id": "onions",
+      "canonical": "בצל יבש",
+      "aliases": [
+        "בצל",
+        "onions"
+      ],
+      "category": [
+        "produce"
+      ],
+      "defaultUnit": "kg",
+      "qtyRange": [
+        1,
+        3
+      ],
+      "mustIncludeAny": [
+        "בצל"
+      ],
+      "mustExcludeAny": [
+        "מרק",
+        "טבעות",
+        "ביסלי",
+        "מטוגן",
+        "קרקר"
+      ]
+    },
+    {
+      "id": "red_onion",
+      "canonical": "בצל סגול",
+      "aliases": [
+        "בצל אדום"
+      ],
+      "category": [
+        "produce"
+      ],
+      "defaultUnit": "kg",
+      "qtyRange": [
+        0.5,
+        2
+      ],
+      "mustIncludeAny": [
+        "בצל"
+      ],
+      "mustExcludeAny": [
+        "מטוגן"
+      ]
+    },
+    {
+      "id": "green_onion",
+      "canonical": "בצל ירוק",
+      "aliases": [
+        "בצל ירוק חבילה"
+      ],
+      "category": [
+        "produce"
+      ],
+      "defaultUnit": "unit",
+      "qtyRange": [
+        1,
+        2
+      ],
+      "mustIncludeAny": [
+        "בצל ירוק",
+        "בצל"
+      ],
+      "mustExcludeAny": []
+    },
+    {
+      "id": "garlic",
+      "canonical": "שום",
+      "aliases": [
+        "שום טרי",
+        "מארז שום",
+        "garlic"
+      ],
+      "category": [
+        "produce"
+      ],
+      "defaultUnit": "unit",
+      "qtyRange": [
+        1,
+        2
+      ],
+      "mustIncludeAny": [
+        "שום"
+      ],
+      "mustExcludeAny": [
+        "אבקת",
+        "גבישי",
+        "רוטב",
+        "קרוטונים",
+        "לחם"
+      ]
+    },
+    {
+      "id": "potatoes",
+      "canonical": "תפוחי אדמה",
+      "aliases": [
+        "תפו\"א",
+        "תפוח אדמה",
+        "potatoes"
+      ],
+      "category": [
+        "produce"
+      ],
+      "defaultUnit": "kg",
+      "qtyRange": [
+        1.5,
+        4
+      ],
+      "mustIncludeAny": [
+        "תפוח אדמה",
+        "תפוחי אדמה",
+        "תפו\"א",
+        "תפוא"
+      ],
+      "mustExcludeAny": [
+        "חטיף",
+        "תפוצ",
+        "פירה",
+        "קפוא"
+      ]
+    },
+    {
+      "id": "sweet_potato",
+      "canonical": "בטטה",
+      "aliases": [
+        "בטטות"
+      ],
+      "category": [
+        "produce"
+      ],
+      "defaultUnit": "kg",
+      "qtyRange": [
+        1,
+        2.5
+      ],
+      "mustIncludeAny": [
+        "בטטה",
+        "בטטות"
+      ],
+      "mustExcludeAny": [
+        "צ׳יפס",
+        "קפוא"
+      ]
+    },
+    {
+      "id": "carrots",
+      "canonical": "גזר",
+      "aliases": [
+        "גזרים",
+        "גזר ארוז",
+        "carrots"
+      ],
+      "category": [
+        "produce"
+      ],
+      "defaultUnit": "kg",
+      "qtyRange": [
+        1,
+        2
+      ],
+      "mustIncludeAny": [
+        "גזר"
+      ],
+      "mustExcludeAny": [
+        "מיץ",
+        "עוגת",
+        "גמדי קפוא"
+      ]
+    },
+    {
+      "id": "zucchini",
+      "canonical": "קישואים",
+      "aliases": [
+        "קישוא",
+        "זוקיני"
+      ],
+      "category": [
+        "produce"
+      ],
+      "defaultUnit": "kg",
+      "qtyRange": [
+        1,
+        2
+      ],
+      "mustIncludeAny": [
+        "קישוא",
+        "זוקיני"
+      ],
+      "mustExcludeAny": []
+    },
+    {
+      "id": "eggplant",
+      "canonical": "חצילים",
+      "aliases": [
+        "חציל"
+      ],
+      "category": [
+        "produce"
+      ],
+      "defaultUnit": "kg",
+      "qtyRange": [
+        1,
+        2
+      ],
+      "mustIncludeAny": [
+        "חציל"
+      ],
+      "mustExcludeAny": [
+        "סלט",
+        "קלוי",
+        "טחינה",
+        "מטבוחה"
+      ]
+    },
+    {
+      "id": "cabbage_white",
+      "canonical": "כרוב לבן",
+      "aliases": [
+        "כרוב ירוק"
+      ],
+      "category": [
+        "produce"
+      ],
+      "defaultUnit": "unit",
+      "qtyRange": [
+        1,
+        2
+      ],
+      "mustIncludeAny": [
+        "כרוב"
+      ],
+      "mustExcludeAny": [
+        "סלט",
+        "חמוץ",
+        "כבוש",
+        "ממולא"
+      ]
+    },
+    {
+      "id": "cabbage_red",
+      "canonical": "כרוב סגול",
+      "aliases": [
+        "כרוב אדום"
+      ],
+      "category": [
+        "produce"
+      ],
+      "defaultUnit": "unit",
+      "qtyRange": [
+        1,
+        2
+      ],
+      "mustIncludeAny": [
+        "כרוב"
+      ],
+      "mustExcludeAny": [
+        "סלט"
+      ]
+    },
+    {
+      "id": "cauliflower",
+      "canonical": "כרובית",
+      "aliases": [
+        "כרובית טרייה"
+      ],
+      "category": [
+        "produce"
+      ],
+      "defaultUnit": "unit",
+      "qtyRange": [
+        1,
+        2
+      ],
+      "mustIncludeAny": [
+        "כרובית"
+      ],
+      "mustExcludeAny": [
+        "קפוא"
+      ]
+    },
+    {
+      "id": "broccoli",
+      "canonical": "ברוקולי טרי",
+      "aliases": [
+        "ברוקולי"
+      ],
+      "category": [
+        "produce",
+        "frozen"
+      ],
+      "defaultUnit": "unit",
+      "qtyRange": [
+        1,
+        2
+      ],
+      "mustIncludeAny": [
+        "ברוקולי"
+      ],
+      "mustExcludeAny": [
+        "פשטידה"
+      ]
+    },
+    {
+      "id": "lettuce",
+      "canonical": "חסה",
+      "aliases": [
+        "חסה ערבית",
+        "חסה אייסברג",
+        "lettuce"
+      ],
+      "category": [
+        "produce"
+      ],
+      "defaultUnit": "unit",
+      "qtyRange": [
+        1,
+        2
+      ],
+      "mustIncludeAny": [
+        "חסה"
+      ],
+      "mustExcludeAny": []
+    },
+    {
+      "id": "parsley",
+      "canonical": "פטרוזיליה",
+      "aliases": [
+        "צרור פטרוזיליה"
+      ],
+      "category": [
+        "produce"
+      ],
+      "defaultUnit": "unit",
+      "qtyRange": [
+        1,
+        2
+      ],
+      "mustIncludeAny": [
+        "פטרוזיליה"
+      ],
+      "mustExcludeAny": [
+        "יבשה",
+        "תבלין"
+      ]
+    },
+    {
+      "id": "cilantro",
+      "canonical": "כוסברה",
+      "aliases": [
+        "צרור כוסברה"
+      ],
+      "category": [
+        "produce"
+      ],
+      "defaultUnit": "unit",
+      "qtyRange": [
+        1,
+        2
+      ],
+      "mustIncludeAny": [
+        "כוסברה"
+      ],
+      "mustExcludeAny": [
+        "טחון",
+        "גרגירים"
+      ]
+    },
+    {
+      "id": "dill",
+      "canonical": "שמיר",
+      "aliases": [
+        "צרור שמיר"
+      ],
+      "category": [
+        "produce"
+      ],
+      "defaultUnit": "unit",
+      "qtyRange": [
+        1,
+        2
+      ],
+      "mustIncludeAny": [
+        "שמיר"
+      ],
+      "mustExcludeAny": [
+        "מלפפון"
+      ]
+    },
+    {
+      "id": "mint",
+      "canonical": "נענע",
+      "aliases": [
+        "צרור נענע"
+      ],
+      "category": [
+        "produce"
+      ],
+      "defaultUnit": "unit",
+      "qtyRange": [
+        1,
+        2
+      ],
+      "mustIncludeAny": [
+        "נענע"
+      ],
+      "mustExcludeAny": [
+        "תה",
+        "סוכריות",
+        "מסטיק",
+        "סירופ"
+      ]
+    },
+    {
+      "id": "mushrooms",
+      "canonical": "פטריות שמפיניון",
+      "aliases": [
+        "פטריות טריות",
+        "סלסלת פטריות"
+      ],
+      "category": [
+        "produce"
+      ],
+      "defaultUnit": "unit",
+      "qtyRange": [
+        1,
+        3
+      ],
+      "mustIncludeAny": [
+        "פטריות",
+        "שמפיניון"
+      ],
+      "mustExcludeAny": [
+        "מרק",
+        "רוטב",
+        "שימורים",
+        "חתוכות בקופסה"
+      ]
+    },
+    {
+      "id": "avocado",
+      "canonical": "אבוקדו",
+      "aliases": [
+        "avocado"
+      ],
+      "category": [
+        "produce"
+      ],
+      "defaultUnit": "kg",
+      "qtyRange": [
+        0.5,
+        2
+      ],
+      "mustIncludeAny": [
+        "אבוקדו"
+      ],
+      "mustExcludeAny": [
+        "שמן",
+        "קרם",
+        "סבון"
+      ]
+    },
+    {
+      "id": "lemons",
+      "canonical": "לימון",
+      "aliases": [
+        "לימונים",
+        "lemons"
+      ],
+      "category": [
+        "produce"
+      ],
+      "defaultUnit": "kg",
+      "qtyRange": [
+        0.5,
+        1.5
+      ],
+      "mustIncludeAny": [
+        "לימון"
+      ],
+      "mustExcludeAny": [
+        "סבון",
+        "נוזל",
+        "מבריק",
+        "מיץ לימון",
+        "עוגיות",
+        "תה",
+        "סירופ",
+        "מגבונים"
+      ]
+    },
+    {
+      "id": "bananas",
+      "canonical": "בננות",
+      "aliases": [
+        "בננה",
+        "bananas"
+      ],
+      "category": [
+        "produce"
+      ],
+      "defaultUnit": "kg",
+      "qtyRange": [
+        1,
+        2.5
+      ],
+      "mustIncludeAny": [
+        "בננ"
+      ],
+      "mustExcludeAny": [
+        "משקה",
+        "יוגורט",
+        "חטיף",
+        "מאפין"
+      ]
+    },
+    {
+      "id": "apples",
+      "canonical": "תפוחי עץ",
+      "aliases": [
+        "תפוחים",
+        "תפוח עץ פינק ליידי",
+        "תפוח עץ חרמון",
+        "apples"
+      ],
+      "category": [
+        "produce"
+      ],
+      "defaultUnit": "kg",
+      "qtyRange": [
+        1,
+        2.5
+      ],
+      "mustIncludeAny": [
+        "תפוח"
+      ],
+      "mustExcludeAny": [
+        "אדמה",
+        "מיץ",
+        "חומץ",
+        "סיידר",
+        "רסק",
+        "תה"
+      ]
+    },
+    {
+      "id": "oranges",
+      "canonical": "תפוזים",
+      "aliases": [
+        "תפוז"
+      ],
+      "category": [
+        "produce"
+      ],
+      "defaultUnit": "kg",
+      "qtyRange": [
+        1,
+        3
+      ],
+      "mustIncludeAny": [
+        "תפוז"
+      ],
+      "mustExcludeAny": [
+        "מיץ",
+        "פריגת",
+        "שוקולד",
+        "עוגה"
+      ]
+    },
+    {
+      "id": "clementines",
+      "canonical": "קלמנטינות",
+      "aliases": [
+        "קלמנטינה"
+      ],
+      "category": [
+        "produce"
+      ],
+      "defaultUnit": "kg",
+      "qtyRange": [
+        1,
+        2
+      ],
+      "mustIncludeAny": [
+        "קלמנטינ"
+      ],
+      "mustExcludeAny": [
+        "מיץ"
+      ]
+    },
+    {
+      "id": "pears",
+      "canonical": "אגסים",
+      "aliases": [
+        "אגס"
+      ],
+      "category": [
+        "produce"
+      ],
+      "defaultUnit": "kg",
+      "qtyRange": [
+        1,
+        2
+      ],
+      "mustIncludeAny": [
+        "אגס"
+      ],
+      "mustExcludeAny": [
+        "מיץ"
+      ]
+    },
+    {
+      "id": "grapes",
+      "canonical": "ענבים ירוקים",
+      "aliases": [
+        "ענבים"
+      ],
+      "category": [
+        "produce"
+      ],
+      "defaultUnit": "kg",
+      "qtyRange": [
+        0.5,
+        2
+      ],
+      "mustIncludeAny": [
+        "ענב"
+      ],
+      "mustExcludeAny": [
+        "מיץ",
+        "יין",
+        "תירוש",
+        "פריגת"
+      ]
+    },
+    {
+      "id": "beets",
+      "canonical": "סלק אדום",
+      "aliases": [
+        "סלק"
+      ],
+      "category": [
+        "produce"
+      ],
+      "defaultUnit": "kg",
+      "qtyRange": [
+        0.5,
+        2
+      ],
+      "mustIncludeAny": [
+        "סלק"
+      ],
+      "mustExcludeAny": [
+        "סלט",
+        "קרקר"
+      ]
+    },
+    {
+      "id": "celery",
+      "canonical": "סלרי",
+      "aliases": [
+        "סלרי גבעולים",
+        "סלרי עלים"
+      ],
+      "category": [
+        "produce"
+      ],
+      "defaultUnit": "unit",
+      "qtyRange": [
+        1,
+        2
+      ],
+      "mustIncludeAny": [
+        "סלרי"
+      ],
+      "mustExcludeAny": []
+    },
+    {
+      "id": "kohlrabi",
+      "canonical": "קולרבי",
+      "aliases": [
+        "קולורבי"
+      ],
+      "category": [
+        "produce"
+      ],
+      "defaultUnit": "kg",
+      "qtyRange": [
+        0.5,
+        1.5
+      ],
+      "mustIncludeAny": [
+        "קולרבי",
+        "קולורבי"
+      ],
+      "mustExcludeAny": []
+    },
+    {
+      "id": "radish",
+      "canonical": "צנונית",
+      "aliases": [
+        "צנוניות"
+      ],
+      "category": [
+        "produce"
+      ],
+      "defaultUnit": "unit",
+      "qtyRange": [
+        1,
+        2
+      ],
+      "mustIncludeAny": [
+        "צנונית",
+        "צנון"
+      ],
+      "mustExcludeAny": []
+    },
+    {
+      "id": "bread_sliced",
+      "canonical": "לחם פרוס אחיד",
+      "aliases": [
+        "לחם פרוס",
+        "לחם אחיד"
+      ],
+      "category": [
+        "bakery"
+      ],
+      "defaultUnit": "unit",
+      "qtyRange": [
+        1,
+        3
+      ],
+      "mustIncludeAny": [
+        "לחם"
+      ],
+      "mustExcludeAny": [
+        "פירורי",
+        "חביתה"
+      ]
+    },
+    {
+      "id": "bread_whole",
+      "canonical": "לחם מלא",
+      "aliases": [
+        "לחם חיטה מלאה",
+        "לחם 100% מלא"
+      ],
+      "category": [
+        "bakery"
+      ],
+      "defaultUnit": "unit",
+      "qtyRange": [
+        1,
+        2
+      ],
+      "mustIncludeAny": [
+        "לחם"
+      ],
+      "mustExcludeAny": [
+        "פירורי"
+      ]
+    },
+    {
+      "id": "rye_bread",
+      "canonical": "לחם שיפון",
+      "aliases": [
+        "לחם שיפון קל"
+      ],
+      "category": [
+        "bakery"
+      ],
+      "defaultUnit": "unit",
+      "qtyRange": [
+        1,
+        2
+      ],
+      "mustIncludeAny": [
+        "לחם",
+        "שיפון"
+      ],
+      "mustExcludeAny": []
+    },
+    {
+      "id": "challah",
+      "canonical": "חלה לשבת",
+      "aliases": [
+        "חלה",
+        "חלה מתוקה",
+        "חלות"
+      ],
+      "category": [
+        "bakery"
+      ],
+      "defaultUnit": "unit",
+      "qtyRange": [
+        1,
+        3
+      ],
+      "mustIncludeAny": [
+        "חלה",
+        "חלות"
+      ],
+      "mustExcludeAny": []
+    },
+    {
+      "id": "pita",
+      "canonical": "פיתות",
+      "aliases": [
+        "פיתה",
+        "חבילת פיתות",
+        "pita"
+      ],
+      "category": [
+        "bakery"
+      ],
+      "defaultUnit": "pack",
+      "qtyRange": [
+        1,
+        3
+      ],
+      "mustIncludeAny": [
+        "פיתות",
+        "פיתה"
+      ],
+      "mustExcludeAny": [
+        "קרוטונים",
+        "ביסלי"
+      ]
+    },
+    {
+      "id": "rolls",
+      "canonical": "לחמניות",
+      "aliases": [
+        "לחמניה",
+        "שישיית לחמניות",
+        "לחמניות המבורגר"
+      ],
+      "category": [
+        "bakery"
+      ],
+      "defaultUnit": "pack",
+      "qtyRange": [
+        1,
+        3
+      ],
+      "mustIncludeAny": [
+        "לחמני"
+      ],
+      "mustExcludeAny": []
+    },
+    {
+      "id": "tortillas",
+      "canonical": "טורטיות",
+      "aliases": [
+        "טורטיה",
+        "דפי טורטיה"
+      ],
+      "category": [
+        "bakery"
+      ],
+      "defaultUnit": "pack",
+      "qtyRange": [
+        1,
+        2
+      ],
+      "mustIncludeAny": [
+        "טורטי"
+      ],
+      "mustExcludeAny": [
+        "חטיף",
+        "דוריטוס"
+      ]
+    },
+    {
+      "id": "baguette",
+      "canonical": "בגט",
+      "aliases": [
+        "באגט"
+      ],
+      "category": [
+        "bakery"
+      ],
+      "defaultUnit": "unit",
+      "qtyRange": [
+        1,
+        3
+      ],
+      "mustIncludeAny": [
+        "בגט",
+        "באגט"
+      ],
+      "mustExcludeAny": []
+    },
+    {
+      "id": "rice_cakes",
+      "canonical": "פריכיות אורז",
+      "aliases": [
+        "פריכיות"
+      ],
+      "category": [
+        "bakery"
+      ],
+      "defaultUnit": "unit",
+      "qtyRange": [
+        1,
+        3
+      ],
+      "mustIncludeAny": [
+        "פריכיות",
+        "פריכית"
+      ],
+      "mustExcludeAny": []
+    },
+    {
+      "id": "crackers",
+      "canonical": "קרקרים לחמית",
+      "aliases": [
+        "לחמית",
+        "קרקר זהב"
+      ],
+      "category": [
+        "bakery",
+        "snacks"
+      ],
+      "defaultUnit": "unit",
+      "qtyRange": [
+        1,
+        3
+      ],
+      "mustIncludeAny": [
+        "קרקר",
+        "לחמית"
+      ],
+      "mustExcludeAny": []
+    },
+    {
+      "id": "rugelach",
+      "canonical": "רוגלך",
+      "aliases": [
+        "מאפה רוגלך"
+      ],
+      "category": [
+        "bakery"
+      ],
+      "defaultUnit": "unit",
+      "qtyRange": [
+        1,
+        2
+      ],
+      "mustIncludeAny": [
+        "רוגלך",
+        "רוגעלך"
+      ],
+      "mustExcludeAny": []
+    },
+    {
+      "id": "chocolate_cake",
+      "canonical": "עוגת בראוניז / שוקולד",
+      "aliases": [
+        "עוגת הבית שוקולד"
+      ],
+      "category": [
+        "bakery"
+      ],
+      "defaultUnit": "unit",
+      "qtyRange": [
+        1,
+        2
+      ],
+      "mustIncludeAny": [
+        "עוגת",
+        "עוגה",
+        "בראוניז"
+      ],
+      "mustExcludeAny": [
+        "תערובת"
+      ]
+    },
+    {
+      "id": "cookies_choc_chip",
+      "canonical": "עוגיות שוקולד צ׳יפס",
+      "aliases": [
+        "עוגיות שוקוציפס"
+      ],
+      "category": [
+        "bakery",
+        "snacks"
+      ],
+      "defaultUnit": "unit",
+      "qtyRange": [
+        1,
+        3
+      ],
+      "mustIncludeAny": [
+        "עוגיות"
+      ],
+      "mustExcludeAny": [
+        "גלידה"
+      ]
+    },
+    {
+      "id": "petit_beurre",
+      "canonical": "פתי בר",
+      "aliases": [
+        "ביסקוויט פתי בר",
+        "פתיבר"
+      ],
+      "category": [
+        "bakery",
+        "snacks"
+      ],
+      "defaultUnit": "unit",
+      "qtyRange": [
+        1,
+        3
+      ],
+      "mustIncludeAny": [
+        "פתי בר",
+        "פתיבר",
+        "ביסקוויט"
+      ],
+      "mustExcludeAny": []
+    },
+    {
+      "id": "croissant",
+      "canonical": "קרואסון חמאה",
+      "aliases": [
+        "קרואסון שוקולד"
+      ],
+      "category": [
+        "bakery"
+      ],
+      "defaultUnit": "unit",
+      "qtyRange": [
+        1,
+        3
+      ],
+      "mustIncludeAny": [
+        "קרואסון"
+      ],
+      "mustExcludeAny": []
+    },
+    {
+      "id": "matzo",
+      "canonical": "מצות",
+      "aliases": [
+        "קמח מצה"
+      ],
+      "category": [
+        "bakery",
+        "pantry"
+      ],
+      "defaultUnit": "unit",
+      "qtyRange": [
+        1,
+        2
+      ],
+      "mustIncludeAny": [
+        "מצות",
+        "מצה"
+      ],
+      "mustExcludeAny": []
+    },
+    {
+      "id": "chicken_breast",
+      "canonical": "חזה עוף",
+      "aliases": [
+        "חזה עוף טרי",
+        "שניצל עוף פרוס",
+        "chicken breast"
+      ],
+      "category": [
+        "meat"
+      ],
+      "defaultUnit": "kg",
+      "qtyRange": [
+        1,
+        3
+      ],
+      "mustIncludeAny": [
+        "חזה עוף",
+        "עוף"
+      ],
+      "mustExcludeAny": [
+        "מרק",
+        "פסטרמה",
+        "נקניק"
+      ]
+    },
+    {
+      "id": "chicken_thighs",
+      "canonical": "פרגיות עוף",
+      "aliases": [
+        "סטייק פרגית",
+        "פרגיות"
+      ],
+      "category": [
+        "meat"
+      ],
+      "defaultUnit": "kg",
+      "qtyRange": [
+        1,
+        2.5
+      ],
+      "mustIncludeAny": [
+        "פרגית",
+        "פרגיות",
+        "ירך"
+      ],
+      "mustExcludeAny": [
+        "תיבול"
+      ]
+    },
+    {
+      "id": "chicken_legs",
+      "canonical": "כרעיים עוף",
+      "aliases": [
+        "כרעיים טרי"
+      ],
+      "category": [
+        "meat"
+      ],
+      "defaultUnit": "kg",
+      "qtyRange": [
+        1,
+        3
+      ],
+      "mustIncludeAny": [
+        "כרעיים"
+      ],
+      "mustExcludeAny": []
+    },
+    {
+      "id": "chicken_drumsticks",
+      "canonical": "שוקיים עוף",
+      "aliases": [
+        "שוקיים טרי"
+      ],
+      "category": [
+        "meat"
+      ],
+      "defaultUnit": "kg",
+      "qtyRange": [
+        1,
+        2.5
+      ],
+      "mustIncludeAny": [
+        "שוקיים"
+      ],
+      "mustExcludeAny": []
+    },
+    {
+      "id": "chicken_wings",
+      "canonical": "כנפיים עוף",
+      "aliases": [
+        "כנפיים למנגל"
+      ],
+      "category": [
+        "meat"
+      ],
+      "defaultUnit": "kg",
+      "qtyRange": [
+        1,
+        2
+      ],
+      "mustIncludeAny": [
+        "כנפיים"
+      ],
+      "mustExcludeAny": []
+    },
+    {
+      "id": "ground_beef",
+      "canonical": "בשר בקר טחון",
+      "aliases": [
+        "בשר טחון",
+        "בקר טחון טרי",
+        "ground beef"
+      ],
+      "category": [
+        "meat"
+      ],
+      "defaultUnit": "kg",
+      "qtyRange": [
+        1,
+        2.5
+      ],
+      "mustIncludeAny": [
+        "טחון",
+        "בקר"
+      ],
+      "mustExcludeAny": [
+        "מן הצומח",
+        "טבעול",
+        "תיבול"
+      ]
+    },
+    {
+      "id": "entrecote",
+      "canonical": "סטייק אנטריקוט",
+      "aliases": [
+        "אנטריקוט בקר"
+      ],
+      "category": [
+        "meat"
+      ],
+      "defaultUnit": "kg",
+      "qtyRange": [
+        0.8,
+        2
+      ],
+      "mustIncludeAny": [
+        "אנטריקוט",
+        "אנטרקוט"
+      ],
+      "mustExcludeAny": [
+        "תיבול",
+        "ביסלי"
+      ]
+    },
+    {
+      "id": "beef_shoulder",
+      "canonical": "צלי כתף מספר 5",
+      "aliases": [
+        "כתף בקר",
+        "מספר 5"
+      ],
+      "category": [
+        "meat"
+      ],
+      "defaultUnit": "kg",
+      "qtyRange": [
+        1,
+        2.5
+      ],
+      "mustIncludeAny": [
+        "כתף",
+        "בקר"
+      ],
+      "mustExcludeAny": []
+    },
+    {
+      "id": "asado",
+      "canonical": "אסאדו בקר",
+      "aliases": [
+        "שפונדרה"
+      ],
+      "category": [
+        "meat"
+      ],
+      "defaultUnit": "kg",
+      "qtyRange": [
+        1,
+        2
+      ],
+      "mustIncludeAny": [
+        "אסאדו",
+        "שפונדרה",
+        "קשתית"
+      ],
+      "mustExcludeAny": []
+    },
+    {
+      "id": "chicken_liver",
+      "canonical": "כבד עוף",
+      "aliases": [
+        "כבד עוף טרי"
+      ],
+      "category": [
+        "meat"
+      ],
+      "defaultUnit": "kg",
+      "qtyRange": [
+        0.5,
+        1.5
+      ],
+      "mustIncludeAny": [
+        "כבד"
+      ],
+      "mustExcludeAny": [
+        "קצוץ"
+      ]
+    },
+    {
+      "id": "kebabs",
+      "canonical": "קבב בקר",
+      "aliases": [
+        "קבב מזרחי"
+      ],
+      "category": [
+        "meat",
+        "frozen"
+      ],
+      "defaultUnit": "unit",
+      "qtyRange": [
+        1,
+        3
+      ],
+      "mustIncludeAny": [
+        "קבב"
+      ],
+      "mustExcludeAny": [
+        "תיבול"
+      ]
+    },
+    {
+      "id": "burgers",
+      "canonical": "המבורגר בקר",
+      "aliases": [
+        "קציצות המבורגר"
+      ],
+      "category": [
+        "meat",
+        "frozen"
+      ],
+      "defaultUnit": "unit",
+      "qtyRange": [
+        1,
+        3
+      ],
+      "mustIncludeAny": [
+        "המבורגר",
+        "בורגר"
+      ],
+      "mustExcludeAny": [
+        "לחמני",
+        "רוטב"
+      ]
+    },
+    {
+      "id": "salmon_fillet",
+      "canonical": "פילה סלמון",
+      "aliases": [
+        "סלמון קפוא",
+        "סלמון טרי",
+        "salmon"
+      ],
+      "category": [
+        "meat",
+        "frozen"
+      ],
+      "defaultUnit": "kg",
+      "qtyRange": [
+        0.8,
+        2
+      ],
+      "mustIncludeAny": [
+        "סלמון"
+      ],
+      "mustExcludeAny": [
+        "מעושן",
+        "אוכל לחתולים",
+        "מזון לחתולים"
+      ]
+    },
+    {
+      "id": "tilapia_fillet",
+      "canonical": "פילה אמנון",
+      "aliases": [
+        "פילה מושט",
+        "דג מושט"
+      ],
+      "category": [
+        "meat",
+        "frozen"
+      ],
+      "defaultUnit": "unit",
+      "qtyRange": [
+        1,
+        3
+      ],
+      "mustIncludeAny": [
+        "אמנון",
+        "מושט"
+      ],
+      "mustExcludeAny": []
+    },
+    {
+      "id": "denis_fish",
+      "canonical": "דג דניס",
+      "aliases": [
+        "פילה דניס"
+      ],
+      "category": [
+        "meat",
+        "frozen"
+      ],
+      "defaultUnit": "unit",
+      "qtyRange": [
+        1,
+        2
+      ],
+      "mustIncludeAny": [
+        "דניס"
+      ],
+      "mustExcludeAny": []
+    },
+    {
+      "id": "turkey_ground",
+      "canonical": "הודו טחון",
+      "aliases": [
+        "שווארמה הודו"
+      ],
+      "category": [
+        "meat"
+      ],
+      "defaultUnit": "kg",
+      "qtyRange": [
+        0.8,
+        2
+      ],
+      "mustIncludeAny": [
+        "הודו"
+      ],
+      "mustExcludeAny": [
+        "פסטרמה"
+      ]
+    },
+    {
+      "id": "schnitzel_corn",
+      "canonical": "שניצל תירס טבעול",
+      "aliases": [
+        "שניצל תירס"
+      ],
+      "category": [
+        "frozen",
+        "meat"
+      ],
+      "defaultUnit": "unit",
+      "qtyRange": [
+        1,
+        3
+      ],
+      "mustIncludeAny": [
+        "שניצל תירס",
+        "טבעול"
+      ],
+      "mustExcludeAny": []
+    },
+    {
+      "id": "chicken_schnitzel_frozen",
+      "canonical": "שניצל עוף עוף טוב",
+      "aliases": [
+        "שניצלונים"
+      ],
+      "category": [
+        "frozen",
+        "meat"
+      ],
+      "defaultUnit": "unit",
+      "qtyRange": [
+        1,
+        2
+      ],
+      "mustIncludeAny": [
+        "שניצל"
+      ],
+      "mustExcludeAny": [
+        "תבלין",
+        "פירורי"
+      ]
+    },
+    {
+      "id": "hummus_salad",
+      "canonical": "חומוס אחלה",
+      "aliases": [
+        "סלט חומוס",
+        "חומוס צבר",
+        "hummus"
+      ],
+      "category": [
+        "deli"
+      ],
+      "defaultUnit": "unit",
+      "qtyRange": [
+        1,
+        3
+      ],
+      "mustIncludeAny": [
+        "חומוס"
+      ],
+      "mustExcludeAny": [
+        "חטיף",
+        "יבש",
+        "שימורים",
+        "קמח"
+      ]
+    },
+    {
+      "id": "tahini_raw",
+      "canonical": "טחינה גולמית",
+      "aliases": [
+        "טחינה הר ברכה",
+        "טחינה בארכה",
+        "טחינה אל ארז"
+      ],
+      "category": [
+        "deli",
+        "pantry"
+      ],
+      "defaultUnit": "unit",
+      "qtyRange": [
+        1,
+        3
+      ],
+      "mustIncludeAny": [
+        "טחינה"
+      ],
+      "mustExcludeAny": [
+        "חלווה",
+        "עוגיות"
+      ]
+    },
+    {
+      "id": "pastrami",
+      "canonical": "פסטרמה הודו",
+      "aliases": [
+        "פסטרמה בדבש",
+        "פסטרמה על גחלים"
+      ],
+      "category": [
+        "deli"
+      ],
+      "defaultUnit": "unit",
+      "qtyRange": [
+        1,
+        2
+      ],
+      "mustIncludeAny": [
+        "פסטרמה"
+      ],
+      "mustExcludeAny": []
+    },
+    {
+      "id": "hotdogs",
+      "canonical": "נקניקיות עוף",
+      "aliases": [
+        "נקניקיות זוגלובק",
+        "נקניקיות"
+      ],
+      "category": [
+        "deli",
+        "meat"
+      ],
+      "defaultUnit": "unit",
+      "qtyRange": [
+        1,
+        2
+      ],
+      "mustIncludeAny": [
+        "נקניקיות",
+        "נקניקי"
+      ],
+      "mustExcludeAny": [
+        "לחמני"
+      ]
+    },
+    {
+      "id": "salami",
+      "canonical": "נקניק סלמי",
+      "aliases": [
+        "סלמי איטלקי"
+      ],
+      "category": [
+        "deli"
+      ],
+      "defaultUnit": "unit",
+      "qtyRange": [
+        1,
+        2
+      ],
+      "mustIncludeAny": [
+        "סלמי",
+        "נקניק"
+      ],
+      "mustExcludeAny": []
+    },
+    {
+      "id": "matbucha",
+      "canonical": "מטבוחה",
+      "aliases": [
+        "סלט מטבוחה"
+      ],
+      "category": [
+        "deli"
+      ],
+      "defaultUnit": "unit",
+      "qtyRange": [
+        1,
+        2
+      ],
+      "mustIncludeAny": [
+        "מטבוחה"
+      ],
+      "mustExcludeAny": []
+    },
+    {
+      "id": "eggplant_salad",
+      "canonical": "סלט חצילים במיונז",
+      "aliases": [
+        "חציל בטחינה"
+      ],
+      "category": [
+        "deli"
+      ],
+      "defaultUnit": "unit",
+      "qtyRange": [
+        1,
+        2
+      ],
+      "mustIncludeAny": [
+        "חציל"
+      ],
+      "mustExcludeAny": []
+    },
+    {
+      "id": "pickles_salt",
+      "canonical": "מלפפונים חמוצים במלח",
+      "aliases": [
+        "מלפפון חמוץ",
+        "חמוצים במלח"
+      ],
+      "category": [
+        "deli",
+        "pantry"
+      ],
+      "defaultUnit": "unit",
+      "qtyRange": [
+        1,
+        3
+      ],
+      "mustIncludeAny": [
+        "מלפפו",
+        "חמוצ"
+      ],
+      "mustExcludeAny": []
+    },
+    {
+      "id": "olives_green",
+      "canonical": "זיתים ירוקים מגולענים",
+      "aliases": [
+        "זיתים ירוקים",
+        "זיתי בית השיטה"
+      ],
+      "category": [
+        "deli",
+        "pantry"
+      ],
+      "defaultUnit": "unit",
+      "qtyRange": [
+        1,
+        3
+      ],
+      "mustIncludeAny": [
+        "זיתים",
+        "זיתי"
+      ],
+      "mustExcludeAny": [
+        "שמן"
+      ]
+    },
+    {
+      "id": "olives_black",
+      "canonical": "זיתים שחורים",
+      "aliases": [
+        "זיתי קלמטה"
+      ],
+      "category": [
+        "deli",
+        "pantry"
+      ],
+      "defaultUnit": "unit",
+      "qtyRange": [
+        1,
+        2
+      ],
+      "mustIncludeAny": [
+        "זיתים",
+        "קלמטה"
+      ],
+      "mustExcludeAny": [
+        "שמן"
+      ]
+    },
+    {
+      "id": "rice_basmati",
+      "canonical": "אורז בסמטי",
+      "aliases": [
+        "אורז בסמטי סוגת",
+        "אורז פרסי",
+        "אורז לבן",
+        "rice"
+      ],
+      "category": [
+        "pantry"
+      ],
+      "defaultUnit": "unit",
+      "qtyRange": [
+        1,
+        3
+      ],
+      "mustIncludeAny": [
+        "אורז"
+      ],
+      "mustExcludeAny": [
+        "פריכיות",
+        "חלב",
+        "משקה",
+        "חומץ",
+        "אטריות"
+      ]
+    },
+    {
+      "id": "pasta_penne",
+      "canonical": "פסטה פנה",
+      "aliases": [
+        "פסטה אסם",
+        "פסטה ברילה",
+        "מקרוני",
+        "pasta"
+      ],
+      "category": [
+        "pantry"
+      ],
+      "defaultUnit": "unit",
+      "qtyRange": [
+        1,
+        4
+      ],
+      "mustIncludeAny": [
+        "פסטה",
+        "פנה",
+        "ספגטי",
+        "מקרוני"
+      ],
+      "mustExcludeAny": [
+        "רוטב"
+      ]
+    },
+    {
+      "id": "spaghetti",
+      "canonical": "ספגטי",
+      "aliases": [
+        "ספגטי מספר 7"
+      ],
+      "category": [
+        "pantry"
+      ],
+      "defaultUnit": "unit",
+      "qtyRange": [
+        1,
+        3
+      ],
+      "mustIncludeAny": [
+        "ספגטי",
+        "פסטה"
+      ],
+      "mustExcludeAny": [
+        "רוטב"
+      ]
+    },
+    {
+      "id": "ptitim",
+      "canonical": "פתיתים אפויים",
+      "aliases": [
+        "פתיתים אסם",
+        "פתיתים קוסקוס"
+      ],
+      "category": [
+        "pantry"
+      ],
+      "defaultUnit": "unit",
+      "qtyRange": [
+        1,
+        3
+      ],
+      "mustIncludeAny": [
+        "פתיתים"
+      ],
+      "mustExcludeAny": [
+        "שיבולת",
+        "סבון"
+      ]
+    },
+    {
+      "id": "couscous",
+      "canonical": "קוסקוס מהיר הכנה",
+      "aliases": [
+        "קוסקוס בינוני",
+        "קוסקוס"
+      ],
+      "category": [
+        "pantry"
+      ],
+      "defaultUnit": "unit",
+      "qtyRange": [
+        1,
+        3
+      ],
+      "mustIncludeAny": [
+        "קוסקוס"
+      ],
+      "mustExcludeAny": []
+    },
+    {
+      "id": "bulgur",
+      "canonical": "בורגול",
+      "aliases": [
+        "בורגול גס"
+      ],
+      "category": [
+        "pantry"
+      ],
+      "defaultUnit": "unit",
+      "qtyRange": [
+        1,
+        2
+      ],
+      "mustIncludeAny": [
+        "בורגול"
+      ],
+      "mustExcludeAny": []
+    },
+    {
+      "id": "quinoa",
+      "canonical": "קינואה לבנה",
+      "aliases": [
+        "קינואה"
+      ],
+      "category": [
+        "pantry"
+      ],
+      "defaultUnit": "unit",
+      "qtyRange": [
+        1,
+        2
+      ],
+      "mustIncludeAny": [
+        "קינואה"
+      ],
+      "mustExcludeAny": [
+        "קרקר",
+        "סלט"
+      ]
+    },
+    {
+      "id": "red_lentils",
+      "canonical": "עדשים כתומות",
+      "aliases": [
+        "עדשים אדומות",
+        "עדשים ירוקות"
+      ],
+      "category": [
+        "pantry"
+      ],
+      "defaultUnit": "unit",
+      "qtyRange": [
+        1,
+        2
+      ],
+      "mustIncludeAny": [
+        "עדשים"
+      ],
+      "mustExcludeAny": [
+        "שוקולד",
+        "סוכריות"
+      ]
+    },
+    {
+      "id": "semolina",
+      "canonical": "סולת",
+      "aliases": [
+        "סולת חיטה"
+      ],
+      "category": [
+        "pantry"
+      ],
+      "defaultUnit": "unit",
+      "qtyRange": [
+        1,
+        2
+      ],
+      "mustIncludeAny": [
+        "סולת"
+      ],
+      "mustExcludeAny": []
+    },
+    {
+      "id": "flour_white",
+      "canonical": "קמח חיטה לבן",
+      "aliases": [
+        "קמח לבן מנופה"
+      ],
+      "category": [
+        "pantry"
+      ],
+      "defaultUnit": "unit",
+      "qtyRange": [
+        1,
+        3
+      ],
+      "mustIncludeAny": [
+        "קמח"
+      ],
+      "mustExcludeAny": []
+    },
+    {
+      "id": "flour_self_rising",
+      "canonical": "קמח תופח",
+      "aliases": [
+        "קמח תופח אסם"
+      ],
+      "category": [
+        "pantry"
+      ],
+      "defaultUnit": "unit",
+      "qtyRange": [
+        1,
+        2
+      ],
+      "mustIncludeAny": [
+        "קמח",
+        "תופח"
+      ],
+      "mustExcludeAny": []
+    },
+    {
+      "id": "sugar_white",
+      "canonical": "סוכר לבן",
+      "aliases": [
+        "סוכר 1 ק\"ג",
+        "סוכר סוגת",
+        "sugar"
+      ],
+      "category": [
+        "pantry"
+      ],
+      "defaultUnit": "unit",
+      "qtyRange": [
+        1,
+        3
+      ],
+      "mustIncludeAny": [
+        "סוכר"
+      ],
+      "mustExcludeAny": [
+        "חום",
+        "וניל",
+        "תחליף",
+        "סוכרזית"
+      ]
+    },
+    {
+      "id": "sugar_brown",
+      "canonical": "סוכר חום דמררה",
+      "aliases": [
+        "סוכר חום"
+      ],
+      "category": [
+        "pantry"
+      ],
+      "defaultUnit": "unit",
+      "qtyRange": [
+        1,
+        2
+      ],
+      "mustIncludeAny": [
+        "סוכר חום",
+        "דמררה"
+      ],
+      "mustExcludeAny": []
+    },
+    {
+      "id": "salt",
+      "canonical": "מלח שולחן",
+      "aliases": [
+        "מלח דק",
+        "מלח גס"
+      ],
+      "category": [
+        "pantry"
+      ],
+      "defaultUnit": "unit",
+      "qtyRange": [
+        1,
+        2
+      ],
+      "mustIncludeAny": [
+        "מלח"
+      ],
+      "mustExcludeAny": [
+        "מדיח",
+        "לימון",
+        "בייגלה"
+      ]
+    },
+    {
+      "id": "olive_oil",
+      "canonical": "שמן זית כתית מעולה",
+      "aliases": [
+        "שמן זית",
+        "olive oil"
+      ],
+      "category": [
+        "pantry"
+      ],
+      "defaultUnit": "unit",
+      "qtyRange": [
+        1,
+        2
+      ],
+      "mustIncludeAny": [
+        "שמן זית"
+      ],
+      "mustExcludeAny": [
+        "טונה",
+        "סרדינים",
+        "סבון"
+      ]
+    },
+    {
+      "id": "canola_oil",
+      "canonical": "שמן קנולה",
+      "aliases": [
+        "שמן קנולה 1 ליטר"
+      ],
+      "category": [
+        "pantry"
+      ],
+      "defaultUnit": "unit",
+      "qtyRange": [
+        1,
+        3
+      ],
+      "mustIncludeAny": [
+        "שמן קנולה",
+        "קנולה"
+      ],
+      "mustExcludeAny": [
+        "טונה"
+      ]
+    },
+    {
+      "id": "vinegar_white",
+      "canonical": "חומץ טבעי 5%",
+      "aliases": [
+        "חומץ סינטטי"
+      ],
+      "category": [
+        "pantry"
+      ],
+      "defaultUnit": "unit",
+      "qtyRange": [
+        1,
+        2
+      ],
+      "mustIncludeAny": [
+        "חומץ"
+      ],
+      "mustExcludeAny": [
+        "מלפפון"
+      ]
+    },
+    {
+      "id": "tomato_paste",
+      "canonical": "רסק עגבניות",
+      "aliases": [
+        "רסק עגבניות מרוכז"
+      ],
+      "category": [
+        "pantry"
+      ],
+      "defaultUnit": "unit",
+      "qtyRange": [
+        1,
+        4
+      ],
+      "mustIncludeAny": [
+        "רסק עגבניות",
+        "עגבניות מרוסקות"
+      ],
+      "mustExcludeAny": []
+    },
+    {
+      "id": "crushed_tomatoes",
+      "canonical": "עגבניות מרוסקות מוטי",
+      "aliases": [
+        "עגבניות מרוסקות",
+        "פאסטה מוטי"
+      ],
+      "category": [
+        "pantry"
+      ],
+      "defaultUnit": "unit",
+      "qtyRange": [
+        1,
+        3
+      ],
+      "mustIncludeAny": [
+        "מרוסקות",
+        "עגבניות"
+      ],
+      "mustExcludeAny": []
+    },
+    {
+      "id": "ketchup",
+      "canonical": "קטשופ אסם",
+      "aliases": [
+        "קטשופ היינץ",
+        "קטשופ",
+        "ketchup"
+      ],
+      "category": [
+        "pantry"
+      ],
+      "defaultUnit": "unit",
+      "qtyRange": [
+        1,
+        2
+      ],
+      "mustIncludeAny": [
+        "קטשופ"
+      ],
+      "mustExcludeAny": [
+        "ביסלי",
+        "חטיף"
+      ]
+    },
+    {
+      "id": "mayonnaise",
+      "canonical": "מיונז הלמנס",
+      "aliases": [
+        "מיונז תלמה",
+        "מיונז"
+      ],
+      "category": [
+        "pantry"
+      ],
+      "defaultUnit": "unit",
+      "qtyRange": [
+        1,
+        2
+      ],
+      "mustIncludeAny": [
+        "מיונז"
+      ],
+      "mustExcludeAny": [
+        "סלט"
+      ]
+    },
+    {
+      "id": "mustard",
+      "canonical": "חרדל דיז׳ון",
+      "aliases": [
+        "חרדל תלמה",
+        "חרדל"
+      ],
+      "category": [
+        "pantry"
+      ],
+      "defaultUnit": "unit",
+      "qtyRange": [
+        1,
+        2
+      ],
+      "mustIncludeAny": [
+        "חרדל"
+      ],
+      "mustExcludeAny": []
+    },
+    {
+      "id": "soy_sauce",
+      "canonical": "רוטב סויה",
+      "aliases": [
+        "סויה קיקומן"
+      ],
+      "category": [
+        "pantry"
+      ],
+      "defaultUnit": "unit",
+      "qtyRange": [
+        1,
+        2
+      ],
+      "mustIncludeAny": [
+        "סויה"
+      ],
+      "mustExcludeAny": [
+        "משקה",
+        "חלב"
+      ]
+    },
+    {
+      "id": "sweet_chili",
+      "canonical": "רוטב צ׳ילי מתוק",
+      "aliases": [
+        "צילי מתוק"
+      ],
+      "category": [
+        "pantry"
+      ],
+      "defaultUnit": "unit",
+      "qtyRange": [
+        1,
+        2
+      ],
+      "mustIncludeAny": [
+        "צ'ילי",
+        "צילי",
+        "צ׳ילי"
+      ],
+      "mustExcludeAny": []
+    },
+    {
+      "id": "tuna_oil",
+      "canonical": "טונה בשמן",
+      "aliases": [
+        "רביעיית טונה בשמן",
+        "טונה סטארקיסט בשמן"
+      ],
+      "category": [
+        "pantry"
+      ],
+      "defaultUnit": "unit",
+      "qtyRange": [
+        1,
+        3
+      ],
+      "mustIncludeAny": [
+        "טונה"
+      ],
+      "mustExcludeAny": [
+        "מזון לחתולים"
+      ]
+    },
+    {
+      "id": "tuna_water",
+      "canonical": "טונה במים",
+      "aliases": [
+        "רביעיית טונה במים"
+      ],
+      "category": [
+        "pantry"
+      ],
+      "defaultUnit": "unit",
+      "qtyRange": [
+        1,
+        2
+      ],
+      "mustIncludeAny": [
+        "טונה"
+      ],
+      "mustExcludeAny": [
+        "מזון לחתולים"
+      ]
+    },
+    {
+      "id": "canned_corn",
+      "canonical": "תירס מתוק שימורים",
+      "aliases": [
+        "תירס שימורים",
+        "קופסת תירס"
+      ],
+      "category": [
+        "pantry"
+      ],
+      "defaultUnit": "unit",
+      "qtyRange": [
+        1,
+        4
+      ],
+      "mustIncludeAny": [
+        "תירס"
+      ],
+      "mustExcludeAny": [
+        "שניצל",
+        "קורנפלקס",
+        "פריכיות"
+      ]
+    },
+    {
+      "id": "canned_chickpeas",
+      "canonical": "גרגירי חומוס שימורים",
+      "aliases": [
+        "חומוס שימורים"
+      ],
+      "category": [
+        "pantry"
+      ],
+      "defaultUnit": "unit",
+      "qtyRange": [
+        1,
+        3
+      ],
+      "mustIncludeAny": [
+        "חומוס"
+      ],
+      "mustExcludeAny": [
+        "סלט"
+      ]
+    },
+    {
+      "id": "coconut_cream",
+      "canonical": "קרם קוקוס",
+      "aliases": [
+        "נוזל קוקוס",
+        "חלב קוקוס לבישול"
+      ],
+      "category": [
+        "pantry"
+      ],
+      "defaultUnit": "unit",
+      "qtyRange": [
+        1,
+        3
+      ],
+      "mustIncludeAny": [
+        "קוקוס"
+      ],
+      "mustExcludeAny": [
+        "שמפו",
+        "סבון",
+        "שוקולד"
+      ]
+    },
+    {
+      "id": "breadcrumbs",
+      "canonical": "פירורי לחם מוזהבים",
+      "aliases": [
+        "פירורי לחם",
+        "פנקו"
+      ],
+      "category": [
+        "pantry"
+      ],
+      "defaultUnit": "unit",
+      "qtyRange": [
+        1,
+        2
+      ],
+      "mustIncludeAny": [
+        "פירורי",
+        "פרורי",
+        "פנקו"
+      ],
+      "mustExcludeAny": []
+    },
+    {
+      "id": "baking_powder",
+      "canonical": "אבקת אפייה",
+      "aliases": [
+        "אבקת אפיה"
+      ],
+      "category": [
+        "pantry"
+      ],
+      "defaultUnit": "unit",
+      "qtyRange": [
+        1,
+        2
+      ],
+      "mustIncludeAny": [
+        "אפייה",
+        "אפיה"
+      ],
+      "mustExcludeAny": [
+        "נייר",
+        "תבנית"
+      ]
+    },
+    {
+      "id": "vanilla_sugar",
+      "canonical": "סוכר וניל",
+      "aliases": [
+        "סוכר ונילין"
+      ],
+      "category": [
+        "pantry"
+      ],
+      "defaultUnit": "unit",
+      "qtyRange": [
+        1,
+        2
+      ],
+      "mustIncludeAny": [
+        "וניל"
+      ],
+      "mustExcludeAny": [
+        "גלידה",
+        "מעדן"
+      ]
+    },
+    {
+      "id": "dry_yeast",
+      "canonical": "שמרים יבשים",
+      "aliases": [
+        "שמרים לאפייה"
+      ],
+      "category": [
+        "pantry",
+        "dairy"
+      ],
+      "defaultUnit": "unit",
+      "qtyRange": [
+        1,
+        2
+      ],
+      "mustIncludeAny": [
+        "שמרים"
+      ],
+      "mustExcludeAny": [
+        "עוגת"
+      ]
+    },
+    {
+      "id": "paprika_sweet",
+      "canonical": "פפריקה מתוקה",
+      "aliases": [
+        "פפריקה מרוקאית"
+      ],
+      "category": [
+        "pantry"
+      ],
+      "defaultUnit": "unit",
+      "qtyRange": [
+        1,
+        2
+      ],
+      "mustIncludeAny": [
+        "פפריקה"
+      ],
+      "mustExcludeAny": []
+    },
+    {
+      "id": "cumin",
+      "canonical": "כמון טחון",
+      "aliases": [
+        "תבלין כמון"
+      ],
+      "category": [
+        "pantry"
+      ],
+      "defaultUnit": "unit",
+      "qtyRange": [
+        1,
+        2
+      ],
+      "mustIncludeAny": [
+        "כמון"
+      ],
+      "mustExcludeAny": []
+    },
+    {
+      "id": "turmeric",
+      "canonical": "כורכום טחון",
+      "aliases": [
+        "תבלין כורכום"
+      ],
+      "category": [
+        "pantry"
+      ],
+      "defaultUnit": "unit",
+      "qtyRange": [
+        1,
+        2
+      ],
+      "mustIncludeAny": [
+        "כורכום"
+      ],
+      "mustExcludeAny": []
+    },
+    {
+      "id": "black_pepper_ground",
+      "canonical": "פלפל שחור טחון",
+      "aliases": [
+        "פלפל שחור גרוס"
+      ],
+      "category": [
+        "pantry"
+      ],
+      "defaultUnit": "unit",
+      "qtyRange": [
+        1,
+        2
+      ],
+      "mustIncludeAny": [
+        "פלפל שחור"
+      ],
+      "mustExcludeAny": []
+    },
+    {
+      "id": "cinnamon",
+      "canonical": "קינמון טחון",
+      "aliases": [
+        "מקלות קינמון"
+      ],
+      "category": [
+        "pantry"
+      ],
+      "defaultUnit": "unit",
+      "qtyRange": [
+        1,
+        2
+      ],
+      "mustIncludeAny": [
+        "קינמון"
+      ],
+      "mustExcludeAny": [
+        "דגני",
+        "עוגיות",
+        "קינמונים"
+      ]
+    },
+    {
+      "id": "cornflakes",
+      "canonical": "קורנפלקס של אלופים",
+      "aliases": [
+        "קורנפלקס תלמה",
+        "קורנפלקס"
+      ],
+      "category": [
+        "breakfast"
+      ],
+      "defaultUnit": "unit",
+      "qtyRange": [
+        1,
+        3
+      ],
+      "mustIncludeAny": [
+        "קורנפלקס",
+        "דגני"
+      ],
+      "mustExcludeAny": []
+    },
+    {
+      "id": "cinnamons_cereal",
+      "canonical": "קינמונים",
+      "aliases": [
+        "דגני קינמונים"
+      ],
+      "category": [
+        "breakfast"
+      ],
+      "defaultUnit": "unit",
+      "qtyRange": [
+        1,
+        2
+      ],
+      "mustIncludeAny": [
+        "קינמונים"
+      ],
+      "mustExcludeAny": []
+    },
+    {
+      "id": "kariot_cereal",
+      "canonical": "כריות נוגט",
+      "aliases": [
+        "דגני כריות"
+      ],
+      "category": [
+        "breakfast"
+      ],
+      "defaultUnit": "unit",
+      "qtyRange": [
+        1,
+        2
+      ],
+      "mustIncludeAny": [
+        "כריות"
+      ],
+      "mustExcludeAny": [
+        "ניקוי",
+        "קרצוף"
+      ]
+    },
+    {
+      "id": "granola",
+      "canonical": "גרנולה שיבולת שועל",
+      "aliases": [
+        "גרנולה"
+      ],
+      "category": [
+        "breakfast"
+      ],
+      "defaultUnit": "unit",
+      "qtyRange": [
+        1,
+        2
+      ],
+      "mustIncludeAny": [
+        "גרנולה"
+      ],
+      "mustExcludeAny": []
+    },
+    {
+      "id": "oats",
+      "canonical": "שיבולת שועל קוואקר",
+      "aliases": [
+        "קוואקר",
+        "פתיתי שיבולת שועל"
+      ],
+      "category": [
+        "breakfast"
+      ],
+      "defaultUnit": "unit",
+      "qtyRange": [
+        1,
+        2
+      ],
+      "mustIncludeAny": [
+        "שיבולת שועל",
+        "קוואקר"
+      ],
+      "mustExcludeAny": [
+        "משקה",
+        "חלב"
+      ]
+    },
+    {
+      "id": "nutella",
+      "canonical": "ממרח שוקולד נוטלה",
+      "aliases": [
+        "נוטלה",
+        "ממרח השחר",
+        "השחר העולה"
+      ],
+      "category": [
+        "breakfast"
+      ],
+      "defaultUnit": "unit",
+      "qtyRange": [
+        1,
+        2
+      ],
+      "mustIncludeAny": [
+        "נוטלה",
+        "השחר",
+        "ממרח"
+      ],
+      "mustExcludeAny": []
+    },
+    {
+      "id": "peanut_butter",
+      "canonical": "חמאת בוטנים טבעית",
+      "aliases": [
+        "חמאת בוטנים סקיפי",
+        "חמאת בוטנים"
+      ],
+      "category": [
+        "breakfast"
+      ],
+      "defaultUnit": "unit",
+      "qtyRange": [
+        1,
+        2
+      ],
+      "mustIncludeAny": [
+        "חמאת בוטנים",
+        "סקיפי"
+      ],
+      "mustExcludeAny": [
+        "במבה"
+      ]
+    },
+    {
+      "id": "honey",
+      "canonical": "דבש טהור יד מרדכי",
+      "aliases": [
+        "דבש",
+        "דבש לחיץ"
+      ],
+      "category": [
+        "pantry",
+        "breakfast"
+      ],
+      "defaultUnit": "unit",
+      "qtyRange": [
+        1,
+        2
+      ],
+      "mustIncludeAny": [
+        "דבש"
+      ],
+      "mustExcludeAny": [
+        "פסטרמה",
+        "עוגת",
+        "חרדל"
+      ]
+    },
+    {
+      "id": "silan",
+      "canonical": "סילאן טבעי",
+      "aliases": [
+        "סילאן תמרים"
+      ],
+      "category": [
+        "pantry",
+        "breakfast"
+      ],
+      "defaultUnit": "unit",
+      "qtyRange": [
+        1,
+        2
+      ],
+      "mustIncludeAny": [
+        "סילאן"
+      ],
+      "mustExcludeAny": []
+    },
+    {
+      "id": "strawberry_jam",
+      "canonical": "ריבת תות שדה",
+      "aliases": [
+        "קונפיטורת תות",
+        "ריבת תות"
+      ],
+      "category": [
+        "pantry",
+        "breakfast"
+      ],
+      "defaultUnit": "unit",
+      "qtyRange": [
+        1,
+        2
+      ],
+      "mustIncludeAny": [
+        "ריבת",
+        "קונפיטור"
+      ],
+      "mustExcludeAny": [
+        "סופגני"
+      ]
+    },
+    {
+      "id": "instant_coffee",
+      "canonical": "קפה נמס טסטרס צ׳ויס",
+      "aliases": [
+        "קפה נמס עלית",
+        "קפה מגורען",
+        "נס קפה"
+      ],
+      "category": [
+        "breakfast"
+      ],
+      "defaultUnit": "unit",
+      "qtyRange": [
+        1,
+        2
+      ],
+      "mustIncludeAny": [
+        "קפה נמס",
+        "טסטרס",
+        "מגורען"
+      ],
+      "mustExcludeAny": [
+        "עוגת",
+        "גלידה"
+      ]
+    },
+    {
+      "id": "turkish_coffee",
+      "canonical": "קפה שחור טורקי עלית",
+      "aliases": [
+        "קפה טורקי",
+        "קפה שחור"
+      ],
+      "category": [
+        "breakfast"
+      ],
+      "defaultUnit": "unit",
+      "qtyRange": [
+        1,
+        3
+      ],
+      "mustIncludeAny": [
+        "טורקי",
+        "קפה שחור"
+      ],
+      "mustExcludeAny": []
+    },
+    {
+      "id": "tea_wissotzky",
+      "canonical": "תה ויסוצקי קלאסי",
+      "aliases": [
+        "תה שחור ויסוצקי",
+        "תה ירוק ויסוצקי"
+      ],
+      "category": [
+        "breakfast"
+      ],
+      "defaultUnit": "unit",
+      "qtyRange": [
+        1,
+        2
+      ],
+      "mustIncludeAny": [
+        "תה",
+        "ויסוצקי"
+      ],
+      "mustExcludeAny": [
+        "עוגיות",
+        "נקניק"
+      ]
+    },
+    {
+      "id": "shokolit",
+      "canonical": "אבקת שוקולית",
+      "aliases": [
+        "שוקולית עלית"
+      ],
+      "category": [
+        "breakfast"
+      ],
+      "defaultUnit": "unit",
+      "qtyRange": [
+        1,
+        2
+      ],
+      "mustIncludeAny": [
+        "שוקולית",
+        "אבקת שוקו"
+      ],
+      "mustExcludeAny": []
+    },
+    {
+      "id": "cocoa_powder",
+      "canonical": "אבקת קקאו",
+      "aliases": [
+        "קקאו לאפייה"
+      ],
+      "category": [
+        "pantry",
+        "breakfast"
+      ],
+      "defaultUnit": "unit",
+      "qtyRange": [
+        1,
+        2
+      ],
+      "mustIncludeAny": [
+        "קקאו"
+      ],
+      "mustExcludeAny": [
+        "חמאת"
+      ]
+    },
+    {
+      "id": "almonds_raw",
+      "canonical": "שקדים טבעיים",
+      "aliases": [
+        "שקדים קלופים"
+      ],
+      "category": [
+        "pantry"
+      ],
+      "defaultUnit": "unit",
+      "qtyRange": [
+        1,
+        2
+      ],
+      "mustIncludeAny": [
+        "שקדים"
+      ],
+      "mustExcludeAny": [
+        "חלב",
+        "משקה",
+        "מרק"
+      ]
+    },
+    {
+      "id": "frozen_peas",
+      "canonical": "אפונה קפואה סנפרוסט",
+      "aliases": [
+        "אפונה סנפרוסט",
+        "אפונת גינה קפואה"
+      ],
+      "category": [
+        "frozen"
+      ],
+      "defaultUnit": "unit",
+      "qtyRange": [
+        1,
+        3
+      ],
+      "mustIncludeAny": [
+        "אפונה",
+        "אפונת"
+      ],
+      "mustExcludeAny": [
+        "שימורים"
+      ]
+    },
+    {
+      "id": "frozen_green_beans",
+      "canonical": "שעועית ירוקה סנפרוסט",
+      "aliases": [
+        "שעועית עדינה קפואה"
+      ],
+      "category": [
+        "frozen",
+        "produce"
+      ],
+      "defaultUnit": "unit",
+      "qtyRange": [
+        1,
+        2
+      ],
+      "mustIncludeAny": [
+        "שעועית"
+      ],
+      "mustExcludeAny": [
+        "לבנה",
+        "רוטב"
+      ]
+    },
+    {
+      "id": "frozen_fries",
+      "canonical": "צ׳יפס קפוא תפוגן",
+      "aliases": [
+        "ציפס קפוא",
+        "צ׳יפס אמריקאי"
+      ],
+      "category": [
+        "frozen"
+      ],
+      "defaultUnit": "unit",
+      "qtyRange": [
+        1,
+        2
+      ],
+      "mustIncludeAny": [
+        "צ'יפס",
+        "ציפס",
+        "צ׳יפס",
+        "טוגנים"
+      ],
+      "mustExcludeAny": [
+        "תפוצ"
+      ]
+    },
+    {
+      "id": "puff_pastry",
+      "canonical": "בצק עלים מעדנות",
+      "aliases": [
+        "בצק עלים מרודד"
+      ],
+      "category": [
+        "frozen"
+      ],
+      "defaultUnit": "unit",
+      "qtyRange": [
+        1,
+        2
+      ],
+      "mustIncludeAny": [
+        "בצק עלים"
+      ],
+      "mustExcludeAny": []
+    },
+    {
+      "id": "frozen_pizza",
+      "canonical": "פיצה קפואה מעדנות",
+      "aliases": [
+        "פיצה מעדנות"
+      ],
+      "category": [
+        "frozen"
+      ],
+      "defaultUnit": "unit",
+      "qtyRange": [
+        1,
+        3
+      ],
+      "mustIncludeAny": [
+        "פיצה"
+      ],
+      "mustExcludeAny": [
+        "רוטב",
+        "תבלין",
+        "ביסלי"
+      ]
+    },
+    {
+      "id": "malawach",
+      "canonical": "מלאווח מעדנות",
+      "aliases": [
+        "מלאווח"
+      ],
+      "category": [
+        "frozen"
+      ],
+      "defaultUnit": "unit",
+      "qtyRange": [
+        1,
+        2
+      ],
+      "mustIncludeAny": [
+        "מלאווח",
+        "מלוואח"
+      ],
+      "mustExcludeAny": []
+    },
+    {
+      "id": "jachnun",
+      "canonical": "ג׳חנון קפוא",
+      "aliases": [
+        "גחנון"
+      ],
+      "category": [
+        "frozen"
+      ],
+      "defaultUnit": "unit",
+      "qtyRange": [
+        1,
+        2
+      ],
+      "mustIncludeAny": [
+        "ג'חנון",
+        "גחנון",
+        "ג׳חנון"
+      ],
+      "mustExcludeAny": []
+    },
+    {
+      "id": "bourekas_cheese",
+      "canonical": "בורקס גבינה קפוא",
+      "aliases": [
+        "בורקס גבינה מעדנות"
+      ],
+      "category": [
+        "frozen",
+        "bakery"
+      ],
+      "defaultUnit": "unit",
+      "qtyRange": [
+        1,
+        2
+      ],
+      "mustIncludeAny": [
+        "בורקס"
+      ],
+      "mustExcludeAny": []
+    },
+    {
+      "id": "ice_cream_vanilla",
+      "canonical": "גלידת שמנת וניל",
+      "aliases": [
+        "גלידה בן אנד ג׳ריס",
+        "גלידה קרמיסימו"
+      ],
+      "category": [
+        "frozen"
+      ],
+      "defaultUnit": "unit",
+      "qtyRange": [
+        1,
+        2
+      ],
+      "mustIncludeAny": [
+        "גלידה",
+        "גלידת",
+        "קרמיסימו"
+      ],
+      "mustExcludeAny": [
+        "גביעי"
+      ]
+    },
+    {
+      "id": "edamame",
+      "canonical": "אדממה קפוא",
+      "aliases": [
+        "פולי סויה אדממה"
+      ],
+      "category": [
+        "frozen"
+      ],
+      "defaultUnit": "unit",
+      "qtyRange": [
+        1,
+        2
+      ],
+      "mustIncludeAny": [
+        "אדממה"
+      ],
+      "mustExcludeAny": []
+    },
+    {
+      "id": "frozen_corn",
+      "canonical": "גרעיני תירס סנפרוסט",
+      "aliases": [
+        "תירס קפוא סנפרוסט"
+      ],
+      "category": [
+        "frozen"
+      ],
+      "defaultUnit": "unit",
+      "qtyRange": [
+        1,
+        2
+      ],
+      "mustIncludeAny": [
+        "תירס",
+        "סנפרוסט"
+      ],
+      "mustExcludeAny": [
+        "שניצל"
+      ]
+    },
+    {
+      "id": "filo_dough",
+      "canonical": "דפי פילו מצונן/קפוא",
+      "aliases": [
+        "בצק פילו"
+      ],
+      "category": [
+        "frozen"
+      ],
+      "defaultUnit": "unit",
+      "qtyRange": [
+        1,
+        2
+      ],
+      "mustIncludeAny": [
+        "פילו"
+      ],
+      "mustExcludeAny": []
+    },
+    {
+      "id": "mineral_water",
+      "canonical": "שישיית מים מינרליים",
+      "aliases": [
+        "מים מינרליים נביעות",
+        "מים מינרליים מי עדן",
+        "מים עין גדי"
+      ],
+      "category": [
+        "drinks"
+      ],
+      "defaultUnit": "pack",
+      "qtyRange": [
+        1,
+        4
+      ],
+      "mustIncludeAny": [
+        "מים",
+        "נביעות",
+        "מי עדן",
+        "עין גדי"
+      ],
+      "mustExcludeAny": [
+        "טונה",
+        "מגבונים",
+        "מי פה"
+      ]
+    },
+    {
+      "id": "soda_water",
+      "canonical": "מי סודה שוופס",
+      "aliases": [
+        "בקבוקי מי סודה",
+        "סודה קינלי"
+      ],
+      "category": [
+        "drinks"
+      ],
+      "defaultUnit": "pack",
+      "qtyRange": [
+        1,
+        3
+      ],
+      "mustIncludeAny": [
+        "סודה"
+      ],
+      "mustExcludeAny": [
+        "לשתייה",
+        "אפייה",
+        "ניקוי"
+      ]
+    },
+    {
+      "id": "coca_cola",
+      "canonical": "קוקה קולה 1.5 ליטר",
+      "aliases": [
+        "קוקה קולה",
+        "קולה רגיל"
+      ],
+      "category": [
+        "drinks"
+      ],
+      "defaultUnit": "unit",
+      "qtyRange": [
+        1,
+        6
+      ],
+      "mustIncludeAny": [
+        "קולה"
+      ],
+      "mustExcludeAny": [
+        "סוכריה",
+        "גומי"
+      ]
+    },
+    {
+      "id": "cola_zero",
+      "canonical": "קוקה קולה זירו",
+      "aliases": [
+        "קולה זירו",
+        "פפסי מקס",
+        "coke zero"
+      ],
+      "category": [
+        "drinks"
+      ],
+      "defaultUnit": "unit",
+      "qtyRange": [
+        1,
+        6
+      ],
+      "mustIncludeAny": [
+        "זירו",
+        "מקס",
+        "קולה"
+      ],
+      "mustExcludeAny": []
+    },
+    {
+      "id": "sprite",
+      "canonical": "ספרייט",
+      "aliases": [
+        "ספרייט זירו"
+      ],
+      "category": [
+        "drinks"
+      ],
+      "defaultUnit": "unit",
+      "qtyRange": [
+        1,
+        4
+      ],
+      "mustIncludeAny": [
+        "ספרייט"
+      ],
+      "mustExcludeAny": []
+    },
+    {
+      "id": "fanta",
+      "canonical": "פאנטה אורנג׳",
+      "aliases": [
+        "פאנטה"
+      ],
+      "category": [
+        "drinks"
+      ],
+      "defaultUnit": "unit",
+      "qtyRange": [
+        1,
+        3
+      ],
+      "mustIncludeAny": [
+        "פאנטה"
+      ],
+      "mustExcludeAny": []
+    },
+    {
+      "id": "orange_juice",
+      "canonical": "מיץ תפוזים סחוט",
+      "aliases": [
+        "מיץ תפוזים פריגת",
+        "orange juice"
+      ],
+      "category": [
+        "drinks"
+      ],
+      "defaultUnit": "unit",
+      "qtyRange": [
+        1,
+        3
+      ],
+      "mustIncludeAny": [
+        "תפוזים"
+      ],
+      "mustExcludeAny": [
+        "סבון"
+      ]
+    },
+    {
+      "id": "grape_juice",
+      "canonical": "מיץ ענבים תירוש",
+      "aliases": [
+        "תירוש כרמל",
+        "מיץ ענבים"
+      ],
+      "category": [
+        "drinks"
+      ],
+      "defaultUnit": "unit",
+      "qtyRange": [
+        1,
+        3
+      ],
+      "mustIncludeAny": [
+        "תירוש",
+        "ענבים"
+      ],
+      "mustExcludeAny": []
+    },
+    {
+      "id": "apple_juice",
+      "canonical": "מיץ תפוחים צלול",
+      "aliases": [
+        "מיץ תפוחים"
+      ],
+      "category": [
+        "drinks"
+      ],
+      "defaultUnit": "unit",
+      "qtyRange": [
+        1,
+        2
+      ],
+      "mustIncludeAny": [
+        "תפוחים"
+      ],
+      "mustExcludeAny": [
+        "חומץ"
+      ]
+    },
+    {
+      "id": "iced_tea",
+      "canonical": "פיוז טי אפרסק",
+      "aliases": [
+        "נסטי אפרסק",
+        "פיוזטי"
+      ],
+      "category": [
+        "drinks"
+      ],
+      "defaultUnit": "unit",
+      "qtyRange": [
+        1,
+        4
+      ],
+      "mustIncludeAny": [
+        "פיוז",
+        "נסטי",
+        "אפרסק"
+      ],
+      "mustExcludeAny": []
+    },
+    {
+      "id": "raspberry_syrup",
+      "canonical": "תרכיז פטל ויטמינצ׳יק",
+      "aliases": [
+        "ויטמינציק פטל",
+        "סירופ פטל"
+      ],
+      "category": [
+        "drinks"
+      ],
+      "defaultUnit": "unit",
+      "qtyRange": [
+        1,
+        2
+      ],
+      "mustIncludeAny": [
+        "פטל",
+        "ויטמינצ"
+      ],
+      "mustExcludeAny": []
+    },
+    {
+      "id": "beer_goldstar",
+      "canonical": "בירה גולדסטאר שישייה",
+      "aliases": [
+        "בירה גולדסטאר",
+        "בירה מכבי",
+        "בירה קרלסברג"
+      ],
+      "category": [
+        "drinks"
+      ],
+      "defaultUnit": "pack",
+      "qtyRange": [
+        1,
+        2
+      ],
+      "mustIncludeAny": [
+        "בירה",
+        "גולדסטאר",
+        "קרלסברג",
+        "מכבי"
+      ],
+      "mustExcludeAny": [
+        "שמרי"
+      ]
+    },
+    {
+      "id": "red_wine",
+      "canonical": "יין אדום יבש",
+      "aliases": [
+        "יין קברנה סוביניון",
+        "יין מרלו"
+      ],
+      "category": [
+        "drinks"
+      ],
+      "defaultUnit": "unit",
+      "qtyRange": [
+        1,
+        2
+      ],
+      "mustIncludeAny": [
+        "יין",
+        "קברנה",
+        "מרלו"
+      ],
+      "mustExcludeAny": [
+        "חומץ",
+        "כוסות"
+      ]
+    },
+    {
+      "id": "white_wine",
+      "canonical": "יין לבן יבש",
+      "aliases": [
+        "יין שרדונה"
+      ],
+      "category": [
+        "drinks"
+      ],
+      "defaultUnit": "unit",
+      "qtyRange": [
+        1,
+        2
+      ],
+      "mustIncludeAny": [
+        "יין",
+        "שרדונה",
+        "סוביניון"
+      ],
+      "mustExcludeAny": [
+        "חומץ"
+      ]
+    },
+    {
+      "id": "energy_drink",
+      "canonical": "משקה אנרגיה XL",
+      "aliases": [
+        "רד בול",
+        "משקה אנרגיה בלו"
+      ],
+      "category": [
+        "drinks"
+      ],
+      "defaultUnit": "unit",
+      "qtyRange": [
+        2,
+        6
+      ],
+      "mustIncludeAny": [
+        "אנרגיה",
+        "xl",
+        "רד בול",
+        "בלו"
+      ],
+      "mustExcludeAny": [
+        "חטיף"
+      ]
+    },
+    {
+      "id": "malt_beer",
+      "canonical": "בירה שחורה נשר מאלט",
+      "aliases": [
+        "בירה שחורה מאלט"
+      ],
+      "category": [
+        "drinks"
+      ],
+      "defaultUnit": "unit",
+      "qtyRange": [
+        1,
+        3
+      ],
+      "mustIncludeAny": [
+        "מאלט",
+        "נשר",
+        "שחורה"
+      ],
+      "mustExcludeAny": []
+    },
+    {
+      "id": "bamba",
+      "canonical": "במבה אסם",
+      "aliases": [
+        "במבה",
+        "חטיף במבה"
+      ],
+      "category": [
+        "snacks"
+      ],
+      "defaultUnit": "unit",
+      "qtyRange": [
+        2,
+        6
+      ],
+      "mustIncludeAny": [
+        "במבה"
+      ],
+      "mustExcludeAny": []
+    },
+    {
+      "id": "bissli",
+      "canonical": "ביסלי גריל",
+      "aliases": [
+        "ביסלי",
+        "ביסלי בצל",
+        "ביסלי ברביקיו"
+      ],
+      "category": [
+        "snacks"
+      ],
+      "defaultUnit": "unit",
+      "qtyRange": [
+        2,
+        5
+      ],
+      "mustIncludeAny": [
+        "ביסלי"
+      ],
+      "mustExcludeAny": []
+    },
+    {
+      "id": "tapuchips",
+      "canonical": "תפוצ׳יפס טבעי",
+      "aliases": [
+        "תפוציפס",
+        "חטיף תפוצ׳יפס"
+      ],
+      "category": [
+        "snacks"
+      ],
+      "defaultUnit": "unit",
+      "qtyRange": [
+        1,
+        4
+      ],
+      "mustIncludeAny": [
+        "תפוצ"
+      ],
+      "mustExcludeAny": []
+    },
+    {
+      "id": "doritos",
+      "canonical": "דוריטוס חמוץ חריף",
+      "aliases": [
+        "דוריטוס",
+        "דוריטוס נאצ׳ו"
+      ],
+      "category": [
+        "snacks"
+      ],
+      "defaultUnit": "unit",
+      "qtyRange": [
+        1,
+        4
+      ],
+      "mustIncludeAny": [
+        "דוריטוס"
+      ],
+      "mustExcludeAny": []
+    },
+    {
+      "id": "apropos",
+      "canonical": "אפרופו אסם",
+      "aliases": [
+        "אפרופו"
+      ],
+      "category": [
+        "snacks"
+      ],
+      "defaultUnit": "unit",
+      "qtyRange": [
+        1,
+        3
+      ],
+      "mustIncludeAny": [
+        "אפרופו"
+      ],
+      "mustExcludeAny": []
+    },
+    {
+      "id": "pretzels",
+      "canonical": "בייגלה שמיניות",
+      "aliases": [
+        "בייגלה שטוחים",
+        "בייגלה אוסם"
+      ],
+      "category": [
+        "snacks"
+      ],
+      "defaultUnit": "unit",
+      "qtyRange": [
+        1,
+        3
+      ],
+      "mustIncludeAny": [
+        "בייגלה",
+        "שטוחים"
+      ],
+      "mustExcludeAny": []
+    },
+    {
+      "id": "milk_chocolate",
+      "canonical": "שוקולד חלב פרה",
+      "aliases": [
+        "שוקולד פרה",
+        "שוקולד חלב עלית",
+        "milk chocolate"
+      ],
+      "category": [
+        "snacks"
+      ],
+      "defaultUnit": "unit",
+      "qtyRange": [
+        1,
+        4
+      ],
+      "mustIncludeAny": [
+        "שוקולד"
+      ],
+      "mustExcludeAny": [
+        "ממרח",
+        "עוגת",
+        "משקה"
+      ]
+    },
+    {
+      "id": "dark_chocolate",
+      "canonical": "שוקולד מריר עלית",
+      "aliases": [
+        "שוקולד מריר 60%",
+        "שוקולד מריר לאפייה"
+      ],
+      "category": [
+        "snacks"
+      ],
+      "defaultUnit": "unit",
+      "qtyRange": [
+        1,
+        4
+      ],
+      "mustIncludeAny": [
+        "שוקולד מריר"
+      ],
+      "mustExcludeAny": []
+    },
+    {
+      "id": "pesek_zman",
+      "canonical": "חטיף פסק זמן",
+      "aliases": [
+        "פסק זמן",
+        "מיני פסק זמן"
+      ],
+      "category": [
+        "snacks"
+      ],
+      "defaultUnit": "unit",
+      "qtyRange": [
+        1,
+        4
+      ],
+      "mustIncludeAny": [
+        "פסק זמן"
+      ],
+      "mustExcludeAny": []
+    },
+    {
+      "id": "wafers_lemon",
+      "canonical": "ופלים שוקולד / לימון",
+      "aliases": [
+        "ופלים מן",
+        "ופלים עלית"
+      ],
+      "category": [
+        "snacks"
+      ],
+      "defaultUnit": "unit",
+      "qtyRange": [
+        1,
+        3
+      ],
+      "mustIncludeAny": [
+        "ופל",
+        "בפלות"
+      ],
+      "mustExcludeAny": []
+    },
+    {
+      "id": "halva",
+      "canonical": "חלווה וניל בארכה",
+      "aliases": [
+        "חלווה",
+        "חלבה"
+      ],
+      "category": [
+        "snacks",
+        "breakfast"
+      ],
+      "defaultUnit": "unit",
+      "qtyRange": [
+        1,
+        2
+      ],
+      "mustIncludeAny": [
+        "חלווה",
+        "חלבה"
+      ],
+      "mustExcludeAny": []
+    },
+    {
+      "id": "popcorn_micro",
+      "canonical": "פופקורן למיקרוגל",
+      "aliases": [
+        "פופקורן חמאה"
+      ],
+      "category": [
+        "snacks"
+      ],
+      "defaultUnit": "unit",
+      "qtyRange": [
+        1,
+        2
+      ],
+      "mustIncludeAny": [
+        "פופקורן"
+      ],
+      "mustExcludeAny": []
+    },
+    {
+      "id": "pringles",
+      "canonical": "פרינגלס",
+      "aliases": [
+        "פרינגלס שמנת בצל"
+      ],
+      "category": [
+        "snacks"
+      ],
+      "defaultUnit": "unit",
+      "qtyRange": [
+        1,
+        3
+      ],
+      "mustIncludeAny": [
+        "פרינגלס"
+      ],
+      "mustExcludeAny": []
+    },
+    {
+      "id": "klik",
+      "canonical": "קליק כריות / כדורים",
+      "aliases": [
+        "חטיף קליק"
+      ],
+      "category": [
+        "snacks"
+      ],
+      "defaultUnit": "unit",
+      "qtyRange": [
+        1,
+        4
+      ],
+      "mustIncludeAny": [
+        "קליק"
+      ],
+      "mustExcludeAny": []
+    },
+    {
+      "id": "sunflower_seeds",
+      "canonical": "גרעיני חמנייה קלויים",
+      "aliases": [
+        "גרעינים שחורים"
+      ],
+      "category": [
+        "snacks",
+        "pantry"
+      ],
+      "defaultUnit": "unit",
+      "qtyRange": [
+        1,
+        2
+      ],
+      "mustIncludeAny": [
+        "גרעיני",
+        "חמני"
+      ],
+      "mustExcludeAny": [
+        "לחם"
+      ]
+    },
+    {
+      "id": "chewing_gum",
+      "canonical": "מסטיק מאסט / אורביט",
+      "aliases": [
+        "מסטיק מנטה"
+      ],
+      "category": [
+        "snacks"
+      ],
+      "defaultUnit": "unit",
+      "qtyRange": [
+        1,
+        3
+      ],
+      "mustIncludeAny": [
+        "מסטיק",
+        "אורביט",
+        "מאסט"
+      ],
+      "mustExcludeAny": []
+    },
+    {
+      "id": "dish_soap",
+      "canonical": "נוזל כלים פיירי",
+      "aliases": [
+        "סבון כלים פיירי",
+        "נוזל כלים פלמוליב",
+        "סבון כלים"
+      ],
+      "category": [
+        "cleaning"
+      ],
+      "defaultUnit": "unit",
+      "qtyRange": [
+        1,
+        2
+      ],
+      "mustIncludeAny": [
+        "כלים",
+        "פיירי"
+      ],
+      "mustExcludeAny": [
+        "מדיח"
+      ]
+    },
+    {
+      "id": "dishwasher_tabs",
+      "canonical": "טבליות למדיח פיניש",
+      "aliases": [
+        "טבליות למדיח",
+        "קפסולות למדיח"
+      ],
+      "category": [
+        "cleaning"
+      ],
+      "defaultUnit": "unit",
+      "qtyRange": [
+        1,
+        2
+      ],
+      "mustIncludeAny": [
+        "מדיח",
+        "פיניש"
+      ],
+      "mustExcludeAny": []
+    },
+    {
+      "id": "laundry_gel",
+      "canonical": "ג׳ל כביסה פרסיל",
+      "aliases": [
+        "ג׳ל כביסה אריאל",
+        "נוזל כביסה",
+        "אבקת כביסה"
+      ],
+      "category": [
+        "cleaning"
+      ],
+      "defaultUnit": "unit",
+      "qtyRange": [
+        1,
+        2
+      ],
+      "mustIncludeAny": [
+        "כביסה",
+        "פרסיל",
+        "אריאל",
+        "מקסימה"
+      ],
+      "mustExcludeAny": [
+        "מרכך"
+      ]
+    },
+    {
+      "id": "fabric_softener",
+      "canonical": "מרכך כביסה בדין",
+      "aliases": [
+        "מרכך כביסה מקסימה",
+        "מרכך כביסה"
+      ],
+      "category": [
+        "cleaning"
+      ],
+      "defaultUnit": "unit",
+      "qtyRange": [
+        1,
+        2
+      ],
+      "mustIncludeAny": [
+        "מרכך כביסה",
+        "בדין",
+        "מקסימה"
+      ],
+      "mustExcludeAny": [
+        "שיער"
+      ]
+    },
+    {
+      "id": "bleach",
+      "canonical": "אקונומיקה סנו ז׳אוול",
+      "aliases": [
+        "אקונומיקה",
+        "אקונומיקה מבושמת"
+      ],
+      "category": [
+        "cleaning"
+      ],
+      "defaultUnit": "unit",
+      "qtyRange": [
+        1,
+        2
+      ],
+      "mustIncludeAny": [
+        "אקונומיקה",
+        "ז'אוול",
+        "ז׳אוול"
+      ],
+      "mustExcludeAny": []
+    },
+    {
+      "id": "floor_cleaner",
+      "canonical": "נוזל רצפות סנו פוליויקס",
+      "aliases": [
+        "נוזל לניקוי רצפות",
+        "נוזל רצפות ריצפז"
+      ],
+      "category": [
+        "cleaning"
+      ],
+      "defaultUnit": "unit",
+      "qtyRange": [
+        1,
+        2
+      ],
+      "mustIncludeAny": [
+        "רצפות",
+        "פוליויקס",
+        "ריצפז"
+      ],
+      "mustExcludeAny": []
+    },
+    {
+      "id": "glass_cleaner",
+      "canonical": "מנקה חלונות סנו קליר",
+      "aliases": [
+        "סנו קליר",
+        "תרסיס חלונות"
+      ],
+      "category": [
+        "cleaning"
+      ],
+      "defaultUnit": "unit",
+      "qtyRange": [
+        1,
+        2
+      ],
+      "mustIncludeAny": [
+        "חלונות",
+        "קליר"
+      ],
+      "mustExcludeAny": []
+    },
+    {
+      "id": "trash_bags",
+      "canonical": "שקיות אשפה חזקות",
+      "aliases": [
+        "שקיות זבל",
+        "שקיות אשפה סנו סושי"
+      ],
+      "category": [
+        "cleaning"
+      ],
+      "defaultUnit": "unit",
+      "qtyRange": [
+        1,
+        3
+      ],
+      "mustIncludeAny": [
+        "אשפה",
+        "זבל"
+      ],
+      "mustExcludeAny": []
+    },
+    {
+      "id": "paper_towels",
+      "canonical": "נייר סופג למטבח",
+      "aliases": [
+        "מגבות נייר ניקול",
+        "נייר סופג סנו סושי"
+      ],
+      "category": [
+        "cleaning"
+      ],
+      "defaultUnit": "unit",
+      "qtyRange": [
+        1,
+        2
+      ],
+      "mustIncludeAny": [
+        "סופג",
+        "מגבות נייר"
+      ],
+      "mustExcludeAny": []
+    },
+    {
+      "id": "sponges",
+      "canonical": "כריות קרצוף סקוטש ברייט",
+      "aliases": [
+        "סקוטש כלים",
+        "ספוג הפלא"
+      ],
+      "category": [
+        "cleaning"
+      ],
+      "defaultUnit": "unit",
+      "qtyRange": [
+        1,
+        2
+      ],
+      "mustIncludeAny": [
+        "סקוטש",
+        "ספוג",
+        "קרצוף"
+      ],
+      "mustExcludeAny": [
+        "דגני"
+      ]
+    },
+    {
+      "id": "wet_floor_cloths",
+      "canonical": "מטליות לחות לרצפה",
+      "aliases": [
+        "מטליות רצפה ניקול"
+      ],
+      "category": [
+        "cleaning"
+      ],
+      "defaultUnit": "unit",
+      "qtyRange": [
+        1,
+        2
+      ],
+      "mustIncludeAny": [
+        "מטליות",
+        "רצפה"
+      ],
+      "mustExcludeAny": []
+    },
+    {
+      "id": "limescale_remover",
+      "canonical": "מסיר אבנית אנטי קאלק",
+      "aliases": [
+        "סנו אנטי קאלק",
+        "מסיר שומנים סנט מוריץ"
+      ],
+      "category": [
+        "cleaning"
+      ],
+      "defaultUnit": "unit",
+      "qtyRange": [
+        1,
+        2
+      ],
+      "mustIncludeAny": [
+        "אבנית",
+        "קאלק",
+        "שומנים"
+      ],
+      "mustExcludeAny": []
+    },
+    {
+      "id": "toilet_cleaner",
+      "canonical": "ג׳ל ניקוי לאסלה 00",
+      "aliases": [
+        "סבון אסלה",
+        "סנו בון לאסלה"
+      ],
+      "category": [
+        "cleaning"
+      ],
+      "defaultUnit": "unit",
+      "qtyRange": [
+        1,
+        2
+      ],
+      "mustIncludeAny": [
+        "אסלה",
+        "אסלות",
+        "00"
+      ],
+      "mustExcludeAny": []
+    },
+    {
+      "id": "air_freshener",
+      "canonical": "מטהר אוויר אייר וויק",
+      "aliases": [
+        "מטהר אוויר סנו פרש"
+      ],
+      "category": [
+        "cleaning"
+      ],
+      "defaultUnit": "unit",
+      "qtyRange": [
+        1,
+        2
+      ],
+      "mustIncludeAny": [
+        "מטהר אוויר",
+        "מבשם",
+        "פרש"
+      ],
+      "mustExcludeAny": []
+    },
+    {
+      "id": "toilet_paper",
+      "canonical": "נייר טואלט לילי 32 גלילים",
+      "aliases": [
+        "נייר טואלט",
+        "נייר טואלט מולט"
+      ],
+      "category": [
+        "personal"
+      ],
+      "defaultUnit": "unit",
+      "qtyRange": [
+        1,
+        2
+      ],
+      "mustIncludeAny": [
+        "נייר טואלט",
+        "לילי",
+        "מולט"
+      ],
+      "mustExcludeAny": [
+        "מגבוני"
+      ]
+    },
+    {
+      "id": "toothpaste",
+      "canonical": "משחת שיניים קולגייט",
+      "aliases": [
+        "משחת שיניים",
+        "משחת שיניים מרידול"
+      ],
+      "category": [
+        "personal"
+      ],
+      "defaultUnit": "unit",
+      "qtyRange": [
+        1,
+        3
+      ],
+      "mustIncludeAny": [
+        "משחת שיניים",
+        "קולגייט",
+        "מרידול",
+        "אורל"
+      ],
+      "mustExcludeAny": [
+        "מברשת"
+      ]
+    },
+    {
+      "id": "toothbrush",
+      "canonical": "מברשת שיניים",
+      "aliases": [
+        "מברשת שיניים קולגייט"
+      ],
+      "category": [
+        "personal"
+      ],
+      "defaultUnit": "unit",
+      "qtyRange": [
+        1,
+        2
+      ],
+      "mustIncludeAny": [
+        "מברשת שיניים"
+      ],
+      "mustExcludeAny": [
+        "משחת"
+      ]
+    },
+    {
+      "id": "shampoo",
+      "canonical": "שמפו פינוק / הד אנד שולדרס",
+      "aliases": [
+        "שמפו לשיער",
+        "שמפו הוואי",
+        "shampoo"
+      ],
+      "category": [
+        "personal"
+      ],
+      "defaultUnit": "unit",
+      "qtyRange": [
+        1,
+        2
+      ],
+      "mustIncludeAny": [
+        "שמפו"
+      ],
+      "mustExcludeAny": [
+        "שטיחים"
+      ]
+    },
+    {
+      "id": "hair_conditioner",
+      "canonical": "מרכך שיער פינוק",
+      "aliases": [
+        "מרכך לשיער",
+        "קונדישנר"
+      ],
+      "category": [
+        "personal"
+      ],
+      "defaultUnit": "unit",
+      "qtyRange": [
+        1,
+        2
+      ],
+      "mustIncludeAny": [
+        "מרכך",
+        "קונדישנר"
+      ],
+      "mustExcludeAny": [
+        "כביסה"
+      ]
+    },
+    {
+      "id": "body_wash",
+      "canonical": "תחליב רחצה דאב / כיף",
+      "aliases": [
+        "ג׳ל רחצה",
+        "אל סבון נוזלי"
+      ],
+      "category": [
+        "personal"
+      ],
+      "defaultUnit": "unit",
+      "qtyRange": [
+        1,
+        2
+      ],
+      "mustIncludeAny": [
+        "רחצה",
+        "אל סבון",
+        "תחליב"
+      ],
+      "mustExcludeAny": []
+    },
+    {
+      "id": "hand_soap",
+      "canonical": "סבון ידיים נוזלי",
+      "aliases": [
+        "סבון ידיים פלמוליב"
+      ],
+      "category": [
+        "personal"
+      ],
+      "defaultUnit": "unit",
+      "qtyRange": [
+        1,
+        3
+      ],
+      "mustIncludeAny": [
+        "ידיים",
+        "סבון"
+      ],
+      "mustExcludeAny": [
+        "כלים"
+      ]
+    },
+    {
+      "id": "deodorant",
+      "canonical": "דאודורנט ספריי / רול און",
+      "aliases": [
+        "דאודורנט דאב",
+        "דאודורנט אקס"
+      ],
+      "category": [
+        "personal"
+      ],
+      "defaultUnit": "unit",
+      "qtyRange": [
+        1,
+        2
+      ],
+      "mustIncludeAny": [
+        "דאודורנט"
+      ],
+      "mustExcludeAny": []
+    },
+    {
+      "id": "tissues_box",
+      "canonical": "ממחטות נייר קלינקס",
+      "aliases": [
+        "טישו בקופסה",
+        "טישו"
+      ],
+      "category": [
+        "personal"
+      ],
+      "defaultUnit": "unit",
+      "qtyRange": [
+        1,
+        3
+      ],
+      "mustIncludeAny": [
+        "טישו",
+        "ממחטות",
+        "קלינקס"
+      ],
+      "mustExcludeAny": []
+    },
+    {
+      "id": "mouthwash",
+      "canonical": "מי פה ליסטרין",
+      "aliases": [
+        "שטיפת פה ליסטרין"
+      ],
+      "category": [
+        "personal"
+      ],
+      "defaultUnit": "unit",
+      "qtyRange": [
+        1,
+        2
+      ],
+      "mustIncludeAny": [
+        "מי פה",
+        "ליסטרין",
+        "שטיפת פה"
+      ],
+      "mustExcludeAny": []
+    },
+    {
+      "id": "diapers",
+      "canonical": "חיתולי האגיס / פמפרס",
+      "aliases": [
+        "טיטולים",
+        "פמפרס מידה 4",
+        "האגיס"
+      ],
+      "category": [
+        "baby"
+      ],
+      "defaultUnit": "unit",
+      "qtyRange": [
+        1,
+        3
+      ],
+      "mustIncludeAny": [
+        "חיתול",
+        "טיטולים",
+        "האגיס",
+        "פמפרס"
+      ],
+      "mustExcludeAny": [
+        "מגבונים"
+      ]
+    },
+    {
+      "id": "baby_wipes",
+      "canonical": "מגבונים לחים לתינוק האגיס",
+      "aliases": [
+        "מגבוני תינוק",
+        "מארז מגבונים האגיס"
+      ],
+      "category": [
+        "baby"
+      ],
+      "defaultUnit": "unit",
+      "qtyRange": [
+        1,
+        3
+      ],
+      "mustIncludeAny": [
+        "מגבונים",
+        "מגבוני"
+      ],
+      "mustExcludeAny": [
+        "רצפה",
+        "אסלה"
+      ]
+    },
+    {
+      "id": "baby_formula",
+      "canonical": "מטרנה / סימילאק",
+      "aliases": [
+        "מטרנה אקסטרה קר",
+        "סימילאק גולד",
+        "נוטרילון"
+      ],
+      "category": [
+        "baby"
+      ],
+      "defaultUnit": "unit",
+      "qtyRange": [
+        1,
+        2
+      ],
+      "mustIncludeAny": [
+        "מטרנה",
+        "סימילאק",
+        "נוטרילון"
+      ],
+      "mustExcludeAny": [
+        "דייסה",
+        "ביסקוויט"
+      ]
+    },
+    {
+      "id": "baby_puree",
+      "canonical": "מחית פירות גרבר",
+      "aliases": [
+        "גרבר תפוח בננה",
+        "מזון תינוקות גרבר"
+      ],
+      "category": [
+        "baby"
+      ],
+      "defaultUnit": "unit",
+      "qtyRange": [
+        2,
+        6
+      ],
+      "mustIncludeAny": [
+        "גרבר",
+        "מחית"
+      ],
+      "mustExcludeAny": []
+    },
+    {
+      "id": "cat_food",
+      "canonical": "מזון יבש לחתולים פריסקיז",
+      "aliases": [
+        "אוכל לחתולים",
+        "שימורים לחתול פנסי פיסט"
+      ],
+      "category": [
+        "pets"
+      ],
+      "defaultUnit": "unit",
+      "qtyRange": [
+        1,
+        3
+      ],
+      "mustIncludeAny": [
+        "חתול",
+        "פריסקיז",
+        "פנסי"
+      ],
+      "mustExcludeAny": [
+        "חול"
+      ]
+    },
+    {
+      "id": "cat_litter",
+      "canonical": "חול מתגבש לחתולים",
+      "aliases": [
+        "חול לחתולים"
+      ],
+      "category": [
+        "pets"
+      ],
+      "defaultUnit": "unit",
+      "qtyRange": [
+        1,
+        2
+      ],
+      "mustIncludeAny": [
+        "חול",
+        "חתול"
+      ],
+      "mustExcludeAny": []
+    },
+    {
+      "id": "dog_food",
+      "canonical": "מזון יבש לכלבים דוגלי / בונזו",
+      "aliases": [
+        "אוכל לכלבים",
+        "בונזו לכלב"
+      ],
+      "category": [
+        "pets"
+      ],
+      "defaultUnit": "unit",
+      "qtyRange": [
+        1,
+        2
+      ],
+      "mustIncludeAny": [
+        "כלב",
+        "בונזו",
+        "דוגלי",
+        "פדיגרי"
+      ],
+      "mustExcludeAny": []
+    },
+    {
+      "id": "baking_paper",
+      "canonical": "נייר אפייה סנו סושי",
+      "aliases": [
+        "דפי נייר אפייה",
+        "נייר אפייה"
+      ],
+      "category": [
+        "cleaning",
+        "home"
+      ],
+      "defaultUnit": "unit",
+      "qtyRange": [
+        1,
+        2
+      ],
+      "mustIncludeAny": [
+        "נייר אפייה",
+        "נייר אפיה"
+      ],
+      "mustExcludeAny": []
+    },
+    {
+      "id": "aluminum_foil",
+      "canonical": "רדיד אלומיניום ניקול",
+      "aliases": [
+        "נייר כסף",
+        "רדיד אלומיניום"
+      ],
+      "category": [
+        "cleaning",
+        "home"
+      ],
+      "defaultUnit": "unit",
+      "qtyRange": [
+        1,
+        2
+      ],
+      "mustIncludeAny": [
+        "אלומיניום",
+        "כסף"
+      ],
+      "mustExcludeAny": [
+        "תבנית"
+      ]
+    },
+    {
+      "id": "cling_wrap",
+      "canonical": "ניילון נצמד סנו סושי",
+      "aliases": [
+        "ניילון נצמד"
+      ],
+      "category": [
+        "home"
+      ],
+      "defaultUnit": "unit",
+      "qtyRange": [
+        1,
+        2
+      ],
+      "mustIncludeAny": [
+        "נצמד"
+      ],
+      "mustExcludeAny": []
+    },
+    {
+      "id": "roasting_bags",
+      "canonical": "שקיות צלייה קוקי",
+      "aliases": [
+        "שקית קוקי",
+        "שקיות קוקי"
+      ],
+      "category": [
+        "home"
+      ],
+      "defaultUnit": "unit",
+      "qtyRange": [
+        1,
+        2
+      ],
+      "mustIncludeAny": [
+        "קוקי",
+        "צלייה",
+        "צליה"
+      ],
+      "mustExcludeAny": [
+        "עוגיות"
+      ]
+    },
+    {
+      "id": "sandwich_bags",
+      "canonical": "שקיות אוכל לכריכים",
+      "aliases": [
+        "שקיות סנדוויץ"
+      ],
+      "category": [
+        "home",
+        "cleaning"
+      ],
+      "defaultUnit": "unit",
+      "qtyRange": [
+        1,
+        2
+      ],
+      "mustIncludeAny": [
+        "שקיות אוכל",
+        "סנדוויץ",
+        "כריכים"
+      ],
+      "mustExcludeAny": []
+    },
+    {
+      "id": "disposable_cups_cold",
+      "canonical": "כוסות חד פעמיות לשתייה קרה",
+      "aliases": [
+        "כוסות פלסטיק חד פעמי"
+      ],
+      "category": [
+        "home"
+      ],
+      "defaultUnit": "unit",
+      "qtyRange": [
+        1,
+        3
+      ],
+      "mustIncludeAny": [
+        "כוסות"
+      ],
+      "mustExcludeAny": [
+        "יין זכוכית"
+      ]
+    },
+    {
+      "id": "disposable_plates",
+      "canonical": "צלחות חד פעמיות מתכלות",
+      "aliases": [
+        "צלחות חד פעמיות"
+      ],
+      "category": [
+        "home"
+      ],
+      "defaultUnit": "unit",
+      "qtyRange": [
+        1,
+        2
+      ],
+      "mustIncludeAny": [
+        "צלחות"
+      ],
+      "mustExcludeAny": []
+    },
+    {
+      "id": "napkins",
+      "canonical": "מפיות נייר לשולחן",
+      "aliases": [
+        "חבילת מפיות"
+      ],
+      "category": [
+        "home"
+      ],
+      "defaultUnit": "unit",
+      "qtyRange": [
+        1,
+        3
+      ],
+      "mustIncludeAny": [
+        "מפיות"
+      ],
+      "mustExcludeAny": []
+    },
+    {
+      "id": "shabbat_candles",
+      "canonical": "נרות שבת",
+      "aliases": [
+        "נרונים חימום",
+        "גפרורים"
+      ],
+      "category": [
+        "home"
+      ],
+      "defaultUnit": "unit",
+      "qtyRange": [
+        1,
+        2
+      ],
+      "mustIncludeAny": [
+        "נרות",
+        "נרונים",
+        "גפרורים"
+      ],
+      "mustExcludeAny": []
+    }
+  ],
+  "rareItems": [
+    {
+      "id": "rare_halloumi",
+      "canonical": "גבינת חלומי",
+      "aliases": [
+        "חלומי קפריסאית"
+      ],
+      "category": [
+        "dairy"
+      ],
+      "defaultUnit": "unit",
+      "qtyRange": [
+        1,
+        2
+      ],
+      "mustIncludeAny": [
+        "חלומי"
+      ],
+      "mustExcludeAny": []
+    },
+    {
+      "id": "rare_mascarpone",
+      "canonical": "גבינת מסקרפונה",
+      "aliases": [
+        "מסקרפונה"
+      ],
+      "category": [
+        "dairy"
+      ],
+      "defaultUnit": "unit",
+      "qtyRange": [
+        1,
+        2
+      ],
+      "mustIncludeAny": [
+        "מסקרפונה"
+      ],
+      "mustExcludeAny": []
+    },
+    {
+      "id": "rare_brie",
+      "canonical": "גבינת ברי צרפתית",
+      "aliases": [
+        "גבינת ברי"
+      ],
+      "category": [
+        "dairy"
+      ],
+      "defaultUnit": "unit",
+      "qtyRange": [
+        1,
+        2
+      ],
+      "mustIncludeAny": [
+        "ברי"
+      ],
+      "mustExcludeAny": [
+        "לחם"
+      ]
+    },
+    {
+      "id": "rare_gorgonzola",
+      "canonical": "גבינת גורגונזולה",
+      "aliases": [
+        "גורגונזולה"
+      ],
+      "category": [
+        "dairy"
+      ],
+      "defaultUnit": "unit",
+      "qtyRange": [
+        1,
+        1
+      ],
+      "mustIncludeAny": [
+        "גורגונזולה"
+      ],
+      "mustExcludeAny": []
+    },
+    {
+      "id": "rare_manchego",
+      "canonical": "גבינת מנצ׳גו",
+      "aliases": [
+        "מנצגו"
+      ],
+      "category": [
+        "dairy"
+      ],
+      "defaultUnit": "unit",
+      "qtyRange": [
+        1,
+        1
+      ],
+      "mustIncludeAny": [
+        "מנצ"
+      ],
+      "mustExcludeAny": []
+    },
+    {
+      "id": "rare_spelt_flour",
+      "canonical": "קמח כוסמין מלא",
+      "aliases": [
+        "קמח כוסמין 80%"
+      ],
+      "category": [
+        "pantry"
+      ],
+      "defaultUnit": "unit",
+      "qtyRange": [
+        1,
+        2
+      ],
+      "mustIncludeAny": [
+        "כוסמין"
+      ],
+      "mustExcludeAny": [
+        "לחם",
+        "פסטה",
+        "עוגיות"
+      ]
+    },
+    {
+      "id": "rare_almond_flour",
+      "canonical": "קמח שקדים מולבנים",
+      "aliases": [
+        "אבקת שקדים לאפייה"
+      ],
+      "category": [
+        "pantry"
+      ],
+      "defaultUnit": "unit",
+      "qtyRange": [
+        1,
+        2
+      ],
+      "mustIncludeAny": [
+        "קמח שקדים",
+        "אבקת שקדים",
+        "שקדים מולבנים טחון"
+      ],
+      "mustExcludeAny": [
+        "חלב"
+      ]
+    },
+    {
+      "id": "rare_truffle_oil",
+      "canonical": "שמן כמהין",
+      "aliases": [
+        "שמן בטעם כמהין"
+      ],
+      "category": [
+        "pantry"
+      ],
+      "defaultUnit": "unit",
+      "qtyRange": [
+        1,
+        1
+      ],
+      "mustIncludeAny": [
+        "כמהין"
+      ],
+      "mustExcludeAny": [
+        "תפוצ"
+      ]
+    },
+    {
+      "id": "rare_avocado_oil",
+      "canonical": "שמן אבוקדו בכבישה קרה",
+      "aliases": [
+        "שמן אבוקדו"
+      ],
+      "category": [
+        "pantry"
+      ],
+      "defaultUnit": "unit",
+      "qtyRange": [
+        1,
+        1
+      ],
+      "mustIncludeAny": [
+        "שמן אבוקדו"
+      ],
+      "mustExcludeAny": [
+        "קרם",
+        "שמפו"
+      ]
+    },
+    {
+      "id": "rare_sesame_oil",
+      "canonical": "שמן שומשום קלוי",
+      "aliases": [
+        "שמן שומשום"
+      ],
+      "category": [
+        "pantry"
+      ],
+      "defaultUnit": "unit",
+      "qtyRange": [
+        1,
+        1
+      ],
+      "mustIncludeAny": [
+        "שמן שומשום"
+      ],
+      "mustExcludeAny": []
+    },
+    {
+      "id": "rare_rice_vinegar",
+      "canonical": "חומץ אורז לסושי",
+      "aliases": [
+        "חומץ אורז"
+      ],
+      "category": [
+        "pantry"
+      ],
+      "defaultUnit": "unit",
+      "qtyRange": [
+        1,
+        1
+      ],
+      "mustIncludeAny": [
+        "חומץ אורז"
+      ],
+      "mustExcludeAny": []
+    },
+    {
+      "id": "rare_balsamic",
+      "canonical": "חומץ בלסמי ממודנה",
+      "aliases": [
+        "חומץ בלסמי"
+      ],
+      "category": [
+        "pantry"
+      ],
+      "defaultUnit": "unit",
+      "qtyRange": [
+        1,
+        1
+      ],
+      "mustIncludeAny": [
+        "בלסמי"
+      ],
+      "mustExcludeAny": []
+    },
+    {
+      "id": "rare_nori",
+      "canonical": "אצות נורי לסושי",
+      "aliases": [
+        "דפי אצות נורי"
+      ],
+      "category": [
+        "pantry"
+      ],
+      "defaultUnit": "unit",
+      "qtyRange": [
+        1,
+        2
+      ],
+      "mustIncludeAny": [
+        "נורי",
+        "אצות"
+      ],
+      "mustExcludeAny": [
+        "חטיף"
+      ]
+    },
+    {
+      "id": "rare_miso",
+      "canonical": "מחית מיסו בהיר",
+      "aliases": [
+        "משחת מיסו"
+      ],
+      "category": [
+        "pantry"
+      ],
+      "defaultUnit": "unit",
+      "qtyRange": [
+        1,
+        1
+      ],
+      "mustIncludeAny": [
+        "מיסו"
+      ],
+      "mustExcludeAny": []
+    },
+    {
+      "id": "rare_polenta",
+      "canonical": "קמח תירס פולנטה",
+      "aliases": [
+        "פולנטה איטלקית"
+      ],
+      "category": [
+        "pantry"
+      ],
+      "defaultUnit": "unit",
+      "qtyRange": [
+        1,
+        2
+      ],
+      "mustIncludeAny": [
+        "פולנטה",
+        "קמח תירס"
+      ],
+      "mustExcludeAny": []
+    },
+    {
+      "id": "rare_tapioca",
+      "canonical": "פניני טפיוקה",
+      "aliases": [
+        "טפיוקה"
+      ],
+      "category": [
+        "pantry"
+      ],
+      "defaultUnit": "unit",
+      "qtyRange": [
+        1,
+        1
+      ],
+      "mustIncludeAny": [
+        "טפיוקה"
+      ],
+      "mustExcludeAny": []
+    },
+    {
+      "id": "rare_gf_pasta",
+      "canonical": "פסטה ללא גלוטן",
+      "aliases": [
+        "פסטה תירס ללא גלוטן"
+      ],
+      "category": [
+        "pantry"
+      ],
+      "defaultUnit": "unit",
+      "qtyRange": [
+        1,
+        2
+      ],
+      "mustIncludeAny": [
+        "פסטה",
+        "ללא גלוטן"
+      ],
+      "mustExcludeAny": []
+    },
+    {
+      "id": "rare_jerusalem_artichoke",
+      "canonical": "ארטישוק ירושלמי",
+      "aliases": [
+        "בטטה קסביה"
+      ],
+      "category": [
+        "produce"
+      ],
+      "defaultUnit": "kg",
+      "qtyRange": [
+        0.5,
+        1.5
+      ],
+      "mustIncludeAny": [
+        "ארטישוק ירושלמי",
+        "קסביה"
+      ],
+      "mustExcludeAny": []
+    },
+    {
+      "id": "rare_asparagus",
+      "canonical": "אספרגוס טרי",
+      "aliases": [
+        "צרור אספרגוס"
+      ],
+      "category": [
+        "produce"
+      ],
+      "defaultUnit": "unit",
+      "qtyRange": [
+        1,
+        2
+      ],
+      "mustIncludeAny": [
+        "אספרגוס"
+      ],
+      "mustExcludeAny": [
+        "מרק"
+      ]
+    },
+    {
+      "id": "rare_blueberries",
+      "canonical": "אוכמניות טריות",
+      "aliases": [
+        "סלסלת אוכמניות"
+      ],
+      "category": [
+        "produce",
+        "frozen"
+      ],
+      "defaultUnit": "unit",
+      "qtyRange": [
+        1,
+        2
+      ],
+      "mustIncludeAny": [
+        "אוכמניות"
+      ],
+      "mustExcludeAny": [
+        "יוגורט",
+        "ריבת",
+        "תה"
+      ]
+    },
+    {
+      "id": "rare_smoked_salmon",
+      "canonical": "סלמון מעושן פרוס",
+      "aliases": [
+        "לקס סלמון מעושן"
+      ],
+      "category": [
+        "deli",
+        "meat"
+      ],
+      "defaultUnit": "unit",
+      "qtyRange": [
+        1,
+        2
+      ],
+      "mustIncludeAny": [
+        "סלמון מעושן",
+        "מעושן"
+      ],
+      "mustExcludeAny": []
+    },
+    {
+      "id": "rare_silken_tofu",
+      "canonical": "טופו משי רך",
+      "aliases": [
+        "טופו משי"
+      ],
+      "category": [
+        "dairy",
+        "pantry"
+      ],
+      "defaultUnit": "unit",
+      "qtyRange": [
+        1,
+        2
+      ],
+      "mustIncludeAny": [
+        "טופו"
+      ],
+      "mustExcludeAny": []
+    },
+    {
+      "id": "rare_nutritional_yeast",
+      "canonical": "שמרי בירה פתיתים",
+      "aliases": [
+        "שמרים תזונתיים"
+      ],
+      "category": [
+        "pantry"
+      ],
+      "defaultUnit": "unit",
+      "qtyRange": [
+        1,
+        1
+      ],
+      "mustIncludeAny": [
+        "שמרי בירה",
+        "תזונתיים"
+      ],
+      "mustExcludeAny": []
+    },
+    {
+      "id": "rare_maple_pure",
+      "canonical": "סירופ מייפל טהור",
+      "aliases": [
+        "מייפל אורגני טהור"
+      ],
+      "category": [
+        "pantry",
+        "breakfast"
+      ],
+      "defaultUnit": "unit",
+      "qtyRange": [
+        1,
+        1
+      ],
+      "mustIncludeAny": [
+        "מייפל"
+      ],
+      "mustExcludeAny": [
+        "עוגת",
+        "מעדן"
+      ]
+    },
+    {
+      "id": "rare_pine_nuts",
+      "canonical": "צנוברים טבעיים",
+      "aliases": [
+        "צנוברים"
+      ],
+      "category": [
+        "pantry"
+      ],
+      "defaultUnit": "unit",
+      "qtyRange": [
+        1,
+        1
+      ],
+      "mustIncludeAny": [
+        "צנובר"
+      ],
+      "mustExcludeAny": [
+        "חומוס"
+      ]
+    },
+    {
+      "id": "rare_capers",
+      "canonical": "צלפים בחומץ",
+      "aliases": [
+        "צלפים"
+      ],
+      "category": [
+        "pantry"
+      ],
+      "defaultUnit": "unit",
+      "qtyRange": [
+        1,
+        1
+      ],
+      "mustIncludeAny": [
+        "צלפים"
+      ],
+      "mustExcludeAny": []
+    },
+    {
+      "id": "rare_anchovies",
+      "canonical": "פילה אנשובי בשמן זית",
+      "aliases": [
+        "אנשובי"
+      ],
+      "category": [
+        "pantry"
+      ],
+      "defaultUnit": "unit",
+      "qtyRange": [
+        1,
+        2
+      ],
+      "mustIncludeAny": [
+        "אנשובי"
+      ],
+      "mustExcludeAny": []
+    },
+    {
+      "id": "rare_artichoke_hearts",
+      "canonical": "תחתיות ארטישוק קפואות",
+      "aliases": [
+        "לבבות ארטישוק סנפרוסט"
+      ],
+      "category": [
+        "frozen",
+        "pantry"
+      ],
+      "defaultUnit": "unit",
+      "qtyRange": [
+        1,
+        2
+      ],
+      "mustIncludeAny": [
+        "ארטישוק"
+      ],
+      "mustExcludeAny": [
+        "ירושלמי"
+      ]
+    },
+    {
+      "id": "rare_buckwheat_crackers",
+      "canonical": "קרקר כוסמת",
+      "aliases": [
+        "פריכיות כוסמת"
+      ],
+      "category": [
+        "bakery",
+        "pantry"
+      ],
+      "defaultUnit": "unit",
+      "qtyRange": [
+        1,
+        2
+      ],
+      "mustIncludeAny": [
+        "כוסמת"
+      ],
+      "mustExcludeAny": []
+    },
+    {
+      "id": "rare_camel_truffle_fantasy",
+      "canonical": "פטריות כמהין שחורות טריות מצרפת",
+      "aliases": [
+        "חלב נאקות אורגני"
+      ],
+      "category": [
+        "other",
+        "pantry"
+      ],
+      "defaultUnit": "unit",
+      "qtyRange": [
+        1,
+        1
+      ],
+      "mustIncludeAny": [
+        "כמהין שחורות טריות מצרפת",
+        "נאקות"
+      ],
+      "mustExcludeAny": []
+    }
+  ],
+  "ambiguousItems": [
+    {
+      "id": "amb_soda",
+      "term": "סודה",
+      "aliases": [
+        "soda"
+      ],
+      "choices": [
+        "מי סודה לשתייה",
+        "סודה לשתייה (אפייה)"
+      ]
+    },
+    {
+      "id": "amb_pepper",
+      "term": "פלפל",
+      "aliases": [
+        "pepper"
+      ],
+      "choices": [
+        "פלפל אדום (ירק)",
+        "פלפל שחור טחון (תבלין)",
+        "פלפל חריף ירוק"
+      ]
+    },
+    {
+      "id": "amb_cream",
+      "term": "שמנת",
+      "aliases": [
+        "cream"
+      ],
+      "choices": [
+        "שמנת מתוקה 38%",
+        "שמנת חמוצה 15%",
+        "שמנת לבישול 15%"
+      ]
+    },
+    {
+      "id": "amb_paper",
+      "term": "נייר",
+      "aliases": [],
+      "choices": [
+        "נייר טואלט",
+        "נייר סופג למטבח",
+        "נייר אפייה"
+      ]
+    },
+    {
+      "id": "amb_cheese",
+      "term": "גבינה",
+      "aliases": [
+        "cheese"
+      ],
+      "choices": [
+        "גבינה לבנה 5%",
+        "גבינה צהובה עמק",
+        "גבינה בולגרית"
+      ]
+    },
+    {
+      "id": "amb_flour",
+      "term": "קמח",
+      "aliases": [
+        "flour"
+      ],
+      "choices": [
+        "קמח חיטה לבן",
+        "קמח תופח",
+        "קמח כוסמין מלא"
+      ]
+    },
+    {
+      "id": "amb_choco",
+      "term": "שוקו",
+      "aliases": [],
+      "choices": [
+        "משקה שוקו מוכן",
+        "אבקת שוקולית"
+      ]
+    },
+    {
+      "id": "amb_oil",
+      "term": "שמן",
+      "aliases": [
+        "oil"
+      ],
+      "choices": [
+        "שמן קנולה",
+        "שמן זית כתית מעולה"
+      ]
+    },
+    {
+      "id": "amb_soap",
+      "term": "סבון",
+      "aliases": [
+        "soap"
+      ],
+      "choices": [
+        "סבון ידיים נוזלי",
+        "נוזל כלים",
+        "תחליב רחצה"
+      ]
+    },
+    {
+      "id": "amb_tuna",
+      "term": "טונה",
+      "aliases": [
+        "tuna"
+      ],
+      "choices": [
+        "טונה בשמן",
+        "טונה במים"
+      ]
+    },
+    {
+      "id": "amb_soup",
+      "term": "מרק",
+      "aliases": [],
+      "choices": [
+        "אבקת מרק עוף",
+        "שקדי מרק",
+        "מרק נמס"
+      ]
+    },
+    {
+      "id": "amb_vinegar",
+      "term": "חומץ",
+      "aliases": [],
+      "choices": [
+        "חומץ טבעי 5%",
+        "חומץ תפוחים",
+        "חומץ בלסמי"
+      ]
+    },
+    {
+      "id": "amb_beans",
+      "term": "שעועית",
+      "aliases": [
+        "beans"
+      ],
+      "choices": [
+        "שעועית ירוקה קפואה",
+        "שעועית לבנה ברוטב / יבשה"
+      ]
+    },
+    {
+      "id": "amb_peas",
+      "term": "אפונה",
+      "aliases": [
+        "peas"
+      ],
+      "choices": [
+        "אפונה קפואה סנפרוסט",
+        "אפונה שימורים"
+      ]
+    },
+    {
+      "id": "amb_dough",
+      "term": "בצק",
+      "aliases": [],
+      "choices": [
+        "בצק עלים",
+        "בצק פילו",
+        "בצק פריך"
+      ]
+    },
+    {
+      "id": "amb_corn",
+      "term": "תירס",
+      "aliases": [
+        "corn"
+      ],
+      "choices": [
+        "תירס מתוק שימורים",
+        "תירס קפוא סנפרוסט",
+        "שניצל תירס"
+      ]
+    },
+    {
+      "id": "amb_cups",
+      "term": "כוסות",
+      "aliases": [],
+      "choices": [
+        "כוסות חד פעמיות לשתייה קרה",
+        "כוסות נייר לשתייה חמה"
+      ]
+    },
+    {
+      "id": "amb_bags",
+      "term": "שקיות",
+      "aliases": [],
+      "choices": [
+        "שקיות אשפה",
+        "שקיות אוכל לכריכים",
+        "שקיות צלייה קוקי"
+      ]
+    },
+    {
+      "id": "amb_wipes",
+      "term": "מגבונים",
+      "aliases": [
+        "wipes"
+      ],
+      "choices": [
+        "מגבונים לחים לתינוק",
+        "מטליות לחות לניקוי"
+      ]
+    },
+    {
+      "id": "amb_nuts",
+      "term": "אגוזים",
+      "aliases": [
+        "nuts"
+      ],
+      "choices": [
+        "אגוזי מלך",
+        "אגוזי פקאן",
+        "תערובת אגוזים"
+      ]
+    },
+    {
+      "id": "amb_coffee",
+      "term": "קפה",
+      "aliases": [
+        "coffee"
+      ],
+      "choices": [
+        "קפה נמס מגורען",
+        "קפה שחור טורקי",
+        "קפסולות קפה"
+      ]
+    },
+    {
+      "id": "amb_tea",
+      "term": "תה",
+      "aliases": [
+        "tea"
+      ],
+      "choices": [
+        "תה שחור קלאסי",
+        "תה ירוק",
+        "חליטת צמחים"
+      ]
+    },
+    {
+      "id": "amb_sauce",
+      "term": "רוטב",
+      "aliases": [
+        "sauce"
+      ],
+      "choices": [
+        "רוטב עגבניות לפסטה",
+        "רוטב סויה",
+        "רוטב צ׳ילי מתוק"
+      ]
+    },
+    {
+      "id": "amb_sausage",
+      "term": "נקניק",
+      "aliases": [],
+      "choices": [
+        "פסטרמה הודו",
+        "נקניק סלמי",
+        "נקניקיות עוף"
+      ]
+    },
+    {
+      "id": "amb_fish",
+      "term": "דג",
+      "aliases": [
+        "דגים",
+        "fish"
+      ],
+      "choices": [
+        "פילה סלמון",
+        "פילה אמנון (מושט)",
+        "דג דניס"
+      ]
+    },
+    {
+      "id": "amb_meat",
+      "term": "בשר",
+      "aliases": [
+        "meat"
+      ],
+      "choices": [
+        "בשר בקר טחון",
+        "צלי כתף בקר",
+        "סטייק אנטריקוט"
+      ]
+    },
+    {
+      "id": "amb_chicken",
+      "term": "עוף",
+      "aliases": [
+        "chicken"
+      ],
+      "choices": [
+        "חזה עוף",
+        "כרעיים עוף",
+        "פרגיות עוף"
+      ]
+    },
+    {
+      "id": "amb_spread",
+      "term": "ממרח",
+      "aliases": [],
+      "choices": [
+        "ממרח שוקולד נוטלה",
+        "חמאת בוטנים",
+        "ממרח תמרים"
+      ]
+    },
+    {
+      "id": "amb_conditioner",
+      "term": "מרכך",
+      "aliases": [],
+      "choices": [
+        "מרכך כביסה",
+        "מרכך שיער"
+      ]
+    },
+    {
+      "id": "amb_milk_alt",
+      "term": "חלב צמחי",
+      "aliases": [],
+      "choices": [
+        "משקה סויה",
+        "משקה שיבולת שועל",
+        "משקה שקדים"
+      ]
+    },
+    {
+      "id": "amb_cereal",
+      "term": "דגנים",
+      "aliases": [
+        "דגני בוקר"
+      ],
+      "choices": [
+        "קורנפלקס",
+        "גרנולה",
+        "כריות נוגט"
+      ]
+    },
+    {
+      "id": "amb_snack",
+      "term": "חטיף",
+      "aliases": [
+        "חטיפים"
+      ],
+      "choices": [
+        "במבה אסם",
+        "ביסלי גריל",
+        "חטיף אנרגיה"
+      ]
+    },
+    {
+      "id": "amb_pudding",
+      "term": "מעדן",
+      "aliases": [
+        "מעדנים"
+      ],
+      "choices": [
+        "מילקי שוקולד",
+        "מעדן דני שוקולד",
+        "מעדן חלבון"
+      ]
+    },
+    {
+      "id": "amb_juice",
+      "term": "מיץ",
+      "aliases": [
+        "juice"
+      ],
+      "choices": [
+        "מיץ תפוזים",
+        "מיץ ענבים תירוש",
+        "מיץ תפוחים"
+      ]
+    },
+    {
+      "id": "amb_whipped",
+      "term": "קצפת",
+      "aliases": [],
+      "choices": [
+        "שמנת מתוקה להקצפה 38%",
+        "קצפת צמחית"
+      ]
+    },
+    {
+      "id": "amb_spicy",
+      "term": "חריף",
+      "aliases": [],
+      "choices": [
+        "פלפל חריף ירוק",
+        "סחוג ירוק / אריסה"
+      ]
+    }
+  ],
+  "nonGroceryItems": [
+    "מקדחה רוטטת בוש",
+    "מקדחים 4,6,8 מ\"מ",
+    "דיבלים 8 מ\"מ וברגים",
+    "פטיש 500 גרם",
+    "מברג פיליפס מגנטי",
+    "מפתח שוודי מתכוונן",
+    "פלאייר שפיץ",
+    "מטר מדידה 5 מטר",
+    "פלס בנאים",
+    "שפכטל נירוסטה",
+    "ספריי צבע לבן מט",
+    "פח צבע אקרילי לקיר",
+    "דבק נגרים אלמרס",
+    "רובה אקרילית אפורה",
+    "נייר שיוף עדין",
+    "כיסא משרדי ארגונומי",
+    "שולחן פינת אוכל מאיקאה",
+    "ספה תלת מושבית",
+    "כורסת טלוויזיה",
+    "ארון בגדים 4 דלתות",
+    "שידת לילה לבנה",
+    "מזרן זוגי אורטופדי",
+    "שטיח סלון מודרני",
+    "וילון האפלה לחדר שינה",
+    "גוף תאורה לד לתקרה",
+    "קרש חיתוך בוצ׳ר עץ",
+    "סט סכו\"ם בשרי 24 חלקים",
+    "כוסות יין קריסטל",
+    "סיר נירוסטה סולתם 5 ליטר",
+    "מחבת טפלון 28 ס\"מ",
+    "מיקסר קנווד שף",
+    "בלנדר מוט בראון",
+    "קומקום חשמלי זכוכית",
+    "טוסטר לחיצה",
+    "כבל HDMI 2 מטר",
+    "מטען מהיר לאייפון",
+    "אוזניות בלוטות׳ איירפודס",
+    "עכבר אלחוטי לוג׳יטק",
+    "מקלדת מכנית",
+    "מדפסת לייזר ביתית",
+    "ראוטר אלחוטי",
+    "חולצת טי שירט לבנה",
+    "מכנסי ג׳ינס כחולים",
+    "נעלי ספורט נייקי",
+    "מעיל חורף לילד",
+    "תיק גב לבית ספר",
+    "להתקשר לאמא לפני שבת",
+    "לקבוע תור לרופא שיניים",
+    "לשלם חשבון חשמל",
+    "מתנה ליום הולדת של רוני",
+    "כרטיסים לסרט בחמישי",
+    "לקחת חבילה מהדואר",
+    "asdfghjkl",
+    "qwerty12345",
+    "???!!!---",
+    "https://example.com/promo"
+  ],
+  "sectionHeaders": [
+    "רשימת קניות",
+    "קניות לשבת",
+    "פירות וירקות:",
+    "**מוצרי חלב**",
+    "=== בשר ודגים ===",
+    "לחם ומאפים",
+    "מזווה ובישול",
+    "משקאות",
+    "חטיפים ומתוקים",
+    "ניקיון וכביסה",
+    "טואלטיקה ופארם",
+    "מוצרי תינוקות",
+    "דברים שצמחו באדמה",
+    "דברים חלביים",
+    "קפואים:",
+    "--- סופר ---",
+    "### מצרכים לארוחת שישי ###",
+    "קטגוריה",
+    "מוצר",
+    "הערות"
+  ]
+}

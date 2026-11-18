@@ -1,0 +1,23 @@
+{
+  "capturedAt": "2026-11-18T15:53:40.130Z",
+  "stores": {
+    "shufersal": {
+      "storeId": "413",
+      "priceStamp": "20261118034000",
+      "priceCompressedKB": 590,
+      "promoCompressedKB": 350
+    },
+    "ramilevy": {
+      "storeId": "39",
+      "priceStamp": "202611180519",
+      "priceCompressedKB": 625,
+      "promoCompressedKB": 21
+    },
+    "carrefour": {
+      "storeId": "471",
+      "priceStamp": "20261118121014",
+      "priceCompressedKB": 520,
+      "promoCompressedKB": 234
+    }
+  }
+}
