@@ -1,6 +1,7 @@
 // Independent Reference Price Model (Oracle) for SmartCart DV Regression.
 // IMPORTANT: Zero imports from pipeline/* or web/js/*. Reads the raw frozen .xml.gz snapshot
-// with its own XML scanner and computes expected shelf + all-customer promotion totals independently.
+// with its own independent XML scanner, runs strict testbench self-checks, and computes expected
+// shelf + all-customer promotion totals and catalog availability independently.
 import fs from 'node:fs';
 import path from 'node:path';
 import zlib from 'node:zlib';
@@ -9,15 +10,58 @@ import { fileURLToPath } from 'node:url';
 const SNAP_DIR = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..', 'snapshot');
 
 function xmlVal(chunk, tag) {
-  const m = chunk.match(new RegExp(`<${tag}(?:\\s[^>]*)?>([\\s\\S]*?)<\\/${tag}>`, 'i'));
+  const openRe = new RegExp(`<${tag}(?:\\s[^>]*)?>`, 'i');
+  const m = openRe.exec(chunk);
   if (!m) return '';
-  return m[1]
+  const start = m.index + m[0].length;
+  const closeIdx = chunk.toLowerCase().indexOf(`</${tag.toLowerCase()}>`, start);
+  if (closeIdx < 0) return '';
+  return chunk
+    .slice(start, closeIdx)
     .trim()
     .replace(/&quot;/g, '"')
     .replace(/&apos;/g, "'")
     .replace(/&lt;/g, '<')
     .replace(/&gt;/g, '>')
     .replace(/&amp;/g, '&');
+}
+
+function xmlFirstVal(chunk, tags) {
+  for (const t of tags) {
+    const v = xmlVal(chunk, t);
+    if (v) return v;
+  }
+  return '';
+}
+
+function extractBlocksLinear(xml, tagName) {
+  const blocks = [];
+  const low = xml.toLowerCase();
+  const openPat = `<${tagName.toLowerCase()}`;
+  const closePat = `</${tagName.toLowerCase()}>`;
+  let cursor = 0;
+  while (cursor < low.length) {
+    const idx = low.indexOf(openPat, cursor);
+    if (idx < 0) break;
+    const afterName = low.charCodeAt(idx + openPat.length);
+    // Ensure exact tag name (followed by '>', '/', or whitespace, not e.g. <PromotionItems> when looking for <PromotionItem>)
+    if (afterName !== 62 && afterName !== 47 && afterName !== 32 && afterName !== 9 && afterName !== 10 && afterName !== 13) {
+      cursor = idx + openPat.length;
+      continue;
+    }
+    const gt = low.indexOf('>', idx + openPat.length);
+    if (gt < 0) break;
+    if (low.charCodeAt(gt - 1) === 47) {
+      // Self-closing <Tag .../>
+      cursor = gt + 1;
+      continue;
+    }
+    const endIdx = low.indexOf(closePat, gt + 1);
+    if (endIdx < 0) break;
+    blocks.push(xml.slice(gt + 1, endIdx));
+    cursor = endIdx + closePat.length;
+  }
+  return blocks;
 }
 
 function normCode(raw) {
@@ -31,55 +75,72 @@ function round2(n) {
 
 function parseSnapshotPrices(xml) {
   const byNormCode = new Map();
-  const re = /<Item(?:\s[^>]*)?>([\s\S]*?)<\/Item>/gi;
-  let m;
-  while ((m = re.exec(xml)) !== null) {
-    const b = m[1];
-    const code = xmlVal(b, 'ItemCode').replace(/\s+/g, '');
-    const price = round2(Number(xmlVal(b, 'ItemPrice')));
+  const uniqueItems = [];
+  for (const b of extractBlocksLinear(xml, 'Item')) {
+    const code = xmlFirstVal(b, ['ItemCode', 'ITEMCODE']).replace(/\s+/g, '');
+    const price = round2(Number(xmlFirstVal(b, ['ItemPrice', 'ITEMPRICE'])));
     if (!code || !(price > 0)) continue;
-    const name = xmlVal(b, 'ItemName') || xmlVal(b, 'ManufactureItemDescription');
+    // Support Shufersal/Carrefour (<ItemName>) AND Rami Levy (<ItemNm>, <ManufacturerItemDescription>)
+    const name = xmlFirstVal(b, ['ItemName', 'ItemNm', 'ManufacturerItemDescription', 'ManufactureItemDescription']);
     if (!name) continue;
-    const brand = xmlVal(b, 'ManufactureName') || xmlVal(b, 'ManufacturerName');
-    const weighted = xmlVal(b, 'bIsWeighted') === '1' || xmlVal(b, 'BisWeighted') === '1';
+    const brand = xmlFirstVal(b, ['ManufacturerName', 'ManufactureName']);
+    const wTag = xmlFirstVal(b, ['bIsWeighted', 'BisWeighted', 'IsWeighted']);
+    const weighted = wTag === '1' || /^true$/i.test(wTag);
     const rec = { code, normBarcode: normCode(code), name, brand, weighted, price };
-    if (!byNormCode.has(rec.normBarcode)) byNormCode.set(rec.normBarcode, rec);
+    if (!byNormCode.has(rec.normBarcode)) {
+      byNormCode.set(rec.normBarcode, rec);
+      uniqueItems.push(rec);
+    }
     byNormCode.set(code, rec);
   }
-  return byNormCode;
+  return { byNormCode, uniqueItems };
 }
 
 function parseSnapshotPromos(xml, refDate) {
   const byCode = new Map();
-  const re = /<Promotion(?:\s[^>]*)?>([\s\S]*?)<\/Promotion>/gi;
-  let m;
-  while ((m = re.exec(xml)) !== null) {
-    const b = m[1];
-    const club = xmlVal(b, 'ClubID') || xmlVal(b, 'ClubId');
+  for (const b of extractBlocksLinear(xml, 'Promotion')) {
+    const club = xmlFirstVal(b, ['ClubID', 'ClubId', 'CLUBID']);
     if (club && !/^0(\b|\s|-|$)/.test(club)) continue;
-    if (xmlVal(b, 'AdditionalIsCoupon') === '1') continue;
+    const coupon = xmlFirstVal(b, ['AdditionalIsCoupon', 'IsCoupon']);
+    if (coupon === '1' || /^true$/i.test(coupon)) continue;
 
-    const sRaw = xmlVal(b, 'PromotionStartDateTime') || xmlVal(b, 'PromotionStartDate');
-    const eRaw = xmlVal(b, 'PromotionEndDateTime') || xmlVal(b, 'PromotionEndDate');
-    const start = sRaw ? new Date(sRaw.includes('T') ? sRaw : `${sRaw}T00:00:00`) : null;
-    const end = eRaw ? new Date(eRaw.includes('T') ? eRaw : `${eRaw}T23:59:59`) : null;
+    const sDate = xmlFirstVal(b, ['PromotionStartDateTime', 'PromotionStartDate']);
+    const sHour = xmlVal(b, 'PromotionStartHour') || '00:00:00';
+    const eDate = xmlFirstVal(b, ['PromotionEndDateTime', 'PromotionEndDate']);
+    const eHour = xmlVal(b, 'PromotionEndHour') || '23:59:59';
+    const start = sDate ? new Date(sDate.includes('T') || sDate.includes(' ') ? sDate.replace(' ', 'T') : `${sDate}T${sHour}`) : null;
+    const end = eDate ? new Date(eDate.includes('T') || eDate.includes(' ') ? eDate.replace(' ', 'T') : `${eDate}T${eHour}`) : null;
     if ((start && refDate < start) || (end && refDate > end)) continue;
 
     if ((Number(xmlVal(b, 'MinPurchaseAmount')) || 0) > 0) continue;
-    const groups = [...b.matchAll(/<Group(?:\s[^>]*)?>([\s\S]*?)<\/Group>/gi)].map((x) => x[1]);
+    const groups = extractBlocksLinear(b, 'Group');
     if (groups.length > 1) continue;
     const scope = groups.length === 1 ? groups[0] : b;
     if ((Number(xmlVal(scope, 'MinPurchaseAmount')) || 0) > 0) continue;
-    if (groups.length === 0 && xmlVal(b, 'IsGiftItem') === '1') continue;
+    if (groups.length === 0) {
+      const topGift = xmlVal(b, 'IsGiftItem');
+      if (topGift === '1' || /^true$/i.test(topGift)) continue;
+    }
 
     const fallbackPrice = Number(xmlVal(b, 'DiscountedPrice')) || 0;
     const fallbackQty = Number(xmlVal(b, 'MinQty')) || 0;
 
-    for (const im of scope.matchAll(/<PromotionItem(?:\s[^>]*)?>([\s\S]*?)<\/PromotionItem>/gi)) {
-      const ib = im[1];
-      const code = xmlVal(ib, 'ItemCode').replace(/\s+/g, '');
+    // Independent support for both <PromotionItem> and <PromotionItems><Item>
+    let itemChunks = extractBlocksLinear(scope, 'PromotionItem');
+    if (!itemChunks.length) {
+      for (const container of extractBlocksLinear(scope, 'PromotionItems')) {
+        itemChunks.push(...extractBlocksLinear(container, 'Item'));
+      }
+    }
+
+    for (const ib of itemChunks) {
+      const code = xmlFirstVal(ib, ['ItemCode', 'ITEMCODE']).replace(/\s+/g, '');
       if (!code || /^0+$/.test(code)) continue;
-      if (xmlVal(ib, 'bIsWeighted') === '1') continue;
+      const itemGift = xmlVal(ib, 'IsGiftItem');
+      if (itemGift === '1' || /^true$/i.test(itemGift)) continue;
+      const wTag = xmlFirstVal(ib, ['bIsWeighted', 'BisWeighted', 'IsWeighted']);
+      if (wTag === '1' || /^true$/i.test(wTag)) continue;
+
       const dp = round2(Number(xmlVal(ib, 'DiscountedPrice')) || fallbackPrice);
       if (!(dp > 0)) continue;
       const mq = Number(xmlVal(ib, 'MinQty')) || fallbackQty || 1;
@@ -112,10 +173,22 @@ export function loadReferenceSnapshot() {
     const pXml = zlib.gunzipSync(fs.readFileSync(path.join(SNAP_DIR, `${chain}-${info.storeId}-prices.xml.gz`))).toString('utf8');
     const promoFile = path.join(SNAP_DIR, `${chain}-${info.storeId}-promos.xml.gz`);
     const prXml = fs.existsSync(promoFile) ? zlib.gunzipSync(fs.readFileSync(promoFile)).toString('utf8') : '';
+    const { byNormCode, uniqueItems } = parseSnapshotPrices(pXml);
+    const promosByCode = prXml ? parseSnapshotPromos(prXml, refDate) : new Map();
+
+    // Testbench Self-Checks (H1 & H2): catch broken oracle parsers immediately instead of misreporting DUT errors!
+    if (uniqueItems.length < 1000) {
+      throw new Error(`TB_SELF_CHECK_ERROR: Oracle parsed only ${uniqueItems.length} items for ${chain} (expected >= 1000)`);
+    }
+    if (prXml.includes('<Promotion') && promosByCode.size === 0) {
+      throw new Error(`TB_SELF_CHECK_ERROR: PromoFull for ${chain} has <Promotion> blocks but oracle parsed 0 active promos`);
+    }
+
     chains[chain] = {
       storeId: info.storeId,
-      itemsByCode: parseSnapshotPrices(pXml),
-      promosByCode: prXml ? parseSnapshotPromos(prXml, refDate) : new Map(),
+      itemsByCode: byNormCode,
+      uniqueItems,
+      promosByCode,
       rawPricesXml: pXml,
       rawPromosXml: prXml,
     };
@@ -126,9 +199,6 @@ export function loadReferenceSnapshot() {
 
 /**
  * Independent reference calculation of basket totals for the matched barcodes per chain.
- * @param checkedLines  [{ id, qty, unit, ambiguous }]
- * @param dutMatches    Map<lineId, { [chainId]: { code } | null }>
- * @param deliveryCfg   { [chainId]: { fee: number|null, freeOver: number|null } }
  */
 export function refEvaluateBasket(checkedLines, dutMatches, refSnap, deliveryCfg = {}, includeDelivery = true) {
   const chainIds = ['shufersal', 'ramilevy', 'carrefour'];
@@ -200,29 +270,110 @@ export function refEvaluateBasket(checkedLines, dutMatches, refSnap, deliveryCfg
   }
 
   const completeChains = chainIds.filter((c) => perChain[c].complete);
+  const asymmetricDelivery = Boolean(
+    includeDelivery
+    && completeChains.length > 1
+    && completeChains.some((c) => perChain[c].deliveryFee === null)
+    && completeChains.some((c) => typeof perChain[c].deliveryFee === 'number' && perChain[c].deliveryFee > 0),
+  );
+  const cmpVal = (c) => (asymmetricDelivery ? perChain[c].subtotal : perChain[c].total);
   const cheapestId = completeChains.length
-    ? completeChains.reduce((best, c) => (perChain[c].total < perChain[best].total ? c : best), completeChains[0])
+    ? completeChains.reduce((best, c) => (cmpVal(c) < cmpVal(best) ? c : best), completeChains[0])
     : null;
 
-  return { perChain, cheapestId };
+  return { perChain, cheapestId, comparedOnSubtotalOnly: asymmetricDelivery };
+}
+
+function normSem(s) {
+  return String(s || '')
+    .toLowerCase()
+    .replace(/["״'׳`]/g, '')
+    .replace(/([\u0590-\u05FF])(\d)/g, '$1 $2')
+    .replace(/(\d)([\u0590-\u05FF])/g, '$1 $2')
+    .replace(/[^\p{L}\p{N}%.\s]/gu, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+
+function hasTokenPhrase(normText, phrase, rawLen = 0) {
+  if (!phrase) return false;
+  const padded = ` ${normText} `;
+  if (padded.includes(` ${phrase} `)) return true;
+
+  const pWords = phrase.split(' ');
+  const lastP = pWords[pWords.length - 1];
+  const prefixWords = pWords.length > 1 ? ` ${pWords.slice(0, -1).join(' ')} ` : ' ';
+
+  // Allow start-of-word stem prefixes >= 3 chars (e.g. "עגבני" -> "עגבניות", "בננ" -> "בננה", "חתול" -> "לחתולים")
+  // while blocking mid-word substrings ("ארטישוק", "צמחית", "3400") and known non-inflectional collisions ("מאסטר", "מולטי", "סופגניה").
+  if (lastP.length >= 3 && lastP !== 'מאסט' && lastP !== 'מולט' && lastP !== 'סופג') {
+    let idx = padded.indexOf(prefixWords);
+    while (idx >= 0) {
+      const rest = padded.slice(idx + prefixWords.length);
+      const nextSpace = rest.indexOf(' ');
+      const word = nextSpace >= 0 ? rest.slice(0, nextSpace) : rest;
+      if (word.startsWith(lastP) && word.length - lastP.length <= 3) return true;
+      if (word.length >= lastP.length + 1 && (word[0] === 'ל' || word[0] === 'ה' || word[0] === 'ב')) {
+        const stripped = word.slice(1);
+        if (stripped.startsWith(lastP) && stripped.length - lastP.length <= 3) return true;
+      }
+      idx = padded.indexOf(prefixWords, idx + 1);
+    }
+  }
+
+  // Support 20-char ERP XML trailing-word truncation (e.g. "צלחות מתכלות מקנה סו", "כוסות חד פעמ")
+  if (rawLen >= 19) {
+    const tWords = normText.split(' ');
+    const lastT = tWords[tWords.length - 1] || '';
+    if (lastT.length >= 3 && lastP.length > lastT.length && lastP.startsWith(lastT)) {
+      const prefixPhrase = [...pWords.slice(0, -1), lastT].join(' ');
+      if (padded.endsWith(` ${prefixPhrase} `)) return true;
+    }
+  }
+  return false;
+}
+
+/**
+ * Independent reference catalog availability map (H10):
+ * For each dictionary item `id` and chain `cid`, determines whether at least one product in the snapshot
+ * satisfies token-bounded `(mustIncludeAny, mustExcludeAny)`.
+ */
+export function refComputeAvailability(dictionary, refSnap) {
+  const avail = new Map(); // dictId -> { shufersal: boolean, ramilevy: boolean, carrefour: boolean }
+  const chainNormItems = {};
+  for (const [cid, ch] of Object.entries(refSnap.chains)) {
+    chainNormItems[cid] = ch.uniqueItems.map((it) => ({ low: normSem(it.name), len: it.name.trim().length }));
+  }
+
+  for (const entry of [...dictionary.realItems, ...dictionary.rareItems]) {
+    const inc = (entry.mustIncludeAny || []).map(normSem).filter(Boolean);
+    const exc = (entry.mustExcludeAny || []).map(normSem).filter(Boolean);
+    const perChain = {};
+    for (const [cid, items] of Object.entries(chainNormItems)) {
+      perChain[cid] = items.some(({ low, len }) => {
+        if (inc.length && !inc.some((k) => hasTokenPhrase(low, k, len))) return false;
+        for (const bad of exc) if (bad && hasTokenPhrase(low, bad, len)) return false;
+        return true;
+      });
+    }
+    avail.set(entry.id, perChain);
+  }
+  return avail;
 }
 
 /** Estimate typical price of a golden-dictionary item for budget-bucket stimulus sizing. */
 export function buildPriceEstimator(dictionary, refSnap) {
   const allProducts = [];
   for (const ch of Object.values(refSnap.chains)) {
-    const seen = new Set();
-    for (const item of ch.itemsByCode.values()) {
-      if (seen.has(item.code)) continue;
-      seen.add(item.code);
-      allProducts.push({ nameLow: item.name.toLowerCase(), price: item.price, weighted: item.weighted });
+    for (const item of ch.uniqueItems) {
+      allProducts.push({ nameLow: normSem(item.name), price: item.price, weighted: item.weighted });
     }
   }
 
   const estById = new Map();
   for (const entry of [...dictionary.realItems, ...dictionary.rareItems]) {
-    const inc = (entry.mustIncludeAny || []).map((s) => s.toLowerCase());
-    const exc = (entry.mustExcludeAny || []).map((s) => s.toLowerCase());
+    const inc = (entry.mustIncludeAny || []).map(normSem).filter(Boolean);
+    const exc = (entry.mustExcludeAny || []).map(normSem).filter(Boolean);
     const hits = [];
     for (const p of allProducts) {
       if (inc.length && !inc.some((k) => p.nameLow.includes(k))) continue;

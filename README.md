@@ -13,17 +13,16 @@ A Hebrew-first grocery planning web app (PWA) built around three principles:
 
 ## Features
 - **Official Price Transparency Comparison (`pipeline/`, `web/js/prices.js`, `web/js/pricing.js`):**
-  - Ingests official `Stores`, `PriceFull`, and `PromoFull` XML/GZ feeds for **Shufersal** (~416 branches), **Rami Levy** (~96 branches), and **Carrefour** (~146 branches) across **117 Israeli localities**.
-  - **City & Branch Selection:** Pick a city (`cities.json` mapped via official CBS locality codes) and select a specific branch (`סניף ▾`) per chain. Every price is labeled with its branch.
-  - **All-Customer Promotions:** Applies active non-coupon promotions open to all customers (`ClubID = 0`, single-item discounts and `X for ₪Y` bundles). Club-only deals are excluded for now.
-  - **Strict Price Honesty:** Missing items show `אין נתון`, incomplete baskets are marked `חלקי` (never eligible for `🏆 הכי זול!`), pinned barcodes missing at another chain use the closest name match clearly badged `חלופה`, and weight estimates on counted produce are explicitly labeled.
-  - **Verified Delivery Config (`web/data/delivery.json`):** Only human-verified delivery fees are included with a visible `נכון ל-…` date; unknown/address-dependent fees are shown as `לא ידוע` and excluded from totals.
-- **Smart Hebrew/English Parser (`web/js/parser.js`):** Understands quantities, units, and qualifiers like `2 חלב`, `1.5 ק"ג עגבניות`, `במבה x3`, `סלק לפחות 5`, and `כרובית?`.
-- **Auto Aisle Categorization (`web/js/categories.js`):** Head-noun aware sorting (`מיץ תפוזים` → drinks, `שוקולד חלב` → snacks) with remembered manual overrides.
-- **Smart Google Sheets Import & Export (`web/js/sheets.js`, `api/sheet.js`):**
-  - Import from a public Google Sheets link (with a guided permission modal if private), `.csv` upload, or direct **Ctrl+C → Ctrl+V** from Google Sheets.
-  - Filters out headers, DIY/hardware (`ציוד בניה`), furniture, and durable kitchenware (`קניות כלליות`).
-  - Export lists to UTF-8 BOM `.csv` or clipboard TSV.
+  - Ingests official `Stores`, `PriceFull`, and `PromoFull` XML/GZ/ZIP feeds for **Shufersal** (~417 stores), **Rami Levy** (~97 stores), and **Carrefour** (~148 stores) across **117 Israeli localities** plus official **`StoreType=2` online fulfilment stores** (`online.json`).
+  - **Delivery vs In-Store Mode:** Defaults to **`🚚 משלוח הביתה`** (prices each chain directly from its official online fulfilment store: Shufersal `413`, Rami Levy `39`, Carrefour `471/472/473`), or toggle to **`🏬 קנייה בסניף פיזי`** to pick a city and physical branch (`סניף ▾`).
+  - **All-Customer Promotions:** Applies active non-coupon promotions open to all customers (`ClubID = 0`, single-item discounts and `X for ₪Y` bundles across `<PromotionItem>` and `<PromotionItems><Item>`). Club-only deals are excluded for now.
+  - **Strict Price & Ambiguity Honesty:** Missing items show `אין נתון`, incomplete baskets are marked `חלקי` (never eligible for `🏆 הכי זול!`), bare ambiguous words (`סודה`, `פלפל`, `שמנת`, `נייר`, etc.) prompt 1-click disambiguation chips instead of guessing, bought items (`✅`, `[x]`, `~~...~~`, Excel strikethrough) import unchecked, and asymmetric delivery fees compare on apples-to-apples product subtotals.
+  - **Verified Delivery & Coverage Configs (`web/data/delivery.json`, `web/data/delivery-coverage.json`):** Only human-verified fees/coverage are asserted with a visible `lastChecked` date; unknown cities show a direct check link to the chain's site.
+- **Unified Import, Synonym & `.xlsx` Engine (`web/js/importer.js`, `web/js/synonyms.js`, `web/js/xlsx.js`, `web/js/sheets.js`):**
+  - Supports free text, WhatsApp chats, Google Sheets links (`api/sheet.js`), CSV/TSV, and zero-dependency styled **Excel `.xlsx`** workbooks (ignoring colors/merged cells while detecting `<strike/>` bought rows with bounded streaming decompression).
+  - Deduplicates Hebrew/English synonyms and morphology without merging competing brands or distinct products, and filters out headers, DIY/hardware, furniture, electronics, and errands.
+- **DV-Style 628-List Regression Suite (`tests/regression/`):**
+  - **108 directed corner-case lists + 520 seeded constrained-random lists** (₪200–₪4,000) checked against a 392-entry golden dictionary, a frozen 2.3 MB online-store XML snapshot, and a standalone zero-import XML price oracle (`S1`–`S10` scoreboard + 1D/cross/DUT-response coverage).
 - **Suggestions, Recipes & Optional AI (`suggest.js`, `recipes.js`, `ai.js`):** Purchase-interval predictions (*"כנראה נגמר לך"*), scalable meal templates, and optional BYO Gemini API key.
 - **Optional Desktop Chrome Extension (`extension/`, frozen bonus):**
   - Manifest V3 extension (`v2.3.0`) for desktop Chrome: opens prefilled on **Shufersal** and adds items only after an explicit click on `"הוסף לסל"` (never auto-submits on link open, never touches passwords), and provides a safe **guided search-and-add** checklist on **Rami Levy**.
@@ -50,8 +49,8 @@ smart-grocery/
 ├── api/
 │   └── sheet.js              # /api/sheet (strict Google Sheets CSV export fetcher, shared with serve.mjs)
 ├── extension/                # Optional desktop Chrome Extension (Manifest V3, v2.3.0)
-├── tests/                    # Node test suite (core.test.mjs, pricing.test.mjs, pipeline.test.mjs + XML fixtures)
-├── gemini/                   # Project definition (agents.md) & code-infra skill (auto-updated weekly)
+├── tests/                    # 25 unit tests + 628-list DV regression suite (tests/regression/)
+├── gemini/                   # Project definition (agents.md) & skills (code-infra, dv-regression)
 ├── serve.mjs                 # Local dev server (web/, local /data/v1/, /api/sheet, dev-only /api/room)
 └── vercel.json               # Vercel routing + strict CSP & security headers
 ```
@@ -64,8 +63,10 @@ Requires **Node.js 20+** (zero external npm dependencies).
 ```bash
 git clone https://github.com/ShmuelSfez/smart-grocery.git
 cd smart-grocery
-npm test    # Run all 18 unit tests (parser, categories, sheets, pricing, XML parsers, promos, hybrid matching, codec security)
-npm start   # Start local server at http://localhost:5173 (automatically falls back to GitHub Pages price data if local data/v1/ is absent)
+npm test                  # Run all 25 fast unit tests
+npm run regression:smoke  # Run fast deterministic DV smoke regression
+npm run regression        # Run full 628-list DV regression & update tests/regression/reports/latest.md
+npm start                 # Start local server at http://localhost:5173
 ```
 
 ### Build Price Data Locally (Optional)

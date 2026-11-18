@@ -43,6 +43,43 @@ function shuffleInPlace(arr, rng) {
   return arr;
 }
 
+// Deterministic Hebrew typo & inflection mutator for S6 unseen generalization verification (C1 + M11):
+// Applies realistic orthographic variations (missing geresh, medial-at-end ם->מ / ן->נ, ו->וו, ה->א ending, or unseen container prefix).
+const MEDIAL_AT_END = { 'ם': 'מ', 'ן': 'נ', 'ץ': 'צ', 'ף': 'פ', 'ך': 'כ' };
+const UNSEEN_CONTAINERS = ['אריזת', 'מארז', 'חבילת'];
+
+export function mutateHebrewPhrase(phrase, rng) {
+  const s = String(phrase || '').trim();
+  if (!/[\u0590-\u05FF]/.test(s)) return { text: s, mutated: false };
+  const mode = Math.floor(rng() * 3);
+  if (mode === 0) {
+    // Replace final Hebrew letter with medial form on one word ("מלפפונים" -> "מלפפונימ")
+    const words = s.split(' ');
+    for (let i = 0; i < words.length; i++) {
+      const last = words[i][words[i].length - 1];
+      if (MEDIAL_AT_END[last]) {
+        words[i] = words[i].slice(0, -1) + MEDIAL_AT_END[last];
+        return { text: words.join(' '), mutated: true };
+      }
+    }
+  } else if (mode === 1) {
+    // Aramaic א ending on feminine noun >= 4 chars ("גבינה" -> "גבינא", "טחינה" -> "טחינא")
+    const words = s.split(' ');
+    for (let i = 0; i < words.length; i++) {
+      if (words[i].length >= 4 && words[i].endsWith('ה')) {
+        words[i] = words[i].slice(0, -1) + 'א';
+        return { text: words.join(' '), mutated: true };
+      }
+    }
+  }
+  // Prepend an unseen container word ("אריזת ...")
+  const cont = UNSEEN_CONTAINERS[Math.floor(rng() * UNSEEN_CONTAINERS.length)];
+  if (!s.startsWith(cont + ' ')) {
+    return { text: `${cont} ${s}`, mutated: true };
+  }
+  return { text: s, mutated: false };
+}
+
 function chooseQty(entry, qtyStyle, rng, scaleBoost = 1) {
   const [lo, hi] = entry.qtyRange || [1, 3];
   if (entry.defaultUnit === 'kg') {
@@ -173,29 +210,44 @@ export function generateRandomCase(seed, dictionary, priceEstimator) {
   for (let idx = 0; idx < allGrocery.length; idx++) {
     const g = allGrocery[idx];
     const e = g.entry;
-    const names = [e.canonical, ...(e.aliases || [])];
-    // Filter English aliases out when using Hebrew word quantities ("שתי milk" is unnatural)
-    const usableNames = qtyStyle === 'hebrew_words'
-      ? names.filter((n) => /[\u0590-\u05FF]/.test(n))
-      : names;
-    const chosenText = pick(usableNames.length ? usableNames : [e.canonical], rng);
+    const seenPool = [e.canonical, ...(e.aliases || [])];
+    const unseenPool = e.unseenAliases || [];
+    const filterHeb = (arr) => (qtyStyle === 'hebrew_words' ? arr.filter((n) => /[\u0590-\u05FF]/.test(n)) : arr);
+    const usableSeen = filterHeb(seenPool);
+    const usableUnseen = filterHeb(unseenPool);
+
+    let chosenText = pick(usableSeen.length ? usableSeen : [e.canonical], rng);
+    let vocabSplit = 'seen';
+    if (usableUnseen.length && rng() < 0.35) {
+      chosenText = pick(usableUnseen, rng);
+      vocabSplit = 'unseen';
+    } else if (qtyStyle === 'mixed_styles' && idx === 0 && !g.bought) {
+      const mut = mutateHebrewPhrase(chosenText, rng);
+      if (mut.mutated) {
+        chosenText = mut.text;
+        vocabSplit = 'unseen';
+      }
+    }
 
     if (
       qtyStyle === 'synonym_merge'
       && !synonymSplitUsed
       && !g.bought
       && g.unit === 'unit'
-      && usableNames.length >= 2
+      && (usableSeen.length + usableUnseen.length) >= 2
       && layout !== 'tsv_horizontal'
     ) {
-      // Split into two rows using two distinct synonyms to verify S6 deduplication & quantity summing!
+      // Split into two rows using distinct seen + unseen/mutated synonyms to verify genuine S6 generalization!
       synonymSplitUsed = true;
       const q1 = Math.max(1, Math.floor(g.qty / 2));
       const q2 = Math.max(1, g.qty - q1);
       const totalQ = q1 + q2;
+      const firstVariant = usableSeen[0] || e.canonical;
+      let secondVariant = usableUnseen[0] || usableSeen[1] || mutateHebrewPhrase(firstVariant, rng).text;
+      const mergeSplit = usableUnseen.length > 0 || secondVariant !== usableSeen[1] ? 'unseen' : 'seen';
       rows.push({
         rowKind: 'item',
-        text: usableNames[0],
+        text: firstVariant,
         qty: q1,
         unit: g.unit,
         catLabel: e.category[0],
@@ -204,7 +256,7 @@ export function generateRandomCase(seed, dictionary, priceEstimator) {
       });
       rows.push({
         rowKind: 'item',
-        text: usableNames[1],
+        text: secondVariant,
         qty: q2,
         unit: g.unit,
         catLabel: e.category[0],
@@ -218,6 +270,7 @@ export function generateRandomCase(seed, dictionary, priceEstimator) {
         qty: totalQ,
         unit: g.unit,
         checked: true,
+        vocabSplit: mergeSplit,
         allowedCategories: e.category,
         mustIncludeAny: e.mustIncludeAny,
         mustExcludeAny: e.mustExcludeAny,
@@ -235,10 +288,12 @@ export function generateRandomCase(seed, dictionary, priceEstimator) {
       expectedItems.push({
         dictId: e.id,
         canonical: e.canonical,
+        stimulusSurface: chosenText,
         kind: g.itemKind,
         qty: g.qty,
         unit: g.unit,
         checked: !g.bought,
+        vocabSplit,
         allowedCategories: e.category,
         mustIncludeAny: e.mustIncludeAny,
         mustExcludeAny: e.mustExcludeAny,
@@ -251,7 +306,15 @@ export function generateRandomCase(seed, dictionary, priceEstimator) {
   }
 
   for (const a of chosenAmbig) {
-    const word = a.amb.aliases?.length && rng() < 0.25 ? pick(a.amb.aliases, rng) : a.amb.term;
+    const unseenAmb = a.amb.unseenAliases || [];
+    let word = a.amb.term;
+    let ambSplit = 'seen';
+    if (unseenAmb.length && rng() < 0.35) {
+      word = pick(unseenAmb, rng);
+      ambSplit = 'unseen';
+    } else if (a.amb.aliases?.length && rng() < 0.25) {
+      word = pick(a.amb.aliases, rng);
+    }
     rows.push({
       rowKind: 'item',
       text: word,
@@ -268,6 +331,7 @@ export function generateRandomCase(seed, dictionary, priceEstimator) {
       qty: a.qty,
       unit: 'unit',
       checked: true,
+      vocabSplit: ambSplit,
       allowedCategories: null,
       ambiguousChoices: a.amb.choices,
     });

@@ -1,0 +1,5 @@
+{
+  "version": 1,
+  "description": "Explicit DV triage & waiver registry (M13). Each entry must declare rule, itemId, chain (optional), verdict ('TB-bug' | 'DUT-bug' | 'feed-quirk'), owner, and justification. Waived checks are reported separately in latest.md and never hidden.",
+  "waivers": []
+}

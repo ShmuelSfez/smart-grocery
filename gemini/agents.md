@@ -29,11 +29,12 @@
 
 ## 3. Codebase Map & Skills
 - **`gemini/skills/code-infra/`**: Living architecture & code-reading guide (scheduled to refresh weekly and verify `README.md` stays aligned with the code).
-- **`web/`**: Zero-build static PWA (`index.html`, `styles.css`, `sw.js`, `data/*.json`, `js/*.js`).
+- **`gemini/skills/dv-regression/`**: Guide to the 628-list Design-Verification regression suite, independent XML price oracle, `S1`–`S10` scoreboard, non-tautology gate, and coverage reports.
+- **`web/`**: Zero-build static PWA (`index.html`, `styles.css`, `sw.js`, `data/*.json`, `js/*.js` including `importer.js`, `synonyms.js`, `xlsx.js`, `zip.js`).
 - **`pipeline/`**: Node 20 ingestion pipeline (`build.mjs`, `publish-pages.mjs`, `parse.mjs`, `promos.mjs`, `cities.mjs`, `sources/*.mjs`).
 - **`api/sheet.js`**: Strict Google Sheets CSV export fetcher (shared with `serve.mjs`).
 - **`extension/`**: Optional desktop Chrome Extension MV3 (`manifest.json`, `capture.js`, `panel.js`, `codec.js`, `popup.*`).
-- **`tests/`**: Node built-in test runner (`core.test.mjs`, `pricing.test.mjs`, `pipeline.test.mjs` + `fixtures/`).
+- **`tests/`**: Node built-in unit tests (`core.test.mjs`, `importer.test.mjs`, `pricing.test.mjs`, `pipeline.test.mjs`) + 628-list DV regression (`tests/regression/`).
 
 ---
 

@@ -8,7 +8,8 @@
 3. `promos.mjs` parses `PromoFull` and keeps **only** active, unconditional, non-coupon promotions open to all customers (`ClubID` empty or starting with `0`), producing `{ type: 'price', price }` or `{ type: 'bundle', qty, price }`.
 4. Output written to `data/v1/` (gitignored on `main`, published to orphan `gh-pages` via `pipeline/publish-pages.mjs`):
    - `meta.json` — build timestamp and per-chain branch/product/promo counts.
-   - `cities.json` — `cityName -> [{ chain, storeId, name, address }]` (only branches with valid price files).
+   - `cities.json` — `cityName -> [{ chain, storeId, name, address }]` (only physical branches with valid price files).
+   - `online.json` — `chainId -> [{ storeId, name, address, itemsCount, quick }]` (`StoreType=2` online fulfilment stores for home delivery pricing).
    - `<chain>/catalog.json` — `code -> [name, manufacturer, qty, unit, weighted]`.
    - `<chain>/stores/<storeId>.json` — `code -> [price, unitPrice, promo?]`.
 

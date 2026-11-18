@@ -22,7 +22,7 @@ Follow this order instead of scanning files randomly:
    - `web/js/chains.js` — Live (`shufersal`, `ramilevy`, `carrefour`) vs `soon` (`victory`, `yochananof`) chain definitions.
    - `web/js/pricing.js` — Pure basket comparison (`chargeQty`, `applyPromo`, `lineCost`, `compareBasket`). Never invents prices; only complete baskets can win `cheapestId`.
    - `web/js/prices.js` — Loads `meta.json`, `cities.json`, `<chain>/catalog.json`, and `<chain>/stores/<storeId>.json`; implements Hebrew stem-aware product search and Q15 hybrid matching (exact barcode when pinned, closest name match flagged `substitute`, or per-chain best match for generic items).
-   - `web/js/parser.js`, `web/js/categories.js`, `web/js/sheets.js`, `web/js/codec.js` — Free-text quantity/unit parser, head-noun aisle classifier, Google Sheets relevance analyzer, and bounded deflate URL codec (`SLCodec`).
+   - `web/js/parser.js`, `web/js/synonyms.js`, `web/js/sheets.js`, `web/js/xlsx.js`, `web/js/zip.js`, `web/js/importer.js`, `web/js/categories.js`, `web/js/codec.js` — Free-text quantity/unit parser, morphological synonym & ambiguity analyzer, Sheets/CSV/XLSX relevance & strikethrough analyzer, unified list importer (`applyItemsToList`), head-noun aisle classifier, and bounded deflate URL codec (`SLCodec`).
 3. **Price Transparency Pipeline (`pipeline/`)**
    - `pipeline/sources/{shufersal,ramilevy,carrefour}.mjs` — Official Price Transparency portal adapters.
    - `pipeline/parse.mjs`, `pipeline/promos.mjs`, `pipeline/cities.mjs` — Gzip + UTF-8/UTF-16LE/Windows-1255 XML decoders, active all-customer promotion extractor, and CBS locality code mapper.
@@ -31,8 +31,8 @@ Follow this order instead of scanning files randomly:
    - City autocomplete + per-chain branch pickers (`#branchPickers`), honest basket comparison cards, product picker without silent auto-saving, and network-first app-shell service worker.
 5. **Optional Desktop Chrome Extension (`extension/`, frozen for POC)**
    - `extension/manifest.json` (`v2.3.0`) → `extension/capture.js` (`autoAdd: false`) → `extension/panel.js` (1-click confirmed `/cart/addGrid` on Shufersal; guided search-and-add checklist on Rami Levy).
-6. **Tests (`tests/`)**
-   - Run `npm test` (`core.test.mjs`, `pricing.test.mjs`, `pipeline.test.mjs` + `tests/fixtures/*.xml`).
+6. **Tests & DV Regression (`tests/` & `gemini/skills/dv-regression/SKILL.md`)**
+   - Run `npm test` (`core.test.mjs`, `importer.test.mjs`, `pricing.test.mjs`, `pipeline.test.mjs` + `tests/fixtures/*.xml`) and `npm run regression:smoke` / `npm run regression` (628-list DV suite).
 
 ## Deep Reference & Live File Inventory
 - Architecture, data flows, and invariants: [architecture.md](./references/architecture.md)

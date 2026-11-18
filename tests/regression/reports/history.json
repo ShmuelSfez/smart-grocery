@@ -63,5 +63,88 @@
         "pct": 25
       }
     }
+  },
+  {
+    "timestamp": "2026-11-18T19:49:45.091Z",
+    "commit": "505608f",
+    "totalLists": 628,
+    "passedLists": 400,
+    "listPassPct": 63.7,
+    "passedAssertions": 4192,
+    "totalAssertions": 4420,
+    "assertPassPct": 94.8,
+    "singleBinPct": 100,
+    "crossPct": 98.6,
+    "lexiconOverlapPct": 9.6,
+    "splits": {
+      "s6SeenPct": 100,
+      "s6UnseenPct": 100,
+      "s7UnseenPct": 100,
+      "s9RecallPct": 99.4,
+      "s9PrecisionPct": 99.3
+    },
+    "elapsedSec": 131.83,
+    "rules": {
+      "S1": {
+        "pass": 15,
+        "fail": 0,
+        "waived": 0,
+        "pct": 100
+      },
+      "S2": {
+        "pass": 280,
+        "fail": 0,
+        "waived": 0,
+        "pct": 100
+      },
+      "S3": {
+        "pass": 613,
+        "fail": 0,
+        "waived": 0,
+        "pct": 100
+      },
+      "S4": {
+        "pass": 178,
+        "fail": 0,
+        "waived": 0,
+        "pct": 100
+      },
+      "S5": {
+        "pass": 613,
+        "fail": 0,
+        "waived": 0,
+        "pct": 100
+      },
+      "S6": {
+        "pass": 613,
+        "fail": 0,
+        "waived": 0,
+        "pct": 100
+      },
+      "S7": {
+        "pass": 444,
+        "fail": 0,
+        "waived": 0,
+        "pct": 100
+      },
+      "S8": {
+        "pass": 439,
+        "fail": 0,
+        "waived": 0,
+        "pct": 100
+      },
+      "S9": {
+        "pass": 384,
+        "fail": 228,
+        "waived": 0,
+        "pct": 62.7
+      },
+      "S10": {
+        "pass": 613,
+        "fail": 0,
+        "waived": 0,
+        "pct": 100
+      }
+    }
   }
 ]

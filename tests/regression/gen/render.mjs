@@ -342,7 +342,7 @@ export function buildStyledXlsxBuffer(rows, rng = Math.random) {
 </Relationships>`;
 
   // Styles: fontId 0 = normal, fontId 1 = bold colored, fontId 2 = strikethrough
-  // cellXfs: 0 = normal, 1 = banner bold+teal, 2 = header bold+yellow, 3 = pastel row fill, 4 = strikethrough (bought)
+  // Mix self-closing <xf .../> with non-self-closing <xf ...><alignment readingOrder="2"/></xf> (RTL Excel/Sheets output, H5!)
   const stylesXml = `<?xml version="1.0" encoding="UTF-8"?>
 <styleSheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main">
   <fonts count="3">
@@ -359,10 +359,10 @@ export function buildStyledXlsxBuffer(rows, rng = Math.random) {
   <borders count="1"><border><left/><right/><top/><bottom/><diagonal/></border></borders>
   <cellXfs count="5">
     <xf numFmtId="0" fontId="0" fillId="0" borderId="0"/>
-    <xf numFmtId="0" fontId="1" fillId="2" borderId="0" applyFont="1" applyFill="1"/>
+    <xf numFmtId="0" fontId="1" fillId="2" borderId="0" applyFont="1" applyFill="1"><alignment horizontal="center" readingOrder="2"/></xf>
     <xf numFmtId="0" fontId="1" fillId="3" borderId="0" applyFont="1" applyFill="1"/>
-    <xf numFmtId="0" fontId="0" fillId="2" borderId="0" applyFill="1"/>
-    <xf numFmtId="0" fontId="2" fillId="0" borderId="0" applyFont="1"/>
+    <xf numFmtId="0" fontId="0" fillId="2" borderId="0" applyFill="1"><alignment readingOrder="2"/></xf>
+    <xf numFmtId="0" fontId="2" fillId="0" borderId="0" applyFont="1"><alignment readingOrder="2"/></xf>
   </cellXfs>
 </styleSheet>`;
 
