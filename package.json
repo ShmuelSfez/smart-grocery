@@ -1,1 +1,1 @@
-{ "name": "smart-grocery", "private": true, "type": "module", "scripts": { "test": "node --test tests/", "start": "node serve.mjs" } }
+{ "name": "smart-grocery", "private": true, "type": "module", "scripts": { "test": "node --test tests/", "regression": "node tests/regression/run.mjs", "regression:smoke": "node tests/regression/run.mjs --smoke", "start": "node serve.mjs" } }

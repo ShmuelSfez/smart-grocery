@@ -1,0 +1,67 @@
+[
+  {
+    "timestamp": "2026-11-18T17:12:27.003Z",
+    "commit": "081f6d1",
+    "totalLists": 620,
+    "passedLists": 1,
+    "listPassPct": 0.2,
+    "passedAssertions": 2192,
+    "totalAssertions": 4447,
+    "assertPassPct": 49.3,
+    "singleBinPct": 100,
+    "crossPct": 100,
+    "elapsedSec": 408.7,
+    "rules": {
+      "S1": {
+        "pass": 555,
+        "fail": 65,
+        "pct": 89.5
+      },
+      "S2": {
+        "pass": 45,
+        "fail": 218,
+        "pct": 17.1
+      },
+      "S3": {
+        "pass": 268,
+        "fail": 287,
+        "pct": 48.3
+      },
+      "S4": {
+        "pass": 0,
+        "fail": 159,
+        "pct": 0
+      },
+      "S5": {
+        "pass": 263,
+        "fail": 152,
+        "pct": 63.4
+      },
+      "S6": {
+        "pass": 79,
+        "fail": 476,
+        "pct": 14.2
+      },
+      "S7": {
+        "pass": 134,
+        "fail": 270,
+        "pct": 33.2
+      },
+      "S8": {
+        "pass": 509,
+        "fail": 0,
+        "pct": 100
+      },
+      "S9": {
+        "pass": 200,
+        "fail": 212,
+        "pct": 48.5
+      },
+      "S10": {
+        "pass": 139,
+        "fail": 416,
+        "pct": 25
+      }
+    }
+  }
+]
