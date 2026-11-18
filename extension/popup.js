@@ -55,7 +55,7 @@ async function openShufersal() {
 
 $('open').onclick = openShufersal;
 $('import').onclick = async () => {
-  const m = $('code').value.match(/smartlist=([^&\s]+)/) || $('code').value.trim().match(/^([zp][A-Za-z0-9_-]+)$/);
+  const m = $('code').value.match(/smartlist=([^&\s]+)/) || $('code').value.trim().match(/^([dzp][A-Za-z0-9_-]+)$/);
   if (!m) { $('pendingInfo').textContent = '⚠️ לא נמצא קוד רשימה בטקסט.'; return; }
   await set({ pending: { code: m[1], ts: Date.now(), items: null } });
   openShufersal();

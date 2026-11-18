@@ -1,6 +1,6 @@
 /* Shared list codec (classic script – used by the web app, the extension and node tests).
  * Encodes a grocery list (and optional email-only hint, NEVER passwords) into a compact URL-safe string.
- * Format: "z" + base64url(deflate-raw(json))  or  "p" + base64url(json) as fallback.
+ * Format: "d" + base64url(deflate(json)), "z" + base64url(deflate-raw(json)), or "p" + base64url(json).
  */
 (function (root) {
   if (root.SLCodec) return;
@@ -91,7 +91,7 @@
     const bytes = new TextEncoder().encode(JSON.stringify(payload));
     if (canCompress) {
       try {
-        return 'z' + bytesToB64url(await streamBytesBounded(bytes, new CompressionStream('deflate-raw'), MAX_DECOMPRESSED_BYTES));
+        return 'd' + bytesToB64url(await streamBytesBounded(bytes, new CompressionStream('deflate'), MAX_DECOMPRESSED_BYTES));
       } catch (e) { /* fall through */ }
     }
     return 'p' + bytesToB64url(bytes);
@@ -102,7 +102,8 @@
     if (!code || code.length > 32768) throw new Error('Invalid list payload size');
     const kind = code[0];
     let bytes = b64urlToBytes(code.slice(1));
-    if (kind === 'z') bytes = await streamBytesBounded(bytes, new DecompressionStream('deflate-raw'), MAX_DECOMPRESSED_BYTES);
+    if (kind === 'd') bytes = await streamBytesBounded(bytes, new DecompressionStream('deflate'), MAX_DECOMPRESSED_BYTES);
+    else if (kind === 'z') bytes = await streamBytesBounded(bytes, new DecompressionStream('deflate-raw'), MAX_DECOMPRESSED_BYTES);
     else if (kind !== 'p') throw new Error('Unknown list format');
     if (bytes.byteLength > MAX_DECOMPRESSED_BYTES) throw new Error('Payload too large');
     const payload = JSON.parse(new TextDecoder().decode(bytes));

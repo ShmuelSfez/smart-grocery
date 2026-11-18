@@ -169,14 +169,14 @@ test('prices + compareBasket: Q15 hybrid matching (exact barcode, substitute, mi
 });
 
 test('codec security: rejects >256 KB decompression bombs and strips untrusted image hosts', async () => {
-  // Compress 350 KB of repeated JSON (compresses to < 2 KB in deflate-raw, expands > 256 KB)
+  // Compress 350 KB of repeated JSON (compresses to < 2 KB in deflate, expands > 256 KB)
   const hugeJson = JSON.stringify({ v: 1, i: [['חלב', 1, 'unit', 'dairy'], ['א'.repeat(350_000), 1, 'unit', '']] });
-  const deflated = zlib.deflateRawSync(Buffer.from(hugeJson, 'utf8'));
+  const deflated = zlib.deflateSync(Buffer.from(hugeJson, 'utf8'));
   assert.ok(deflated.length < 32768, 'compressed bomb fits under string length check');
   const b64url = deflated.toString('base64').replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
 
   await assert.rejects(
-    () => decodePayload('z' + b64url),
+    () => decodePayload('d' + b64url),
     /exceeds limit|too large/i,
   );
 

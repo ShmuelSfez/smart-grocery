@@ -86,7 +86,7 @@ test('codec round-trip (Hebrew)', async () => {
     { name: 'עגבניות', qty: 1.5, unit: 'kg', category: 'produce' },
   ];
   const code = await encodeList(items);
-  assert.match(code, /^[zp][A-Za-z0-9_-]+$/);
+  assert.match(code, /^[dzp][A-Za-z0-9_-]+$/);
   assert.deepEqual(await decodeList(code), items);
   assert.deepEqual(await decodeList(encodeURIComponent(code)), items);
 });
