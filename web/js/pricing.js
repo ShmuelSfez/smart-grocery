@@ -95,20 +95,29 @@ export function compareBasket(lines, chainIds, delivery = {}, opts = {}) {
     };
   }
   // Only complete baskets can honestly be called "cheapest".
+  // If delivery is enabled and one complete chain publishes a fee while another complete chain's fee is unknown (null),
+  // compare complete chains on apples-to-apples product `subtotal` instead of penalizing transparent chains.
   const complete = chainIds.filter((id) => perChain[id].complete);
+  const comparedOnSubtotalOnly = Boolean(
+    includeDelivery
+    && complete.length > 1
+    && complete.some((id) => perChain[id].deliveryFee === null)
+    && complete.some((id) => typeof perChain[id].deliveryFee === 'number' && perChain[id].deliveryFee > 0),
+  );
+  const cmpMetric = (id) => (comparedOnSubtotalOnly ? perChain[id].subtotal : perChain[id].total);
   const cheapestId = complete.length
-    ? complete.reduce((best, id) => (perChain[id].total < perChain[best].total ? id : best), complete[0])
+    ? complete.reduce((best, id) => (cmpMetric(id) < cmpMetric(best) ? id : best), complete[0])
     : null;
   const ranking = [...chainIds].sort((a, b) => {
     const A = perChain[a];
     const B = perChain[b];
     if (A.complete !== B.complete) return A.complete ? -1 : 1;
     if (A.missing.length !== B.missing.length) return A.missing.length - B.missing.length;
-    return A.total - B.total;
+    return cmpMetric(a) - cmpMetric(b);
   });
-  const maxComplete = complete.length ? Math.max(...complete.map((id) => perChain[id].total)) : 0;
-  const savings = cheapestId ? round2(maxComplete - perChain[cheapestId].total) : 0;
-  return { perChain, cheapestId, ranking, savings };
+  const maxComplete = complete.length ? Math.max(...complete.map(cmpMetric)) : 0;
+  const savings = cheapestId ? round2(maxComplete - cmpMetric(cheapestId)) : 0;
+  return { perChain, cheapestId, ranking, savings, comparedOnSubtotalOnly };
 }
 
 function round2(n) {

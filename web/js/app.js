@@ -1,10 +1,13 @@
-import { parseItem, parseMany, normalizeName, formatQty } from './parser.js';
+import { parseItem, normalizeName, formatQty } from './parser.js';
 import { CATEGORIES, CATEGORY_BY_ID, categorize } from './categories.js';
 import { store } from './store.js';
 import { recordPurchase, runningOut, frequent, STARTER_ITEMS } from './suggest.js';
 import { RECIPES, scaleRecipe } from './recipes.js';
 import { aiToItems } from './ai.js';
 import { parseGrid, analyzeSheetGrid, exportListToCsv } from './sheets.js';
+import { importFromText, applyItemsToList } from './importer.js';
+import { parseXlsxBuffer } from './xlsx.js';
+import { checkAmbiguousTerm } from './synonyms.js';
 import { CHAINS, CHAIN_BY_ID, LIVE_CHAIN_IDS } from './chains.js';
 import { compareBasket, lineCost } from './pricing.js';
 import {
@@ -71,7 +74,11 @@ if (cleanedLegacy) store.setMappings(mappings);
 for (const it of list) {
   if (it.checked === undefined) it.checked = true;
   if (it.product?.estimated) it.product = null;
-  if (!it.product && mappings[key(it.name)]) it.product = mappings[key(it.name)];
+  if (!it.product && !it.ambiguous) {
+    const amb = checkAmbiguousTerm(it.name);
+    if (amb) it.ambiguous = amb;
+    else if (mappings[key(it.name)]) it.product = mappings[key(it.name)];
+  }
 }
 
 async function loadStaticConfigs() {
@@ -204,32 +211,21 @@ function computeChainTotals() {
   };
 }
 
-function addItems(items, { silent = false } = {}) {
+function addItems(items, { silent = false, skippedCount = 0 } = {}) {
   const before = JSON.stringify(list);
-  let added = 0;
-  for (const it of items) {
-    if (!it || !it.name) continue;
-    const k = key(it.name);
-    const existing = list.find((x) => key(x.name) === k);
-    if (existing) {
-      if (existing.unit === it.unit) existing.qty = Math.round((existing.qty + it.qty) * 1000) / 1000;
-      else { existing.qty = it.qty; existing.unit = it.unit; }
-      existing.checked = true;
-      if (it.product) existing.product = it.product;
-    } else {
-      const savedProd = it.product || mappings[k] || null;
-      const newItem = {
-        id: uid(), name: it.name, qty: it.qty || 1, unit: it.unit || 'unit',
-        category: catFor(it.name, it.category), note: it.note || '',
-        checked: true, product: savedProd, addedAt: Date.now(),
-      };
-      list.push(newItem);
-    }
-    added++;
-  }
+  const { nextList, addedCount } = applyItemsToList(list, items, {
+    mappings,
+    overrides,
+    history,
+    makeId: uid,
+  });
+  if (!addedCount) return;
+  list = nextList;
   saveList();
-  if (!silent && added) {
-    toast(added === 1 ? `נוסף: ${items[0].name}` : `נוספו ${added} מוצרים`, {
+  if (!silent) {
+    const skipNote = skippedCount > 0 ? ` (${skippedCount} שורות לא-רלוונטיות סוננו)` : '';
+    const msg = addedCount === 1 ? `נוסף: ${items[0].name}${skipNote}` : `נוספו ${addedCount} מוצרים${skipNote}`;
+    toast(msg, {
       label: 'בטל', fn: () => { list = JSON.parse(before); saveList(); },
     });
   }
@@ -321,9 +317,13 @@ function renderComparisonDashboard(calc) {
       const info = perChain[cheapestId];
       const branchName = activeBranchData[cheapestId]?.store?.name;
       const brLabel = branchName ? ` (${branchName.replace(/\s+/g, ' ').trim()})` : '';
-      const delNote = withDelivery && typeof info.deliveryFee === 'number' ? ' כולל משלוח' : '';
       const savNote = savings > 0 ? ` – חיסכון של ₪${savings.toFixed(2)}` : '';
-      $('compareSummary').textContent = `🏆 הסל המלא הזול ביותר${locText}: ${ch.name}${brLabel} – ₪${info.total.toFixed(2)}${delNote}${savNote}`;
+      if (calc.comparedOnSubtotalOnly) {
+        $('compareSummary').textContent = `🏆 סל המוצרים המלא הזול ביותר${locText}: ${ch.name}${brLabel} – ₪${info.subtotal.toFixed(2)}${savNote} (ללא דמי משלוח – בחלק מהרשתות דמי המשלוח תלויים בכתובת)`;
+      } else {
+        const delNote = withDelivery && typeof info.deliveryFee === 'number' ? ' כולל משלוח' : '';
+        $('compareSummary').textContent = `🏆 הסל המלא הזול ביותר${locText}: ${ch.name}${brLabel} – ₪${info.total.toFixed(2)}${delNote}${savNote}`;
+      }
     } else {
       $('compareSummary').textContent = `⚠️ באף רשת${locText} אין מחיר מלא לכל המוצרים שנבחרו (סלים חלקיים מסומנים למטה):`;
     }
@@ -538,8 +538,37 @@ function renderItem(it, activeChainId, allLineMatches) {
   row.append(main);
 
   const pickerOpen = openPickers.has(it.id);
-  const matches = (allLineMatches && allLineMatches.get(it.id)) || (it.checked ? matchLineAcrossChains(it, activeBranchData) : {});
+  const matches = (allLineMatches && allLineMatches.get(it.id)) || (it.checked && !it.ambiguous ? matchLineAcrossChains(it, activeBranchData) : {});
   const activeMatch = matches[activeChainId] || null;
+
+  if (it.ambiguous && it.checked) {
+    const ab = document.createElement('div');
+    ab.className = 'ambig-box';
+    const title = document.createElement('span');
+    title.className = 'ambig-title';
+    title.textContent = `⚠️ לא חד-משמעי ("${it.name}") – בחר למה הכוונה כדי לתמחר:`;
+    const choicesWrap = document.createElement('div');
+    choicesWrap.className = 'ambig-choices';
+    for (const choice of it.ambiguous.choices || []) {
+      const btn = document.createElement('button');
+      btn.type = 'button';
+      btn.className = 'ambig-chip';
+      btn.textContent = choice;
+      btn.onclick = () => {
+        const cleanChoice = choice.replace(/\s*\([^)]*\)\s*/g, ' ').replace(/\s+/g, ' ').trim();
+        it.name = cleanChoice;
+        it.category = catFor(cleanChoice);
+        delete it.ambiguous;
+        delete it.product;
+        delete it.searchQuery;
+        saveList();
+      };
+      choicesWrap.append(btn);
+    }
+    ab.append(title, choicesWrap);
+    row.append(ab);
+    return row;
+  }
 
   if (!pickerOpen && it.checked) {
     const p = it.product;
@@ -997,9 +1026,14 @@ addInput.addEventListener('keydown', (e) => {
 
 $('addForm').addEventListener('submit', (e) => {
   e.preventDefault();
-  const items = parseMany(addInput.value);
-  if (!items.length) return;
-  addItems(items, { silent: items.length === 1 });
+  const rawVal = addInput.value.trim();
+  if (!rawVal) return;
+  const res = importFromText(rawVal, overrides);
+  if (res.error === 'NO_GROCERY_ITEMS') {
+    toast('⚠️ לא זוהו מוצרי סופר בטקסט שהוזן');
+    return;
+  }
+  addItems(res.added, { silent: res.added.length === 1 && !res.skipped.length, skippedCount: res.skipped.length });
   addInput.value = '';
   ac.hidden = true;
   addInput.focus();
@@ -1021,14 +1055,13 @@ function openPaste(mode) {
 $('btnPaste').onclick = () => openPaste('paste');
 if ($('btnExt')) $('btnExt').onclick = () => $('dlgExt').showModal();
 
-// ---------- Smart Google Sheets / CSV Import & Export ----------
-function analyzeRawSheet(text) {
-  const grid = parseGrid(text);
-  const { relevant, skipped } = analyzeSheetGrid(grid, overrides);
+// ---------- Smart Google Sheets / CSV / XLSX Import & Export ----------
+function renderSheetAnalysis(grid, opts = {}) {
+  const { relevant, skipped } = analyzeSheetGrid(grid, overrides, opts);
   const hasAny = relevant.length > 0 || skipped.length > 0;
   $('sheetPreview').hidden = !hasAny;
-  $('btnSheetImport').hidden = !hasAny;
-  if (!hasAny) return;
+  $('btnSheetImport').hidden = relevant.length === 0;
+  if (!hasAny) return { relevant, skipped };
 
   $('sheetRelTitle').textContent = `✅ רלוונטיים לסופר (${relevant.length}):`;
   const relBox = $('sheetRelList');
@@ -1040,7 +1073,10 @@ function analyzeRawSheet(text) {
     cb.checked = true;
     cb.dataset.item = JSON.stringify(it);
     const txt = document.createElement('span');
-    txt.textContent = `${it.name}${it.qty !== 1 || it.unit !== 'unit' ? ' – ' + formatQty(it.qty, it.unit) : ''}`;
+    const qtySuffix = it.qty !== 1 || it.unit !== 'unit' ? ' – ' + formatQty(it.qty, it.unit) : '';
+    const boughtSuffix = it.checked === false ? ' (סומן כנקנה ✓ – יתווסף לא מסומן)' : '';
+    const ambSuffix = it.ambiguous ? ' (⚠️ דורש הבהרה)' : '';
+    txt.textContent = `${it.name}${qtySuffix}${boughtSuffix}${ambSuffix}`;
     const cat = document.createElement('span');
     cat.className = 'why';
     cat.textContent = `${CATEGORY_BY_ID[it.category]?.emoji || ''} ${CATEGORY_BY_ID[it.category]?.he || ''}`;
@@ -1066,6 +1102,12 @@ function analyzeRawSheet(text) {
     lbl.append(cb, txt, why);
     skipBox.append(lbl);
   }
+  return { relevant, skipped };
+}
+
+function analyzeRawSheet(text) {
+  const grid = parseGrid(text);
+  return renderSheetAnalysis(grid);
 }
 
 if ($('btnSheets')) {
@@ -1098,10 +1140,30 @@ if ($('btnSheets')) {
   $('btnUploadCsv').onclick = () => $('csvFile').click();
   $('csvFile').onchange = async (e) => {
     const f = e.target.files?.[0];
+    e.target.value = '';
     if (!f) return;
     setSheetStatus(null);
+    const isXlsx = /\.xlsx$/i.test(f.name) || (f.type && f.type.includes('spreadsheetml'));
+    if (isXlsx) {
+      try {
+        const { grid, strikeCells } = await parseXlsxBuffer(await f.arrayBuffer());
+        $('sheetRaw').value = '';
+        const { relevant } = renderSheetAnalysis(grid, { strikeCells });
+        if (!relevant.length) {
+          setSheetStatus('warn', '⚠️ לא זוהו מוצרי סופר בקובץ ה-Excel שהועלה.');
+        } else {
+          setSheetStatus('ok', `✅ קובץ ה-Excel (${f.name}) פוענח בהצלחה – זוהו ${relevant.length} מוצרי סופר!`);
+        }
+      } catch (err) {
+        setSheetStatus('warn', `⚠️ שגיאה בקריאת קובץ ה-Excel: ${err.message || 'קובץ לא תקין'}`);
+      }
+      return;
+    }
     $('sheetRaw').value = await f.text();
-    analyzeRawSheet($('sheetRaw').value);
+    const { relevant } = analyzeRawSheet($('sheetRaw').value);
+    if (!relevant.length) {
+      setSheetStatus('warn', '⚠️ לא זוהו מוצרי סופר בקובץ שהועלה.');
+    }
   };
   $('btnFetchSheet').onclick = async () => {
     const url = $('sheetUrl').value.trim();
@@ -1215,7 +1277,16 @@ $('btnAi').onclick = () => {
 $('pasteOk').addEventListener('click', async (e) => {
   const text = $('pasteText').value.trim();
   if (!text) return;
-  if (pasteMode === 'paste') { addItems(parseMany(text)); return; }
+  if (pasteMode === 'paste') {
+    const res = importFromText(text, overrides);
+    if (res.error === 'NO_GROCERY_ITEMS') {
+      e.preventDefault();
+      toast('⚠️ לא זוהו מוצרי סופר ברשימה שהודבקה');
+      return;
+    }
+    addItems(res.added, { skippedCount: res.skipped.length });
+    return;
+  }
   e.preventDefault();
   const btn = $('pasteOk');
   btn.disabled = true;
@@ -1309,6 +1380,9 @@ $('dlgEdit').addEventListener('close', () => {
     unit: $('editUnit').value,
     note: $('editNote').value.trim(),
   });
+  const nextAmb = editing.product ? null : checkAmbiguousTerm(name);
+  if (nextAmb) editing.ambiguous = nextAmb;
+  else delete editing.ambiguous;
   editing = null;
   saveList();
 });

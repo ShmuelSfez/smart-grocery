@@ -11,7 +11,8 @@ const UNIT_PATTERNS = [
   { re: /^(ק["״'׳]?ג|קג|קילו|קילוגרם|קילוגרמים|kg|kgs|kilo|kilos)$/i, unit: 'kg' },
   { re: /^(גרם|גר["'׳]?|g|gr|gram|grams)$/i, unit: 'g' },
   { re: /^(יח["'׳]?|יחידה|יחידות|unit|units|pcs|pc)$/i, unit: 'unit' },
-  { re: /^(חבילה|חבילות|חב["'׳]|מארז|מארזים|אריזה|אריזות|שקית|שקיות|pack|packs|pkg|bag|bags)$/i, unit: 'pack' },
+  // Note: "שקית/שקיות" excluded here so "2 שקיות זבל" / "שקיות אוכל" keeps "שקיות" in the product name (M7)
+  { re: /^(חבילה|חבילות|חב["'׳]|מארז|מארזים|אריזה|אריזות|pack|packs|pkg)$/i, unit: 'pack' },
 ];
 
 // size words: a number before these is part of the product name ("2 ליטר חלב"), not a quantity
@@ -131,9 +132,11 @@ export function parseItem(raw) {
   }
 
   if (qty === null && tokens.length > 1) {
-    // "במבה 3" – bare small integer at the end (not "קולה 1.5", not "שמנת 32")
+    // "במבה 3" – bare small integer at the end (not "קולה 1.5", not "שמנת 32", not "צלי כתף מספר 5" / "מידה 4")
     const last = tokens[tokens.length - 1];
-    if (/^\d+$/.test(last) && +last > 0 && +last <= 30) {
+    const prev = tokens[tokens.length - 2] || '';
+    const isProdCodeWord = /^(מספר|מס["'׳]?|מידה|שלב|גודל|סוג|no\.?|#)$/i.test(prev);
+    if (!isProdCodeWord && /^\d+$/.test(last) && +last > 0 && +last <= 30) {
       qty = +last; tokens = tokens.slice(0, -1);
     }
   }
@@ -149,11 +152,19 @@ export function parseItem(raw) {
   return out;
 }
 
+// Safari < 16.4 safe splitter (zero regex lookbehind): protects digit,digit ("4,6,8 מ"מ", "1,5") before splitting
+export function splitLineSegments(line) {
+  const protectedStr = String(line || '').replace(/(\d),(\d)/g, '$1\u0000$2').replace(/(\d),(\d)/g, '$1\u0000$2');
+  return protectedStr
+    .split(/[;،；,]+/)
+    .map((s) => s.replace(/\u0000/g, ',').trim())
+    .filter(Boolean);
+}
+
 export function splitItems(text) {
   return String(text || '')
-    .split(/[\n,;،]+/)
-    .map((s) => s.trim())
-    .filter(Boolean);
+    .split(/\r?\n/)
+    .flatMap((line) => splitLineSegments(line));
 }
 
 export function parseMany(text) {

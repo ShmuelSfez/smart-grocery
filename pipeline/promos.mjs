@@ -104,7 +104,14 @@ export function parsePromosXml(xml, { now = new Date() } = {}) {
     const promoLevelPrice = Number(getTag(block, ['DiscountedPrice'])) || 0;
     const promoLevelMinQty = Number(getTag(block, ['MinQty'])) || 0;
 
-    const itemBlocks = [...scope.matchAll(/<PromotionItem(?:\s[^>]*)?>([\s\S]*?)<\/PromotionItem>/gi)].map((im) => im[1]);
+    // Shufersal/Carrefour emit <PromotionItem>, whereas Rami Levy nests <PromotionItems><Item>...</Item></PromotionItems>
+    let itemBlocks = [...scope.matchAll(/<PromotionItem(?:\s[^>]*)?>([\s\S]*?)<\/PromotionItem>/gi)].map((im) => im[1]);
+    if (!itemBlocks.length) {
+      const wrap = scope.match(/<PromotionItems(?:\s[^>]*)?>([\s\S]*?)<\/PromotionItems>/i)?.[1] || '';
+      if (wrap) {
+        itemBlocks = [...wrap.matchAll(/<Item(?:\s[^>]*)?>([\s\S]*?)<\/Item>/gi)].map((im) => im[1]);
+      }
+    }
     if (!itemBlocks.length) {
       stats.unsupportedSkipped++;
       continue;
@@ -114,6 +121,8 @@ export function parsePromosXml(xml, { now = new Date() } = {}) {
     for (const ib of itemBlocks) {
       const code = getTag(ib, ['ItemCode', 'ITEMCODE']).replace(/\s+/g, '');
       if (!code || /^0+$/.test(code)) continue;
+      const itemGift = getTag(ib, ['IsGiftItem']);
+      if (itemGift === '1' || /^true$/i.test(itemGift)) continue;
       const weighted = getTag(ib, ['bIsWeighted', 'BisWeighted', 'IsWeighted']);
       if (weighted === '1' || /^true$/i.test(weighted)) continue;
 

@@ -61,12 +61,18 @@ export function fetchGoogleCsv(targetUrl, hops = 0) {
         res.resume();
         return reject(new Error('PRIVATE_SHEET'));
       }
-      let raw = '';
+      const chunks = [];
+      let totalBytes = 0;
       res.on('data', (c) => {
-        raw += c;
-        if (raw.length > 1_500_000) req.destroy(new Error('Sheet too large'));
+        const buf = Buffer.isBuffer(c) ? c : Buffer.from(c);
+        totalBytes += buf.length;
+        if (totalBytes > 1_500_000) {
+          req.destroy(new Error('Sheet too large'));
+          return;
+        }
+        chunks.push(buf);
       });
-      res.on('end', () => resolve(raw));
+      res.on('end', () => resolve(Buffer.concat(chunks).toString('utf8')));
     });
     req.on('timeout', () => req.destroy(new Error('Timeout')));
     req.on('error', reject);

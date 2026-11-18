@@ -213,6 +213,12 @@ main { max-width: 780px; margin: 0 auto; padding: 12px; }
 .change-btn { border: 1px solid var(--line); background: #fff; color: var(--brand); border-radius: 8px; padding: 5px 10px; font-size: .78rem; font-weight: 600; white-space: nowrap; }
 .change-btn:hover { border-color: var(--brand); background: #f0fdfa; }
 
+.ambig-box { background: #fffbeb; border: 1px solid #fcd34d; border-radius: 10px; padding: 8px 10px; display: flex; flex-direction: column; gap: 6px; margin-top: 2px; }
+.ambig-title { font-size: .8rem; font-weight: 700; color: #92400e; }
+.ambig-choices { display: flex; flex-wrap: wrap; gap: 6px; }
+.ambig-chip { border: 1px solid #f59e0b; background: #fff; color: #78350f; border-radius: 999px; padding: 4px 10px; font-size: .78rem; font-weight: 600; cursor: pointer; }
+.ambig-chip:hover { background: #fef3c7; border-color: #d97706; }
+
 .picker-box { background: #f8fafc; border: 1px dashed #cbd5e1; border-radius: 12px; padding: 8px; }
 .picker-head { display: flex; justify-content: space-between; align-items: center; font-size: .82rem; color: var(--muted); margin-bottom: 6px; gap: 6px; flex-wrap: wrap; }
 .picker-search { display: flex; gap: 4px; }

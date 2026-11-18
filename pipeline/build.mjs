@@ -2,6 +2,7 @@
 // Usage: node pipeline/build.mjs [--chains=shufersal,ramilevy,carrefour] [--limit-stores=N] [--out=data/v1]
 import fs from 'node:fs';
 import path from 'node:path';
+import { fileURLToPath } from 'node:url';
 import { loadCityMap } from './cities.mjs';
 import { decodeFeedBuffer, parseStoresXml, parsePricesXml } from './parse.mjs';
 import { parsePromosXml } from './promos.mjs';
@@ -71,6 +72,30 @@ function selectStoresToProcess(stores, priceFiles, limitStores) {
   return chosen;
 }
 
+/**
+ * Production serializer shared by `pipeline/build.mjs` and the DV regression runner so tuple layout
+ * (`catalog.json` and `stores/<storeId>.json`) is verified on the exact production code path.
+ */
+export function serializeBranchItems(items, promosByItem, catalog = {}) {
+  const branchPrices = {};
+  let promoCount = 0;
+  for (const it of items) {
+    if (!catalog[it.code]) {
+      catalog[it.code] = [it.name, it.manufacturer, it.qty, it.unit, it.weighted];
+    } else if (!catalog[it.code][1] && it.manufacturer) {
+      catalog[it.code][1] = it.manufacturer;
+    }
+    const promo = it.weighted ? null : promosByItem.get(it.code);
+    if (promo) {
+      branchPrices[it.code] = [it.price, it.unitPrice, promo];
+      promoCount++;
+    } else {
+      branchPrices[it.code] = [it.price, it.unitPrice];
+    }
+  }
+  return { catalog, branchPrices, promoCount };
+}
+
 async function buildChain(chainId, cityMap, outRoot, limitStores) {
   const t0 = Date.now();
   console.log(`[${chainId}] Listing official feeds...`);
@@ -117,21 +142,8 @@ async function buildChain(chainId, cityMap, outRoot, limitStores) {
         }
       }
 
-      const branchPrices = {};
-      for (const it of items) {
-        if (!catalog[it.code]) {
-          catalog[it.code] = [it.name, it.manufacturer, it.qty, it.unit, it.weighted];
-        } else if (!catalog[it.code][1] && it.manufacturer) {
-          catalog[it.code][1] = it.manufacturer;
-        }
-        const promo = promosByItem.get(it.code);
-        if (promo) {
-          branchPrices[it.code] = [it.price, it.unitPrice, promo];
-          totalPromoItems++;
-        } else {
-          branchPrices[it.code] = [it.price, it.unitPrice];
-        }
-      }
+      const { branchPrices, promoCount } = serializeBranchItems(items, promosByItem, catalog);
+      totalPromoItems += promoCount;
 
       fs.writeFileSync(path.join(storesDir, `${store.storeId}.json`), JSON.stringify(branchPrices));
       writtenStores.push({ ...store, itemsCount: items.length });
@@ -257,7 +269,10 @@ async function main() {
   console.log(`\nBuild complete -> ${outRoot} (${meta.citiesCount} cities across ${succeededChains}/${opts.chains.length} chains).`);
 }
 
-main().catch((err) => {
-  console.error(err);
-  process.exit(1);
-});
+const isDirectCli = process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url);
+if (isDirectCli) {
+  main().catch((err) => {
+    console.error(err);
+    process.exit(1);
+  });
+}

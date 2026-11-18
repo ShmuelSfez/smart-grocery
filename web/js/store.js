@@ -18,7 +18,11 @@ function load(key, fallback) {
 }
 
 function save(key, value) {
-  localStorage.setItem(key, JSON.stringify(value));
+  try {
+    localStorage.setItem(key, JSON.stringify(value));
+  } catch {
+    // QuotaExceededError or private-mode restriction: keep in-memory session alive without crashing
+  }
 }
 
 export const store = {
@@ -56,10 +60,34 @@ export const store = {
     mappings: load(KEYS.mappings, {}),
   }),
   importAll(data) {
-    if (!data || data.version !== 1) throw new Error('קובץ גיבוי לא תקין');
-    if (data.list) save(KEYS.list, data.list);
-    if (data.history) save(KEYS.history, data.history);
-    if (data.catOverrides) save(KEYS.catOverrides, data.catOverrides);
-    if (data.mappings) save(KEYS.mappings, data.mappings);
+    if (!data || typeof data !== 'object' || data.version !== 1) throw new Error('קובץ גיבוי לא תקין');
+    if (Array.isArray(data.list)) {
+      const cleanList = data.list.slice(0, 500).filter((x) => x && typeof x === 'object' && typeof x.name === 'string' && x.name.trim()).map((x) => ({
+        id: typeof x.id === 'string' && x.id.length <= 64 ? x.id : String(Date.now() + Math.random()),
+        name: x.name.trim().slice(0, 120),
+        qty: Math.max(0.01, Math.min(1000, Number(x.qty) || 1)),
+        unit: ['unit', 'kg', 'g', 'pack'].includes(x.unit) ? x.unit : 'unit',
+        category: typeof x.category === 'string' ? x.category.slice(0, 30) : 'other',
+        note: typeof x.note === 'string' ? x.note.slice(0, 120) : '',
+        checked: x.checked !== false,
+        product: (typeof window !== 'undefined' && window.SLCodec?.sanitizeProduct) ? window.SLCodec.sanitizeProduct(x.product) : null,
+        addedAt: Number.isFinite(Number(x.addedAt)) ? Number(x.addedAt) : Date.now(),
+      }));
+      save(KEYS.list, cleanList);
+    }
+    if (data.history && typeof data.history === 'object' && !Array.isArray(data.history)) save(KEYS.history, data.history);
+    if (data.catOverrides && typeof data.catOverrides === 'object' && !Array.isArray(data.catOverrides)) save(KEYS.catOverrides, data.catOverrides);
+    if (data.mappings && typeof data.mappings === 'object' && !Array.isArray(data.mappings)) {
+      const cleanMap = {};
+      for (const [k, v] of Object.entries(data.mappings).slice(0, 500)) {
+        if (typeof window !== 'undefined' && window.SLCodec?.sanitizeProduct) {
+          const sp = window.SLCodec.sanitizeProduct(v);
+          if (sp) cleanMap[k.slice(0, 120)] = sp;
+        } else if (v && typeof v === 'object' && typeof v.name === 'string') {
+          cleanMap[k.slice(0, 120)] = { code: String(v.code || ''), name: String(v.name).slice(0, 120), brand: String(v.brand || '').slice(0, 80) };
+        }
+      }
+      save(KEYS.mappings, cleanMap);
+    }
   },
 };

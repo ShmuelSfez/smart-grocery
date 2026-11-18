@@ -3,6 +3,7 @@
 // and implements Hebrew product search + Q15 hybrid cross-chain basket matching.
 
 import { LIVE_CHAIN_IDS } from './chains.js';
+import { getSearchQueriesForItem } from './synonyms.js';
 
 export const PROD_DATA_BASE = 'https://shmuelsfez.github.io/smart-grocery/data/v1';
 export const LOCAL_DATA_BASE = '/data/v1';
@@ -23,33 +24,95 @@ export function normalizeSearchText(str) {
   return String(str || '')
     .toLowerCase()
     .replace(/["״'׳`]/g, '')
+    .replace(/([\u0590-\u05FF])(\d)/g, '$1 $2')
+    .replace(/(\d)([\u0590-\u05FF])/g, '$1 $2')
     .replace(/[^\p{L}\p{N}%.\s]/gu, ' ')
     .replace(/\s+/g, ' ')
     .trim();
 }
 
-// Lightweight Hebrew singular/plural variants so "עגבניות" matches "עגבניה", "מלפפונים" matches "מלפפון", etc.
+const TO_FINAL_HEB = { 'מ': 'ם', 'נ': 'ן', 'צ': 'ץ', 'פ': 'ף', 'כ': 'ך' };
+function toFinalHebLetter(w) {
+  if (!w || w.length < 2) return w;
+  const last = w[w.length - 1];
+  return TO_FINAL_HEB[last] ? w.slice(0, -1) + TO_FINAL_HEB[last] : w;
+}
+
+// Lightweight Hebrew singular/plural variants so "עגבניות" matches "עגבניה", "מלפפונים" matches "מלפפון", "לימונים" matches "לימון", etc.
 export function expandHebrewToken(tok) {
-  const variants = new Set([tok]);
-  if (tok.length > 3 && tok.startsWith('ה')) variants.add(tok.slice(1));
-  if (tok.length >= 4 && tok.endsWith('יות')) {
-    variants.add(tok.slice(0, -3) + 'יה');
-    variants.add(tok.slice(0, -3) + 'ית');
+  const variants = new Set([tok, toFinalHebLetter(tok)]);
+  // Orthographic double/single yod & vav variants ("אפייה"<->"אפיה", "חלווה"<->"חלבה", "אוויר"<->"אויר")
+  if (tok.includes('יי')) variants.add(tok.replace(/יי/g, 'י'));
+  if (tok.includes('וו')) variants.add(tok.replace(/וו/g, 'ו'));
+  if (tok === 'קולרבי' || tok === 'קולורבי') { variants.add('קולרבי'); variants.add('קולורבי'); }
+  if (tok === 'קרואסון' || tok === 'קוראסון') { variants.add('קרואסון'); variants.add('קוראסון'); }
+  if (tok === 'מלאווח' || tok === 'מלוואח' || tok === 'מלאוח' || tok === 'מלואח') {
+    variants.add('מלאווח'); variants.add('מלוואח'); variants.add('מלאוח'); variants.add('מלואח');
   }
-  if (tok.length >= 4 && tok.endsWith('ות')) {
-    const stem = tok.slice(0, -2);
-    variants.add(stem);
-    variants.add(stem + 'ה');
-  }
-  if (tok.length >= 4 && tok.endsWith('ים')) {
-    const stem = tok.slice(0, -2);
-    variants.add(stem);
-    variants.add(stem + 'ה');
-  }
-  if (tok.length >= 3 && tok.endsWith('ה')) {
-    variants.add(tok.slice(0, -1) + 'ות');
+  if (tok === 'טסטרס' || tok === 'טייסטרס') { variants.add('טסטרס'); variants.add('טייסטרס'); }
+  if (tok === 'צויס' || tok === 'צוייס') { variants.add('צויס'); variants.add('צוייס'); }
+
+  const seedList = [...variants];
+  for (const base of seedList) {
+    if (base.length > 3 && (base.startsWith('ה') || base.startsWith('ל') || base.startsWith('ב'))) {
+      variants.add(base.slice(1));
+    }
+    if (base === 'כלים' || base === 'כביסה' || base === 'רצפה' || base === 'מדיח' || base === 'ידיים' || base === 'ידים') {
+      variants.add('ל' + base);
+    }
+    // Construct feminine -ת <-> -ה / -ות ("גלידת" -> "גלידה", "מגבות" <-> "מגבת")
+    if (base.length >= 4 && base.endsWith('ת') && !base.endsWith('ות') && !base.endsWith('ית')) {
+      variants.add(base.slice(0, -1) + 'ה');
+      variants.add(base.slice(0, -1) + 'ות');
+    }
+    if (base === 'פירות' || base === 'פרות') {
+      variants.add('פירות');
+      variants.add('פרות');
+    }
+    if (base.length >= 4 && base.endsWith('יות')) {
+      variants.add(base.slice(0, -3) + 'יה');
+      variants.add(base.slice(0, -3) + 'יית');
+      variants.add(base.slice(0, -3) + 'ית');
+    }
+    if (base.length >= 4 && base.endsWith('ות')) {
+      const stem = base.slice(0, -2);
+      variants.add(stem + 'ה');
+      // Require >=3-letter stem for -ת / bare stem so "מצות" (stem "מצ") never expands to "מצת" (lighter)!
+      if (stem.length >= 3) {
+        variants.add(toFinalHebLetter(stem));
+        variants.add(stem + 'ת');
+      }
+    }
+    if (base.length >= 5 && base.endsWith('יים')) {
+      variants.add(base.slice(0, -3) + 'י');
+    }
+    if (base.length >= 4 && base.endsWith('ים')) {
+      const stem = base.slice(0, -2);
+      variants.add(toFinalHebLetter(stem));
+      variants.add(stem + 'ה');
+      variants.add(stem + 'י');
+    }
+    if (base.length >= 4 && base.endsWith('י')) {
+      const stem = base.slice(0, -1);
+      variants.add(toFinalHebLetter(stem));
+      variants.add(stem + 'ים');
+    }
+    if (base.length >= 3 && base.endsWith('ה')) {
+      variants.add(base.slice(0, -1) + 'ות');
+    }
   }
   return [...variants].filter((v) => v.length >= 2 || /^\d/.test(v));
+}
+
+const collapseCache = new Map();
+function collapseOrthWord(w) {
+  if (!w || w.length < 3) return w;
+  let c = collapseCache.get(w);
+  if (c === undefined) {
+    c = w.replace(/יי/g, 'י').replace(/וו/g, 'ו');
+    collapseCache.set(w, c);
+  }
+  return c;
 }
 
 export function buildCatalogBundle(rawCatalog) {
@@ -63,6 +126,8 @@ export function buildCatalogBundle(rawCatalog) {
     const normName = normalizeSearchText(name);
     const normBrand = normalizeSearchText(brand);
     const words = normName.split(' ').filter(Boolean);
+    const collapsedWords = words.map(collapseOrthWord);
+    const collapsedBrandWords = normBrand ? normBrand.split(' ').filter(Boolean).map(collapseOrthWord) : [];
     const entry = {
       code,
       normBarcode: normalizeBarcode(code),
@@ -74,6 +139,8 @@ export function buildCatalogBundle(rawCatalog) {
       normName,
       normBrand,
       words,
+      collapsedWords,
+      collapsedBrandWords,
     };
     entries.push(entry);
     if (!byNormBarcode.has(entry.normBarcode)) {
@@ -90,45 +157,118 @@ function formatUnitDesc(entry) {
   return 'יחידה';
 }
 
-function tokenMatchesEntry(variants, entry) {
+function tokenMatchesEntry(variants, entry, tokenIdx = 0) {
+  const isPossiblyTruncated = entry.name.trim().length >= 19;
+  const lastWordIdx = entry.words.length - 1;
+
   for (const v of variants) {
+    const vc = collapseOrthWord(v);
     for (let i = 0; i < entry.words.length; i++) {
       const w = entry.words[i];
       if (w === v) return { matched: true, exact: true, wordIndex: i };
-      if (v.length >= 3 && (w.startsWith(v) || v.startsWith(w)) && Math.abs(w.length - v.length) <= 2) {
+      const wc = entry.collapsedWords[i];
+      if (vc.length >= 3 && (wc === vc || wc === 'ל' + vc)) {
+        return { matched: true, exact: wc === vc, wordIndex: i };
+      }
+      // Handle 20-char ERP XML truncation ONLY on trailing word >= 3 chars covering >= 70% of query token
+      if (
+        isPossiblyTruncated
+        && i === lastWordIdx
+        && wc.length >= 3
+        && vc.length > wc.length
+        && wc.length >= Math.ceil(vc.length * 0.7)
+        && vc.startsWith(wc)
+      ) {
         return { matched: true, exact: false, wordIndex: i };
       }
     }
-    if (entry.normBrand && (entry.normBrand === v || (v.length >= 3 && entry.normBrand.includes(v)))) {
-      return { matched: true, exact: false, wordIndex: 2 };
+    if (tokenIdx > 0 && entry.collapsedBrandWords.length) {
+      if (entry.collapsedBrandWords.includes(vc)) {
+        return { matched: true, exact: false, wordIndex: 2 };
+      }
     }
   }
   return { matched: false, exact: false, wordIndex: -1 };
 }
 
+// Hard-disqualifying words: if present in product name and absent from query, reject completely
+const HARD_DISQUALIFIERS = [
+  ['מכונת', ['מכונת', 'מכונה']],
+  ['מכונה', ['מכונת', 'מכונה']],
+  ['שיפודי', ['שיפוד', 'שיפודי']],
+  ['בורקס', ['בורקס']],
+  ['בושם', ['בושם']],
+  ['אדט', ['אדט', 'בושם']],
+  ['אדפ', ['אדפ', 'בושם']],
+  ['לחתולים', ['חתול', 'לחתול', 'לחתולים', 'פריסקיז']],
+  ['לחתול', ['חתול', 'לחתול', 'לחתולים', 'פריסקיז']],
+  ['לכלבים', ['כלב', 'לכלב', 'לכלבים', 'בונזו', 'דוגלי']],
+  ['לכלב', ['כלב', 'לכלב', 'לכלבים', 'בונזו', 'דוגלי']],
+  // Hard-disqualify dish soap when user asked for non-dish product, UNLESS query mentions כלים / מדיח / פיירי
+  ['לכלים', ['כלים', 'לכלים', 'מדיח', 'פיירי', 'פירי']],
+  ['נר', ['נר', 'נרות', 'נרונים']],
+];
+
+// Exact derivative words (matched by full word or plural, NOT prefix, so "נוזל" never penalizes "נוזלי")
+const DERIVATIVE_WORDS = [
+  'במלח', 'בחומץ', 'חמוץ', 'חמוצים', 'כבוש', 'כבושים', 'קלוי', 'קלויים', 'ממולא', 'מטוגן', 'שיפקה',
+  'רסק', 'קטשופ', 'רוטב', 'מרק', 'אבקת', 'גבישי', 'תבלין', 'מרוסקות', 'מיובשות', 'סירופ', 'תרכיז',
+  'לימונית', 'חומץ', 'סיידר', 'תירוש', 'מיץ', 'נקטר', 'משקה', 'תה', 'בירה', 'יין',
+  'שוקולד', 'שוקולית', 'עוגיות', 'עוגת', 'עוגה', 'ביסקוויט', 'גלידה', 'גלידת', 'חטיף', 'ביסלי',
+  'תפוציפס', 'ציטוס', 'קרקר', 'בורקס', 'מאפה', 'מאפין', 'קרואסון', 'פשטידה', 'רביולי', 'פיצה',
+  'סוכריות', 'מסטיק', 'קינדר', 'מרציפן', 'ריבת', 'ריבה', 'פופקורן', 'פופקו', 'קרוטונים', 'טוסט',
+  'סבון', 'שמפו', 'נוזל', 'מבריק', 'מגבונים', 'קרם', 'זאוול', 'אקונומיקה', 'ערק', 'אקליפטוס',
+  'קרצוף', 'נירוסטה', 'לרצפה', 'רצפה', 'מעושן', 'הודו', 'כיפלי',
+  'אדמה', 'בוטנים', 'סויה', 'שקדים', 'קוקוס', 'שיבולת', 'שרי', 'חמוצה', 'אטריות', 'סלט', 'ירושלמי',
+  'טחון', 'גרוס', 'קפוא', 'קפואה', 'קפואים', 'שימורים', 'וניל', 'ונילין', 'לימון', 'מדיח', 'חום', 'חלבון',
+];
+
+function queryMentionsWord(queryWords, mod) {
+  if (queryWords.includes(mod)) return true;
+  const stem = mod.length >= 4 && (mod.endsWith('ים') || mod.endsWith('ות')) ? mod.slice(0, -2) : mod;
+  return queryWords.some((qw) => qw === stem || (stem.length >= 3 && qw.startsWith(stem)));
+}
+
 export function scoreEntry(entry, queryNorm, tokenVariants) {
   if (!queryNorm || !tokenVariants.length) return 0;
+
+  for (const [badWord, allowedTriggers] of HARD_DISQUALIFIERS) {
+    if (entry.words.includes(badWord) && !allowedTriggers.some((tr) => queryNorm.includes(tr))) {
+      return 0;
+    }
+  }
+
   if (entry.normName === queryNorm) return 300;
 
   let matchedCount = 0;
   let score = 0;
   for (let t = 0; t < tokenVariants.length; t++) {
-    const hit = tokenMatchesEntry(tokenVariants[t], entry);
+    const hit = tokenMatchesEntry(tokenVariants[t], entry, t);
     if (!hit.matched) continue;
     matchedCount++;
-    score += hit.exact ? 40 : 24;
-    if (t === 0 && hit.wordIndex === 0) score += 65; // head-noun match ("חלב טרי" > "שוקולד חלב")
+    score += hit.exact ? 42 : 24;
+    if (t === 0 && hit.wordIndex === 0) score += 65;
     else if (hit.wordIndex === 0) score += 25;
   }
 
   if (matchedCount < tokenVariants.length) return 0;
   if (entry.normName.startsWith(queryNorm + ' ')) score += 45;
-  // Penalize mini/personal cups when user asks for generic staples ("קוטג'" -> 250g, not "בקטנה" 100g)
+
+  const queryWords = queryNorm.split(' ').filter(Boolean);
+  for (const mod of DERIVATIVE_WORDS) {
+    if (entry.words.includes(mod) && !queryMentionsWord(queryWords, mod)) {
+      score -= 55;
+    }
+  }
+  // Penalize black pepper when user asked for fresh bell pepper ("פלפל אדום"/"צהוב")
+  if (entry.words.includes('שחור') && !queryWords.includes('שחור') && !queryWords.includes('טורקי') && !queryWords.includes('קפה')) {
+    score -= 55;
+  }
+
   if (!/(?:^|\s)(בקטנה|אישי|מיני|לדרך|מוקטן)(?:$|\s)/.test(queryNorm)
       && /(?:^|\s)(בקטנה|אישי|מיני|לדרך|מוקטן)(?:$|\s)/.test(entry.normName)) {
     score -= 25;
   }
-  // Slightly prefer concise core product names over long multi-pack accessories
   score -= Math.min(20, Math.max(0, entry.words.length - tokenVariants.length) * 3);
   return Math.max(1, score);
 }
@@ -237,24 +377,74 @@ function buildMergedCardForBarcode(normBarcode, activeChains, branchData, fallba
   };
 }
 
-function findBestInSingleChain(queryText, chainBundle, preferWeighted = null) {
-  const queryNorm = normalizeSearchText(queryText);
+const catalogMemo = new WeakMap(); // catalog -> WeakMap<storePrices, Map<cacheKey, result>>
+
+function expandSlashSubqueries(rawQuery) {
+  const q = String(rawQuery || '').trim();
+  if (!/\D\s*\/\s*\D/.test(q)) return [q];
+  const [leftRaw, rightRaw] = q.split(/\s*\/\s*/, 2);
+  const left = leftRaw.trim();
+  const right = (rightRaw || '').trim();
+  const leftWords = left.split(/\s+/).filter(Boolean);
+  const rightWords = right.split(/\s+/).filter(Boolean);
+  const out = [];
+  const push = (s) => { const t = s.trim(); if (t && !out.includes(t)) out.push(t); };
+  push(left);
+  if (leftWords.length > 1 && right) push(`${leftWords[0]} ${right}`);
+  // Only search bare `right` alone when `left` was also a single word ("מטרנה / סימילאק") or `right` has >= 2 words
+  if (right && (leftWords.length <= 1 || rightWords.length >= 2)) push(right);
+  if (leftWords.length >= 2) push(leftWords.slice(0, -1).join(' '));
+  return out;
+}
+
+function toRetailPackBaseAmount(entry) {
+  const q = Number(entry.qty) || 0;
+  if (!(q > 0)) return 0;
+  const u = String(entry.unit || '').toLowerCase();
+  if (/ק["״']?ג|קג|kg|ליטר|ל['׳]?$|liter/.test(u)) return q * 1000;
+  if (/מ["״']?ל|מל|ml|גר|gr|g\b/.test(u)) return q;
+  return q;
+}
+
+function isStandardRetailPack(entry) {
+  const amt = toRetailPackBaseAmount(entry);
+  if (!(amt > 0)) return true;
+  // Standard retail unit is typically 50g..3500g / 100ml..3500ml (avoids 10g sachets & 10kg wholesale sacks)
+  return amt >= 50 && amt <= 3500;
+}
+
+function isBetterTieBreak(candEntry, prevEntry, tokenCount) {
+  const candStd = isStandardRetailPack(candEntry);
+  const prevStd = isStandardRetailPack(prevEntry);
+  if (candStd !== prevStd) return candStd;
+  const candDiff = Math.abs(candEntry.words.length - tokenCount);
+  const prevDiff = Math.abs(prevEntry.words.length - tokenCount);
+  if (candDiff !== prevDiff) return candDiff < prevDiff;
+  return candEntry.normBarcode < prevEntry.normBarcode;
+}
+
+function scanSingleNormalizedQuery(queryNorm, chainBundle, preferWeighted) {
   const rawTokens = queryNorm.split(' ').filter(Boolean);
-  if (!rawTokens.length) return null;
+  if (!rawTokens.length) return { best: null, bestScore: 0 };
   const tokenVariants = rawTokens.map(expandHebrewToken);
 
   const { catalog, storePrices } = chainBundle;
   let best = null;
+  let bestEntry = null;
   let bestScore = 0;
 
   for (const entry of catalog.entries) {
-    if (preferWeighted !== null && entry.weighted !== preferWeighted) continue;
     const sp = storePrices[entry.code];
     if (!sp || !(sp[0] > 0)) continue;
-    const sc = scoreEntry(entry, queryNorm, tokenVariants);
+    let sc = scoreEntry(entry, queryNorm, tokenVariants);
     if (sc <= 0) continue;
-    if (sc > bestScore || (sc === bestScore && best && sp[0] < best.price)) {
+    // Prefer weighted items when user asked by kg/g (+22 bonus instead of hard-filtering out packaged fresh produce!)
+    if (preferWeighted !== null && entry.weighted === preferWeighted) {
+      sc += 22;
+    }
+    if (sc > bestScore || (sc === bestScore && bestEntry && isBetterTieBreak(entry, bestEntry, rawTokens.length))) {
       bestScore = sc;
+      bestEntry = entry;
       best = {
         price: sp[0],
         unitPrice: sp[1] || 0,
@@ -263,10 +453,55 @@ function findBestInSingleChain(queryText, chainBundle, preferWeighted = null) {
         code: entry.code,
         productName: entry.name,
         brand: entry.brand,
+        packBaseAmt: toRetailPackBaseAmount(entry),
       };
     }
   }
-  return best;
+  return { best, bestScore };
+}
+
+function findBestInSingleChain(queryText, chainBundle, preferWeighted = null) {
+  const { catalog, storePrices } = chainBundle;
+  const cacheKey = `${preferWeighted}::${String(queryText || '').trim().toLowerCase()}`;
+
+  let byStore = catalogMemo.get(catalog);
+  if (!byStore) {
+    byStore = new WeakMap();
+    catalogMemo.set(catalog, byStore);
+  }
+  let memoMap = byStore.get(storePrices);
+  if (!memoMap) {
+    memoMap = new Map();
+    byStore.set(storePrices, memoMap);
+  }
+  if (memoMap.has(cacheKey)) return memoMap.get(cacheKey);
+
+  const candidatePhrases = [];
+  for (const { query: synQ, isFallback } of getSearchQueriesForItem(queryText)) {
+    const subs = expandSlashSubqueries(synQ);
+    subs.forEach((subQ, subIdx) => {
+      const nq = normalizeSearchText(subQ);
+      if (nq && !candidatePhrases.some((c) => c.nq === nq)) {
+        candidatePhrases.push({ nq, isFallback: isFallback || subIdx >= 2 });
+      }
+    });
+  }
+
+  let overallBest = null;
+  let overallScore = 0;
+  for (let i = 0; i < candidatePhrases.length; i++) {
+    const { nq, isFallback } = candidatePhrases[i];
+    const { best, bestScore } = scanSingleNormalizedQuery(nq, chainBundle, preferWeighted);
+    const adjScore = i === 0 ? bestScore : Math.max(1, bestScore - 8);
+    if (best && adjScore > overallScore) {
+      overallScore = adjScore;
+      overallBest = { ...best, viaFallback: isFallback };
+    }
+    if (overallBest && overallScore >= 80 && i >= 1) break;
+  }
+
+  memoMap.set(cacheKey, overallBest);
+  return overallBest;
 }
 
 /**
@@ -315,10 +550,29 @@ export function matchLineAcrossChains(line, branchData) {
       const sub = subByProdName || findBestInSingleChain(line.name, bundle, preferWeighted);
       matches[cid] = sub ? { ...sub, kind: 'substitute' } : null;
     } else {
-      // Generic item: best name match in each chain
+      // Generic item: best name match in each chain (mark fallback synonym matches as 'substitute' per H3)
       const best = findBestInSingleChain(line.searchQuery || line.name, bundle, preferWeighted)
         || (preferWeighted !== null ? findBestInSingleChain(line.searchQuery || line.name, bundle, null) : null);
-      matches[cid] = best ? { ...best, kind: 'exact', genericMatch: true } : null;
+      matches[cid] = best ? { ...best, kind: best.viaFallback ? 'substitute' : 'exact', genericMatch: true } : null;
+    }
+  }
+
+  // H9 Pack-Size Outlier Honesty: if an unpinned generic line matched drastically different pack sizes (>3.5x median),
+  // flag the outlier chain match as `kind: 'substitute'` (`sizeOutlier: true`) so the UI surfaces it honestly.
+  if (!pinned) {
+    const sizes = LIVE_CHAIN_IDS
+      .map((cid) => matches[cid])
+      .filter((m) => m && !m.weighted && m.packBaseAmt >= 25)
+      .map((m) => m.packBaseAmt)
+      .sort((a, b) => a - b);
+    if (sizes.length >= 2) {
+      const median = sizes[Math.floor(sizes.length / 2)];
+      for (const cid of LIVE_CHAIN_IDS) {
+        const m = matches[cid];
+        if (m && !m.weighted && m.packBaseAmt >= 25 && (m.packBaseAmt > median * 3.5 || m.packBaseAmt < median / 3.5)) {
+          matches[cid] = { ...m, kind: 'substitute', sizeOutlier: true };
+        }
+      }
     }
   }
 
