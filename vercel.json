@@ -14,7 +14,7 @@
         { "key": "Referrer-Policy", "value": "strict-origin-when-cross-origin" },
         {
           "key": "Content-Security-Policy",
-          "value": "default-src 'self'; img-src 'self' https://res.cloudinary.com https://*.shufersal.co.il https://img.rami-levy.co.il data:; connect-src 'self' https://generativelanguage.googleapis.com; style-src 'self' 'unsafe-inline'; script-src 'self'; object-src 'none'; base-uri 'self'; frame-ancestors 'none';"
+          "value": "default-src 'self'; img-src 'self' https://res.cloudinary.com https://*.shufersal.co.il https://img.rami-levy.co.il data:; connect-src 'self' https://generativelanguage.googleapis.com; style-src 'self'; script-src 'self'; object-src 'none'; base-uri 'self'; frame-ancestors 'none';"
         }
       ]
     }

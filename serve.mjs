@@ -17,7 +17,7 @@ const SEC_HEADERS = {
   'x-content-type-options': 'nosniff',
   'x-frame-options': 'DENY',
   'referrer-policy': 'strict-origin-when-cross-origin',
-  'content-security-policy': "default-src 'self'; img-src 'self' https://res.cloudinary.com https://*.shufersal.co.il https://img.rami-levy.co.il data:; connect-src 'self' https://generativelanguage.googleapis.com; style-src 'self' 'unsafe-inline'; script-src 'self'; object-src 'none'; base-uri 'self'; frame-ancestors 'none';",
+  'content-security-policy': "default-src 'self'; img-src 'self' https://res.cloudinary.com https://*.shufersal.co.il https://img.rami-levy.co.il data:; connect-src 'self' https://generativelanguage.googleapis.com; style-src 'self'; script-src 'self'; object-src 'none'; base-uri 'self'; frame-ancestors 'none';",
 };
 
 const SEARCH_CACHE = new Map();

@@ -32,6 +32,7 @@ let deliveryConfig = { lastChecked: null, chains: {} };
 let sponsoredCodes = new Set();
 
 const searchCache = new Map();
+const searchErrors = new Set();
 const openPickers = new Set();
 
 // Drop any legacy estimated/invented items cached in localStorage from older versions
@@ -112,39 +113,39 @@ async function fetchOptions(query) {
   const q = query.trim();
   if (!q) return [];
   if (searchCache.has(q)) return searchCache.get(q);
-  const p = fetch(`/api/search?q=${encodeURIComponent(q)}&limit=9`)
-    .then((r) => (r.ok ? r.json() : []))
-    .catch(() => []);
+  const p = fetch(`/api/search?q=${encodeURIComponent(q)}&limit=9`).then((r) => {
+    if (!r.ok) throw new Error('HTTP_' + r.status);
+    return r.json();
+  });
   searchCache.set(q, p);
-  const res = await p;
-  searchCache.set(q, res);
-  return res;
+  try {
+    const res = await p;
+    const arr = Array.isArray(res) ? res : [];
+    searchErrors.delete(q);
+    searchCache.set(q, arr);
+    return arr;
+  } catch {
+    // Never cache failed searches as empty results
+    searchCache.delete(q);
+    searchErrors.add(q);
+    return null;
+  }
+}
+
+function bestCandidateFor(it) {
+  const q = (it.searchQuery || it.name || '').trim();
+  const cached = searchCache.get(q);
+  if (!Array.isArray(cached) || !cached.length) return null;
+  return cached.find((p) => p.inStock) || cached[0];
 }
 
 function ensureOptionsLoaded(it) {
-  const q = it.searchQuery || it.name;
-  const existing = searchCache.get(q);
-  if (Array.isArray(existing)) {
-    if ((!it.product || !it.product.chainPrices) && existing.length) {
-      it.product = existing.find((p) => p.inStock) || existing[0];
-      mappings[key(it.name)] = it.product;
-      store.setMappings(mappings);
-      store.setList(list);
-    }
-    return;
-  }
-  fetchOptions(q).then((res) => {
-    if ((!it.product || !it.product.chainPrices) && Array.isArray(res) && res.length) {
-      it.product = res.find((p) => p.inStock) || res[0];
-      mappings[key(it.name)] = it.product;
-      store.setMappings(mappings);
-      store.setList(list);
-    }
-    render();
-  });
+  const q = (it.searchQuery || it.name || '').trim();
+  if (!q || searchCache.has(q) || searchErrors.has(q)) return;
+  fetchOptions(q).then(() => render());
 }
 
-function matchForChain(product, chainId) {
+function matchForChain(product, chainId, kindOverride) {
   if (!product) return null;
   const weighted = product.sellingMethod === 'BY_WEIGHT' || Boolean(product.weighted);
   const price = product.chainPrices && typeof product.chainPrices[chainId] === 'number' && product.chainPrices[chainId] > 0
@@ -155,7 +156,7 @@ function matchForChain(product, chainId) {
     price,
     weighted,
     promo: product.chainPromos?.[chainId] || null,
-    kind: product.chainKinds?.[chainId] || 'exact',
+    kind: kindOverride || product.chainKinds?.[chainId] || 'exact',
   };
 }
 
@@ -165,9 +166,11 @@ function computeChainTotals() {
   const lines = [];
   for (const it of checked) {
     ensureOptionsLoaded(it);
+    const pinned = it.product;
+    const candidate = pinned || bestCandidateFor(it);
     const matches = {};
     for (const cid of LIVE_CHAIN_IDS) {
-      matches[cid] = matchForChain(it.product, cid);
+      matches[cid] = matchForChain(candidate, cid, pinned ? undefined : 'substitute');
     }
     lines.push({ id: it.id, qty: it.qty, unit: it.unit, matches });
   }
@@ -440,12 +443,14 @@ function renderItem(it, activeChainId) {
   };
   row.append(main);
 
-  const pickerOpen = openPickers.has(it.id) || !it.product;
-  if (it.product && !openPickers.has(it.id)) {
-    const p = it.product;
+  const pickerOpen = openPickers.has(it.id);
+  const previewProd = it.product || bestCandidateFor(it);
+  if (!pickerOpen && it.checked) {
+    ensureOptionsLoaded(it);
+    const p = previewProd;
     const cp = document.createElement('div');
     cp.className = 'chosen-prod';
-    if (p.img && window.SLCodec?.isSafeImgUrl(p.img)) {
+    if (p?.img && window.SLCodec?.isSafeImgUrl(p.img)) {
       const img = document.createElement('img');
       img.src = p.img;
       img.alt = '';
@@ -456,48 +461,53 @@ function renderItem(it, activeChainId) {
     info.className = 'cp-info';
     const cpName = document.createElement('span');
     cpName.className = 'cp-name';
-    cpName.textContent = p.name;
+    cpName.textContent = it.product ? p.name : (p ? `התאמה אוטומטית: ${p.name}` : 'טרם נבחר מוצר ספציפי');
     const meta = document.createElement('div');
     meta.className = 'cp-meta';
-    if (isSponsoredProduct(p)) {
+    if (p && isSponsoredProduct(p)) {
       const sp = document.createElement('span');
       sp.className = 'cp-spons';
       sp.textContent = '⭐ ממומן';
       meta.append(sp);
     }
-    if (p.brand) {
+    if (p?.brand) {
       const b = document.createElement('span');
       b.className = 'cp-brand';
       b.textContent = p.brand;
       meta.append(b);
     }
-    if (p.unitDesc) meta.append(document.createTextNode(p.unitDesc));
-    const activeMatch = matchForChain(p, activeChainId);
-    const activeLine = lineCost(it, activeMatch);
-    const pr = document.createElement('span');
-    pr.className = 'cp-price';
-    pr.textContent = itemPriceForChain(p, activeChainId) + (activeLine?.estimated ? ' (הערכת משקל)' : '');
-    meta.append(pr);
+    if (p?.unitDesc) meta.append(document.createTextNode(p.unitDesc));
+    if (p) {
+      const activeMatch = matchForChain(p, activeChainId);
+      const activeLine = lineCost(it, activeMatch);
+      const pr = document.createElement('span');
+      pr.className = 'cp-price';
+      pr.textContent = itemPriceForChain(p, activeChainId) + (activeLine?.estimated ? ' (הערכת משקל)' : '');
+      meta.append(pr);
+    }
     info.append(cpName, meta);
 
-    const pills = document.createElement('div');
-    pills.className = 'chain-pills';
-    for (const cid of LIVE_CHAIN_IDS) {
-      const c = CHAIN_BY_ID[cid];
-      const m = matchForChain(p, cid);
-      const pill = document.createElement('span');
-      pill.className = 'chain-pill' + (cid === activeChainId ? ' active' : '') + (!m ? ' missing' : '');
-      pill.textContent = m ? `${c.name}: ₪${m.price.toFixed(2)}` : `${c.name}: אין נתון`;
-      pills.append(pill);
+    if (p) {
+      const pills = document.createElement('div');
+      pills.className = 'chain-pills';
+      for (const cid of LIVE_CHAIN_IDS) {
+        const c = CHAIN_BY_ID[cid];
+        const m = matchForChain(p, cid);
+        const pill = document.createElement('span');
+        pill.className = 'chain-pill' + (cid === activeChainId ? ' active' : '') + (!m ? ' missing' : '');
+        pill.textContent = m ? `${c.name}: ₪${m.price.toFixed(2)}` : `${c.name}: אין נתון`;
+        pills.append(pill);
+      }
+      info.append(pills);
     }
-    info.append(pills);
 
     const chg = document.createElement('button');
     chg.type = 'button';
     chg.className = 'change-btn';
-    chg.textContent = 'החלף חברה / מותג';
+    chg.textContent = it.product ? 'החלף חברה / מותג' : 'בחר מוצר';
     chg.onclick = () => {
       openPickers.add(it.id);
+      searchErrors.delete((it.searchQuery || it.name || '').trim());
       ensureOptionsLoaded(it);
       render();
     };
@@ -505,7 +515,7 @@ function renderItem(it, activeChainId) {
     row.append(cp);
   } else if (pickerOpen && it.checked) {
     ensureOptionsLoaded(it);
-    const q = it.searchQuery || it.name;
+    const q = (it.searchQuery || it.name || '').trim();
     const cached = searchCache.get(q);
     const box = document.createElement('div');
     box.className = 'picker-box';
@@ -524,23 +534,27 @@ function renderItem(it, activeChainId) {
     btnSearch.textContent = '🔍';
     const doSearch = () => {
       it.searchQuery = inp.value.trim() || it.name;
+      searchErrors.delete(it.searchQuery);
+      searchCache.delete(it.searchQuery);
       fetchOptions(it.searchQuery).then(() => render());
       render();
     };
     inp.onkeydown = (e) => { if (e.key === 'Enter') { e.preventDefault(); doSearch(); } };
     btnSearch.onclick = doSearch;
-    searchWrap.append(inp, btnSearch);
-    if (it.product) {
-      const btnClose = document.createElement('button');
-      btnClose.type = 'button';
-      btnClose.textContent = 'סגור';
-      btnClose.onclick = () => { openPickers.delete(it.id); render(); };
-      searchWrap.append(btnClose);
-    }
+    const btnClose = document.createElement('button');
+    btnClose.type = 'button';
+    btnClose.textContent = 'סגור';
+    btnClose.onclick = () => { openPickers.delete(it.id); render(); };
+    searchWrap.append(inp, btnSearch, btnClose);
     head.append(searchWrap);
     box.append(head);
 
-    if (!Array.isArray(cached)) {
+    if (searchErrors.has(q)) {
+      const errEl = document.createElement('div');
+      errEl.className = 'muted';
+      errEl.textContent = 'שגיאה זמנית בטעינת מוצרים – לחץ 🔍 לניסיון חוזר.';
+      box.append(errEl);
+    } else if (!Array.isArray(cached)) {
       const loading = document.createElement('div');
       loading.className = 'muted';
       loading.textContent = 'משווה מחירים ומותגים בין הרשתות…';
@@ -1209,34 +1223,37 @@ if ($('shufUser')) {
 }
 
 // ---------- Send to Selected Supermarket ----------
-async function ensureProductsChosen(items) {
-  // Concurrency-limited to 3 at a time
+async function resolveOrderProducts(items) {
+  // Fetch candidates for unpicked items without mutating saved user choices
+  const resolved = new Map();
   const queue = [...items];
   const workers = Array.from({ length: 3 }, async () => {
     while (queue.length) {
       const it = queue.shift();
-      if (it.product && it.product.code) continue;
+      if (it.product && it.product.code) {
+        resolved.set(it.id, it.product);
+        continue;
+      }
       const opts = await fetchOptions(it.searchQuery || it.name);
       if (Array.isArray(opts) && opts.length) {
-        it.product = opts.find((p) => p.inStock) || opts[0];
-        mappings[key(it.name)] = it.product;
+        resolved.set(it.id, opts.find((p) => p.inStock) || opts[0]);
       }
     }
   });
   await Promise.all(workers);
-  store.setMappings(mappings);
-  store.setList(list);
+  return resolved;
 }
 
 async function chainOrderLink(includeEmailHint = true) {
   const { activeChainId } = computeChainTotals();
   const chain = CHAIN_BY_ID[activeChainId] || CHAINS[0];
   const checkedItems = list.filter((i) => i.checked);
-  await ensureProductsChosen(checkedItems);
+  const resolved = await resolveOrderProducts(checkedItems);
   const items = checkedItems.map((i) => {
-    const prod = i.product ? {
-      ...i.product,
-      code: (i.product.chainCodes && i.product.chainCodes[activeChainId]) || i.product.code,
+    const chosen = i.product || resolved.get(i.id) || null;
+    const prod = chosen ? {
+      ...chosen,
+      code: (chosen.chainCodes && chosen.chainCodes[activeChainId]) || chosen.code,
     } : null;
     return {
       ...i,
@@ -1362,6 +1379,5 @@ loadStaticConfigs();
 importFromHash();
 window.addEventListener('hashchange', importFromHash);
 if ('serviceWorker' in navigator) {
-  navigator.serviceWorker.getRegistrations().then((rs) => rs.forEach((r) => r.unregister())).catch(() => {});
-  if (window.caches) caches.keys().then((ks) => ks.forEach((k) => caches.delete(k))).catch(() => {});
+  navigator.serviceWorker.register('./sw.js').catch(() => {});
 }

@@ -258,6 +258,8 @@ dialog::backdrop { background: rgba(0,0,0,.35); }
 .field { display: flex; flex-direction: column; gap: 4px; font-size: .85rem; color: var(--muted); flex: 1; }
 .field input, .field select { padding: 10px; border-radius: 10px; border: 1px solid var(--line); color: var(--text); background: #fff; }
 .row { display: flex; gap: 8px; }
+.row-center { align-items: center; }
+.flex-1 { flex: 1; }
 fieldset { border: 1px solid var(--line); border-radius: 12px; display: flex; flex-direction: column; gap: 8px; }
 legend { font-weight: 600; padding: 0 6px; }
 .check { display: flex; gap: 8px; align-items: center; font-size: .9rem; }
