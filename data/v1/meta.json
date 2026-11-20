@@ -1,0 +1,166 @@
+{
+  "version": 1,
+  "generatedAt": "2026-11-20T00:48:44.525Z",
+  "citiesCount": 122,
+  "chains": {
+    "mahsaneihashuk": {
+      "ok": true,
+      "storesCount": 5,
+      "catalogCount": 17459,
+      "promoItemsCount": 20070,
+      "branchFailures": 0,
+      "latestStamp": "20261119060100060100",
+      "promoStats": {
+        "total": 24064,
+        "kept": 20003,
+        "clubSkipped": 3359,
+        "couponSkipped": 0,
+        "expiredSkipped": 0,
+        "conditionalSkipped": 130,
+        "unsupportedSkipped": 572
+      },
+      "carriedForward": true,
+      "rolloverNote": "mahsaneihashuk Stores feed not found on LaibCatalog (7290661400001)"
+    },
+    "victory": {
+      "ok": true,
+      "storesCount": 4,
+      "catalogCount": 12717,
+      "promoItemsCount": 13531,
+      "branchFailures": 0,
+      "latestStamp": "20261119060100060100",
+      "promoStats": {
+        "total": 15164,
+        "kept": 14162,
+        "clubSkipped": 526,
+        "couponSkipped": 59,
+        "expiredSkipped": 0,
+        "conditionalSkipped": 210,
+        "unsupportedSkipped": 207
+      },
+      "carriedForward": true,
+      "rolloverNote": "victory Stores feed not found on LaibCatalog (7290696200003)"
+    },
+    "osherad": {
+      "ok": true,
+      "storesCount": 3,
+      "catalogCount": 7729,
+      "promoItemsCount": 6192,
+      "branchFailures": 0,
+      "latestStamp": "20261119140602",
+      "promoStats": {
+        "total": 2670,
+        "kept": 2562,
+        "clubSkipped": 0,
+        "couponSkipped": 0,
+        "expiredSkipped": 0,
+        "conditionalSkipped": 2,
+        "unsupportedSkipped": 106
+      },
+      "carriedForward": true,
+      "rolloverNote": "Zero branches succeeded for osherad"
+    },
+    "shufersal": {
+      "ok": true,
+      "storesCount": 416,
+      "catalogCount": 38148,
+      "promoItemsCount": 1032336,
+      "branchFailures": 0,
+      "latestStamp": "20261119125648",
+      "promoStats": {
+        "total": 455516,
+        "kept": 402116,
+        "clubSkipped": 1353,
+        "couponSkipped": 32330,
+        "expiredSkipped": 25,
+        "conditionalSkipped": 8190,
+        "unsupportedSkipped": 11502
+      }
+    },
+    "ramilevy": {
+      "ok": true,
+      "storesCount": 97,
+      "catalogCount": 26706,
+      "promoItemsCount": 349698,
+      "branchFailures": 0,
+      "latestStamp": "20261120001131",
+      "promoStats": {
+        "total": 201298,
+        "kept": 156243,
+        "clubSkipped": 923,
+        "couponSkipped": 28442,
+        "expiredSkipped": 0,
+        "conditionalSkipped": 12491,
+        "unsupportedSkipped": 3199
+      }
+    },
+    "carrefour": {
+      "ok": true,
+      "storesCount": 147,
+      "catalogCount": 22919,
+      "promoItemsCount": 319607,
+      "branchFailures": 0,
+      "latestStamp": "20261120000100",
+      "promoStats": {
+        "total": 231428,
+        "kept": 197890,
+        "clubSkipped": 10411,
+        "couponSkipped": 11676,
+        "expiredSkipped": 9,
+        "conditionalSkipped": 4309,
+        "unsupportedSkipped": 7133
+      }
+    },
+    "yochananof": {
+      "ok": true,
+      "storesCount": 47,
+      "catalogCount": 18240,
+      "promoItemsCount": 163226,
+      "branchFailures": 0,
+      "latestStamp": "20261120004031",
+      "promoStats": {
+        "total": 56436,
+        "kept": 51159,
+        "clubSkipped": 561,
+        "couponSkipped": 1100,
+        "expiredSkipped": 0,
+        "conditionalSkipped": 855,
+        "unsupportedSkipped": 2761
+      }
+    },
+    "tivtaam": {
+      "ok": true,
+      "storesCount": 54,
+      "catalogCount": 32303,
+      "promoItemsCount": 65053,
+      "branchFailures": 0,
+      "latestStamp": "20261120004004",
+      "promoStats": {
+        "total": 67678,
+        "kept": 23440,
+        "clubSkipped": 38741,
+        "couponSkipped": 135,
+        "expiredSkipped": 0,
+        "conditionalSkipped": 1119,
+        "unsupportedSkipped": 4243
+      }
+    },
+    "keshet": {
+      "ok": true,
+      "storesCount": 25,
+      "catalogCount": 28486,
+      "promoItemsCount": 63826,
+      "branchFailures": 0,
+      "latestStamp": "20261120001008",
+      "promoStats": {
+        "total": 54451,
+        "kept": 39453,
+        "clubSkipped": 13625,
+        "couponSkipped": 2,
+        "expiredSkipped": 0,
+        "conditionalSkipped": 386,
+        "unsupportedSkipped": 985
+      }
+    }
+  }
+}
