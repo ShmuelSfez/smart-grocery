@@ -2,7 +2,7 @@
 // Includes pure Node-testable cart extraction & safe-merge helpers so existing carts are never wiped.
 (function (root) {
   const reg = root.SmartCartChains;
-  const { round2 } = reg.helpers;
+  const { round2, fetchWithTimeout } = reg.helpers;
 
   function extractExistingRamiCart(rawRamilevy, nowMs = Date.now()) {
     const itemsMap = {};
@@ -67,7 +67,7 @@
 
   async function searchCatalog(query, limit = 12) {
     const storeId = getRamiStoreId();
-    const res = await fetch('/api/catalog', {
+    const res = await fetchWithTimeout('/api/catalog', {
       method: 'POST',
       credentials: 'include',
       headers: {
@@ -76,7 +76,7 @@
         locale: 'he',
       },
       body: JSON.stringify({ q: String(query || '').trim(), store: storeId }),
-    });
+    }, 6000);
     if (!res.ok) throw new Error('SEARCH_' + res.status);
     const data = await res.json();
     const rows = Array.isArray(data?.data) ? data.data : [];
@@ -110,7 +110,7 @@
     const { itemsMap, supplyAt } = extractExistingRamiCart(rawLocal);
     const mergedItemsMap = mergeRamiCartItems(itemsMap, readyItems);
 
-    const res = await fetch('/api/v2/cart', {
+    const res = await fetchWithTimeout('/api/v2/cart', {
       method: 'POST',
       credentials: 'include',
       headers: {
@@ -125,7 +125,7 @@
         items: mergedItemsMap,
         meta: null,
       }),
-    });
+    }, 12000);
     if (!res.ok) throw new Error('RAMI_CART_' + res.status);
     const respJson = await res.json();
     const respItems = Array.isArray(respJson?.items) ? respJson.items : [];

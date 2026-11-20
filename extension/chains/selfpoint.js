@@ -216,12 +216,25 @@
     return Array.from(lineMap.values());
   }
 
+  async function fetchWithTimeout(url, options = {}, timeoutMs = 6000) {
+    if (typeof AbortController === 'undefined') {
+      return fetch(url, options);
+    }
+    const ctrl = new AbortController();
+    const timer = setTimeout(() => ctrl.abort(new Error('TIMEOUT')), timeoutMs);
+    try {
+      return await fetch(url, { ...options, signal: ctrl.signal });
+    } finally {
+      clearTimeout(timer);
+    }
+  }
+
   async function selfPointFetchProducts(url) {
-    const res = await fetch(url, {
+    const res = await fetchWithTimeout(url, {
       method: 'GET',
       credentials: 'include',
       headers: { accept: 'application/json' },
-    });
+    }, 6000);
     if (!res.ok) throw new Error('SELFPOINT_SEARCH_' + res.status);
     const data = await res.json();
     return data?.suggestions?.suggestProducts?.products
@@ -390,7 +403,7 @@
       let res = null;
 
       if (cartId) {
-        res = await fetch(`/v2/retailers/${retailerId}/branches/${encBranch}/carts/${encodeURIComponent(cartId)}?appId=4`, {
+        res = await fetchWithTimeout(`/v2/retailers/${retailerId}/branches/${encBranch}/carts/${encodeURIComponent(cartId)}?appId=4`, {
           method: 'POST',
           credentials: 'include',
           headers: {
@@ -399,12 +412,12 @@
             'x-http-method-override': 'PATCH',
           },
           body: JSON.stringify({ lines: mergedLines }),
-        });
+        }, 12000);
         if (res.status === 404) res = null;
       }
 
       if (!res) {
-        res = await fetch(`/v2/retailers/${retailerId}/branches/${encBranch}/carts?appId=4`, {
+        res = await fetchWithTimeout(`/v2/retailers/${retailerId}/branches/${encBranch}/carts?appId=4`, {
           method: 'POST',
           credentials: 'include',
           headers: {
@@ -412,7 +425,7 @@
             accept: 'application/json',
           },
           body: JSON.stringify({ lines: mergedLines }),
-        });
+        }, 12000);
       }
 
       if (res.status === 401 || res.status === 403 || res.status === 400 || res.status === 422) {
@@ -543,6 +556,7 @@
     normalizeText,
     extractEanBarcode,
     resolveGuidedQuery,
+    fetchWithTimeout,
     discoverSelfPointContext,
     mapSelfPointProduct,
     mergeSelfPointCartLines,

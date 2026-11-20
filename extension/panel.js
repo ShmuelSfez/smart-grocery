@@ -164,27 +164,41 @@
 
   // ---------------- Background product resolution queue (auto chains only; never auto-adds to cart) ----------------
   let queueRunning = false;
+  let queueAborted = false;
+  let pointerDownInFoot = false;
+
+  function safeQueueRender() {
+    if (!pointerDownInFoot && state && state.phase !== 'adding' && state.phase !== 'done') {
+      render();
+    }
+  }
+
   async function runQueue() {
     if (IS_GUIDED || queueRunning || !state || !ADAPTER.searchCatalog) return;
     queueRunning = true;
-    render();
+    queueAborted = false;
+    safeQueueRender();
     try {
       const worker = async () => {
         for (;;) {
-          const item = state && state.items.find((i) => i.status === 'todo');
+          if (queueAborted || !state || state.phase === 'adding' || state.phase === 'done') return;
+          const item = state.items.find((i) => i.status === 'todo');
           if (!item) return;
           item.status = 'searching';
-          render();
+          safeQueueRender();
           const initialQ = item.query || item.wantBarcode || item.product?.name || item.name;
           await searchFor(item, initialQ, true);
+          if (queueAborted) return;
           await new Promise((r) => setTimeout(r, 80));
         }
       };
       await Promise.all([worker(), worker()]);
     } finally {
       queueRunning = false;
-      await persist();
-      render();
+      if (!queueAborted && state && state.phase !== 'done') {
+        await persist();
+        render();
+      }
     }
   }
 
@@ -228,15 +242,18 @@
         item.status = 'choose';
       }
     } catch (err) {
-      item.status = 'error';
-      item.errorMsg = 'שגיאת חיפוש: ' + err.message;
+      if (item.status !== 'skipped') {
+        item.status = 'error';
+        item.errorMsg = 'שגיאת חיפוש: ' + (err?.message || err);
+      }
     }
-    render();
+    safeQueueRender();
   }
 
   // ---------------- Add to cart (explicit user click ONLY) ----------------
   async function addAll() {
     if (!state || IS_GUIDED) return;
+    queueAborted = true;
     if (!ADAPTER.isLoggedIn()) {
       state.error = 'login';
       await persist();
@@ -608,7 +625,14 @@
         return h('div', { class: 'item' },
           h('div', { class: 'row' },
             h('div', { class: 'grow' }, label),
-            h('span', { class: 'status' }, h('span', { class: 'spin' }), ' מתאים מוצר…'),
+            h('div', { class: 'row-tight' },
+              h('span', { class: 'status' }, h('span', { class: 'spin' }), ' מתאים מוצר…'),
+              openStoreSearchBtn(item),
+              h('button', {
+                class: 'lnk grey',
+                onclick: () => { item.status = 'skipped'; render(); persist(); },
+              }, 'דלג'),
+            ),
           ),
         );
       case 'choose':
@@ -673,12 +697,19 @@
     ));
 
     if (!IS_GUIDED && state.phase === 'done') {
+      const missingList = Array.isArray(state.unaddedNames) ? state.unaddedNames : [];
       panel.append(h('div', { class: 'body' },
         h('div', { class: 'done' },
           h('div', { class: 'big' }, '🎉'),
           h('h3', {}, `${addedCount} מוצרים נוספו לסל ב${ADAPTER.name}!`),
-          h('p', {}, ADAPTER.doneSubtitle || `כל המוצרים נוספו לסל ב${ADAPTER.name}. מוכן למעבר לתשלום!`),
+          h('p', {}, ADAPTER.doneSubtitle || `כל המוצרים המותאמים נוספו לסל ב${ADAPTER.name}. מוכן למעבר לתשלום!`),
         ),
+        missingList.length
+          ? h('div', { class: 'login-box' },
+              h('b', {}, `⚠️ ${missingList.length} פריטים לא הותאמו אוטומטית (ניתן להוסיף בחיפוש באתר):`),
+              h('span', { class: 'meta' }, missingList.join(' · ')),
+            )
+          : null,
       ));
       const foot = h('div', { class: 'foot' },
         h('button', { class: 'primary', onclick: goToCheckout }, ADAPTER.checkoutLabel),
@@ -754,7 +785,14 @@
     }
     panel.append(body);
 
-    const foot = h('div', { class: 'foot' });
+    const foot = h('div', {
+      class: 'foot',
+      onpointerdown: () => {
+        pointerDownInFoot = true;
+        setTimeout(() => { pointerDownInFoot = false; }, 600);
+      },
+      onpointerup: () => { pointerDownInFoot = false; },
+    });
     if (state.error && state.error !== 'login') {
       const errBox = h('div', { class: 'login-box' }, h('span', {}, state.error));
       if (state.errorAction) {
@@ -805,7 +843,14 @@
       try {
         const parsed = JSON.parse(doneBannerRaw);
         if (parsed && parsed.chain === CHAIN) {
-          state = { items: [], phase: 'done', doneAdded: Number(parsed.added) || 0, error: null, errorAction: null };
+          state = {
+            items: [],
+            phase: 'done',
+            doneAdded: Number(parsed.added) || 0,
+            unaddedNames: Array.isArray(parsed.missing) ? parsed.missing : [],
+            error: null,
+            errorAction: null,
+          };
           collapsed = false;
           render();
           return;

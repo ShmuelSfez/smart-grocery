@@ -51,7 +51,7 @@ test('extension build: codec.js is byte-synced and unified zips pass listZipEntr
   assert.ok(smartcartBytes.equals(rebuilt), 'committed unified zip must match fresh buildUnifiedZipBuffer()');
 
   const { entries, names, manifest } = verifyExtensionZipBuffer(smartcartBytes);
-  assert.equal(manifest.version, '3.1.0');
+  assert.equal(manifest.version, '3.1.1');
   assert.equal(manifest.host_permissions.length, 7);
   for (const spec of Object.values(CHAIN_BUILD_SPECS)) {
     assert.ok(manifest.host_permissions.includes(spec.matchPattern), `missing host permission ${spec.matchPattern}`);
@@ -60,7 +60,7 @@ test('extension build: codec.js is byte-synced and unified zips pass listZipEntr
 
   const bridgeEntry = entries.find((e) => e.name === 'bridge.js');
   const bridgeSrc = (bridgeEntry.method === 8 ? zlib.inflateRawSync(bridgeEntry.data) : Buffer.from(bridgeEntry.data)).toString('utf8');
-  assert.ok(bridgeSrc.includes("dataset.smartcartExt = '3.1.0'"), 'bridge.js must announce v3.1.0');
+  assert.ok(bridgeSrc.includes("dataset.smartcartExt = '3.1.1'"), 'bridge.js must announce v3.1.1');
 });
 
 test('extension build: per-chain zip generator scopes manifest and scripts cleanly for all 7 chains', () => {

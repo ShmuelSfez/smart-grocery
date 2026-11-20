@@ -1,8 +1,8 @@
 # Codebase File Inventory (Auto-Generated)
 
-- **Updated:** 2026-11-20T00:53:51.008Z
-- **Latest Commit:** `32788c1 2026-11-18 feat(checkout,produce): add 3-chain v3.0 extension cart fill, auto-detect modal, and produce piece-weight spec`
-- **Unit Tests (`npm test`):** 41 pass, 0 fail
+- **Updated:** 2026-11-20T16:48:41.422Z
+- **Latest Commit:** `4f5f7da 2026-11-20 feat(chains,ui,extension): expand to 9 live chains, add top-down ranked list UI, and modular v3.1 extension`
+- **Unit Tests (`npm test`):** FAILED
 
 | File | Lines / Size | Exports |
 | :--- | :--- | :--- |
@@ -37,8 +37,8 @@
 | `extension/chains/carrefour.js` | 16 | — |
 | `extension/chains/mahsaneihashuk.js` | 16 | — |
 | `extension/chains/ramilevy.js` | 209 | — |
-| `extension/chains/selfpoint.js` | 557 | — |
-| `extension/chains/shufersal.js` | 203 | — |
+| `extension/chains/selfpoint.js` | 571 | — |
+| `extension/chains/shufersal.js` | 277 | — |
 | `extension/chains/tivtaam.js` | 32 | — |
 | `extension/chains/victory.js` | 27 | — |
 | `extension/chains/yochananof.js` | 28 | — |
@@ -47,7 +47,7 @@
 | `extension/icons/16.png` | binary (438 B) | — |
 | `extension/icons/48.png` | binary (984 B) | — |
 | `extension/manifest.json` | 73 | — |
-| `extension/panel.js` | 952 | — |
+| `extension/panel.js` | 997 | — |
 | `extension/popup.html` | 63 | — |
 | `extension/popup.js` | 170 | — |
 | `gemini/agents.md` | 18 | — |
@@ -91,8 +91,8 @@
 | `tests/regression/gen/render.mjs` | 405 | `formatLineText`, `renderStimulus`, `buildStyledXlsxBuffer` |
 | `tests/regression/lib/zip-writer.mjs` | 72 | `crc32`, `writeZip` |
 | `tests/regression/refmodel/price-model.mjs` | 487 | `loadReferenceSnapshot`, `refEvaluateBasket`, `refComputeAvailability`, `buildPriceEstimator` |
-| `tests/regression/reports/history.json` | 234 | — |
-| `tests/regression/reports/latest.md` | 86 | — |
+| `tests/regression/reports/history.json` | 317 | — |
+| `tests/regression/reports/latest.md` | 87 | — |
 | `tests/regression/run.mjs` | 802 | — |
 | `tests/regression/snapshot/capture-snapshot.mjs` | 59 | — |
 | `tests/regression/snapshot/carrefour-471-prices.xml.gz` | binary (532871 B) | — |
