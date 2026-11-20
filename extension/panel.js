@@ -1,532 +1,34 @@
-// Content script on shufersal.co.il, rami-levy.co.il, and carrefour.co.il (SmartCart Extension v3.0.0).
+// Shared Shadow-DOM UI, queue & state machine for all 7 Israeli supermarket storefronts (SmartCart Extension v3.1.0).
 // Security & safety invariants:
 // 1. Never auto-submit items to a cart on page load (autoAdd: false) – always wait for an explicit user click.
 // 2. Never overwrite saved product mappings or email hints from untrusted incoming #smartlist= links.
-// 3. Always merge with existing cart items (never wipe an existing cart on Rami Levy or Carrefour).
+// 3. Always merge with existing cart items (never wipe an existing cart).
+// 4. Zero inline style= attributes – styling uses adoptedStyleSheets exclusively.
 (function () {
   if (window.__smartlistPanel) return;
   window.__smartlistPanel = true;
 
-  const HOST = location.hostname;
-  const CHAIN = HOST.includes('rami-levy.co.il')
-    ? 'ramilevy'
-    : HOST.includes('carrefour.co.il')
-      ? 'carrefour'
-      : 'shufersal';
-  const IS_SHUF = CHAIN === 'shufersal';
-  const IS_RAMI = CHAIN === 'ramilevy';
-  const IS_CARR = CHAIN === 'carrefour';
-  const SHUF_BASE = '/online/he';
+  const reg = window.SmartCartChains;
+  const ADAPTER = reg && reg.getByHost(location.hostname);
+  if (!ADAPTER) return;
 
-  const CHAIN_META = {
-    shufersal: {
-      name: 'שופרסל',
-      accent: '#e2001a',
-      checkoutLabel: '💳 עבור לסל ולתשלום בשופרסל',
-    },
-    ramilevy: {
-      name: 'רמי לוי',
-      accent: '#0f766e',
-      checkoutLabel: '💳 עבור לתשלום ברמי לוי',
-    },
-    carrefour: {
-      name: 'קרפור',
-      accent: '#004e9e',
-      checkoutLabel: '💳 עבור לתשלום בקרפור',
-    },
-  };
-  const META = CHAIN_META[CHAIN];
+  const CHAIN = ADAPTER.id;
+  const IS_GUIDED = ADAPTER.mode === 'guided';
+  const { round2, normalizeText, extractEanBarcode, resolveGuidedQuery } = reg.helpers;
 
   // ---------------- storage ----------------
   const get = (k) => new Promise((r) => chrome.storage.local.get(k, (v) => r(v[k])));
   const set = (obj) => new Promise((r) => chrome.storage.local.set(obj, r));
   const del = (k) => new Promise((r) => chrome.storage.local.remove(k, r));
 
-  const normalize = (name) =>
-    String(name || '')
-      .toLowerCase()
-      .replace(/["״'׳`]/g, '')
-      .replace(/[^\p{L}\p{N}%.\s]/gu, ' ')
-      .replace(/\s+/g, ' ')
-      .trim();
-
-  function round2(n) {
-    return Math.round(n * 100) / 100;
-  }
-
-  function absolute(url) {
-    if (!url || typeof url !== 'string') return '';
-    if (/^https?:\/\//i.test(url)) return url;
-    if (url.startsWith('//')) return 'https:' + url;
-    return location.origin + (url.startsWith('/') ? '' : '/') + url;
-  }
-
-  // ---------------- Shufersal helpers ----------------
-  function isOnLoginPage() {
-    return IS_SHUF && location.pathname.includes('/login');
-  }
-
-  function isLoggedIn() {
-    if (!IS_SHUF) return true;
-    if (isOnLoginPage()) return false;
-    if (document.querySelector('.title-notAnonymous')) return true;
-    if (document.querySelector('a[href*="/login"] .accountLink')) return false;
-    return false;
-  }
-
-  function pickShufImage(images) {
-    if (!Array.isArray(images) || !images.length) return '';
-    const pref = ['product', 'medium', 'small', 'large', 'thumbnail'];
-    for (const f of pref) {
-      const img = images.find((i) => i.format === f && i.url);
-      if (img) return absolute(img.url);
-    }
-    return absolute(images[0].url || '');
-  }
-
-  async function findCsrfToken() {
-    const input = document.querySelector('input[name="CSRFToken"]');
-    if (input && input.value) return input.value;
-    for (const s of document.scripts) {
-      const m = (s.textContent || '').match(/CSRFToken\s*[:=]\s*["']([^"']+)["']/);
-      if (m) return m[1];
-    }
-    const htmlMatch = (document.documentElement.innerHTML || '').match(/CSRFToken\s*[:=]\s*["']([^"']+)["']/);
-    if (htmlMatch) return htmlMatch[1];
-    try {
-      const res = await fetch(`${SHUF_BASE}/cart/load?restoreCart=true`, { credentials: 'include' });
-      const txt = await res.text();
-      const m = txt.match(/CSRFToken\s*[:=]\s*["']([^"']+)["']/);
-      if (m) return m[1];
-    } catch (e) { /* ignore */ }
-    return null;
-  }
-
-  async function shufSearch(query, limit = 12) {
-    const url = `${SHUF_BASE}/search/results?q=${encodeURIComponent(query)}:relevance&limit=${limit}&page=0`;
-    const res = await fetch(url, {
-      credentials: 'include',
-      headers: { accept: 'application/json', 'x-requested-with': 'XMLHttpRequest' },
-    });
-    if (!res.ok) throw new Error('SEARCH_' + res.status);
-    const data = await res.json();
-    return (data.results || []).map((p) => ({
-      code: p.code,
-      barcode: String(p.code || '').replace(/^P_/, ''),
-      name: p.name || '',
-      brand: (p.brand && p.brand.name) || '',
-      img: pickShufImage(p.images),
-      price: (p.price && p.price.formattedValue) || '',
-      unitDesc: p.unitDescription || '',
-      sellingMethod: (p.sellingMethod && p.sellingMethod.code) || 'BY_UNIT',
-      inStock: !(p.stock && p.stock.stockLevelStatus) || p.stock.stockLevelStatus.code === 'inStock',
-      purchasable: p.purchasable !== false,
-    }));
-  }
-
-  async function shufAddGrid(items) {
-    const token = await findCsrfToken();
-    if (!token) throw new Error('NO_CSRF');
-    const res = await fetch(`${SHUF_BASE}/cart/addGrid`, {
-      method: 'POST',
-      credentials: 'include',
-      redirect: 'manual',
-      headers: { 'content-type': 'application/json', csrftoken: token, 'x-requested-with': 'XMLHttpRequest' },
-      body: JSON.stringify(items),
-    });
-    if (res.type === 'opaqueredirect' || (res.status >= 300 && res.status < 400)) throw new Error('LOGIN_REQUIRED');
-    if (res.status === 401 || res.status === 403) throw new Error('LOGIN_REQUIRED');
-    if (!res.ok) throw new Error('ADD_' + res.status);
-    const html = await res.text();
-    const doc = new DOMParser().parseFromString(html, 'text/html');
-    const cartCodes = Array.from(doc.querySelectorAll('article[data-product-code]')).map((a) =>
-      a.getAttribute('data-product-code'),
-    );
-    return { cartCodes };
-  }
-
-  // ---------------- Rami Levy helpers ----------------
-  function getRamiStoreId() {
-    try {
-      const rl = JSON.parse(localStorage.getItem('ramilevy') || '{}');
-      const st = rl?.authuser?.user?.store
-        || rl?.cart?.store
-        || rl?.store?.id
-        || rl?.selectedStore;
-      if (st && Number(st) > 0) return Number(st);
-    } catch (e) { /* ignore */ }
-    return 331;
-  }
-
-  async function ramiSearch(query, limit = 12) {
-    const storeId = getRamiStoreId();
-    const res = await fetch('/api/catalog', {
-      method: 'POST',
-      credentials: 'include',
-      headers: {
-        'content-type': 'application/json;charset=UTF-8',
-        accept: 'application/json',
-        locale: 'he',
-      },
-      body: JSON.stringify({ q: String(query || '').trim(), store: storeId }),
-    });
-    if (!res.ok) throw new Error('SEARCH_' + res.status);
-    const data = await res.json();
-    const rows = Array.isArray(data?.data) ? data.data : [];
-    return rows.slice(0, limit).map((p) => {
-      const byWeight = Boolean(p?.prop?.by_kilo || p?.prop?.sw_shakil);
-      const rawPrice = p?.price?.price;
-      const small = p?.images?.small || '';
-      const img = small
-        ? (/^https?:\/\//i.test(small) ? small : `https://img.rami-levy.co.il${small.startsWith('/') ? '' : '/'}${small}`)
-        : '';
-      return {
-        ramiId: String(p.id),
-        code: String(p.barcode || p.id),
-        barcode: String(p.barcode || ''),
-        name: String(p.name || ''),
-        brand: String(p?.brand?.name || p?.gs?.BrandName || ''),
-        img,
-        price: typeof rawPrice === 'number' ? `₪${rawPrice.toFixed(2)}` : (rawPrice ? `₪${rawPrice}` : ''),
-        unitDesc: byWeight ? 'לפי משקל (ק"ג)' : '',
-        sellingMethod: byWeight ? 'BY_WEIGHT' : 'BY_UNIT',
-        inStock: p?.prop?.status !== 0 && p?.in_stock !== false,
-        purchasable: true,
-      };
-    });
-  }
-
-  function readExistingRamiCart() {
-    const itemsMap = {};
-    let supplyAt = '';
-    try {
-      const rl = JSON.parse(localStorage.getItem('ramilevy') || '{}');
-      if (typeof rl?.cart?.supplyAt === 'string' && rl.cart.supplyAt) {
-        const dt = Date.parse(rl.cart.supplyAt);
-        if (!Number.isNaN(dt) && dt > Date.now()) supplyAt = rl.cart.supplyAt;
-      }
-      const rawItems = rl?.cart?.items;
-      if (Array.isArray(rawItems)) {
-        for (const ci of rawItems) {
-          const id = ci && (ci.id ?? ci.product_id ?? ci.item_id);
-          const q = Number(ci?.quantity ?? ci?.qty ?? ci?.amount ?? 0);
-          if (id != null && q > 0) {
-            const k = String(id);
-            itemsMap[k] = round2((itemsMap[k] || 0) + q);
-          }
-        }
-      } else if (rawItems && typeof rawItems === 'object') {
-        for (const [k, v] of Object.entries(rawItems)) {
-          const q = typeof v === 'object' ? Number(v?.quantity ?? v?.qty ?? 0) : Number(v);
-          if (k && q > 0) {
-            itemsMap[String(k)] = round2((itemsMap[String(k)] || 0) + q);
-          }
-        }
-      }
-    } catch (e) { /* ignore */ }
-    return { itemsMap, supplyAt };
-  }
-
-  async function ramiAddCart(readyItems) {
-    const storeId = getRamiStoreId();
-    const { itemsMap, supplyAt } = readExistingRamiCart();
-    const mergedItemsMap = {};
-    for (const [id, q] of Object.entries(itemsMap)) {
-      mergedItemsMap[id] = String(q);
-    }
-    for (const i of readyItems) {
-      const ramiId = String(i.product?.ramiId || '');
-      if (!ramiId) continue;
-      const addQ = Number(i.addQty) || 1;
-      const prevQ = Number(mergedItemsMap[ramiId] || 0);
-      mergedItemsMap[ramiId] = String(round2(prevQ + addQ));
-    }
-
-    const res = await fetch('/api/v2/cart', {
-      method: 'POST',
-      credentials: 'include',
-      headers: {
-        'content-type': 'application/json;charset=UTF-8',
-        accept: 'application/json',
-        locale: 'he',
-      },
-      body: JSON.stringify({
-        store: String(storeId),
-        isClub: 0,
-        supplyAt: supplyAt || new Date(Date.now() + 86400000).toISOString(),
-        items: mergedItemsMap,
-        meta: null,
-      }),
-    });
-    if (!res.ok) throw new Error('RAMI_CART_' + res.status);
-    const respJson = await res.json();
-    const respItems = Array.isArray(respJson?.items) ? respJson.items : [];
-    const inCart = new Set(respItems.map((x) => String(x.id)));
-
-    // Sync updated items back into localStorage.ramilevy if ramilevy key exists so Vuex hydrates cleanly
-    try {
-      const rawRl = localStorage.getItem('ramilevy');
-      if (rawRl) {
-        const rl = JSON.parse(rawRl);
-        if (rl && typeof rl === 'object') {
-          rl.cart = { ...(rl.cart || {}), ...respJson, items: respItems };
-          localStorage.setItem('ramilevy', JSON.stringify(rl));
-        }
-      }
-    } catch (e) { /* ignore */ }
-
-    return { inCart };
-  }
-
-  function clickRamiCheckoutButton() {
-    const findPayBtn = () =>
-      Array.from(document.querySelectorAll('button, a')).find((b) => b.textContent.trim() === 'לתשלום');
-    const btn = findPayBtn();
-    if (btn) {
-      btn.click();
-      return true;
-    }
-    // If cart drawer is closed on narrow viewports, try opening cart toggle first
-    const cartToggle = document.querySelector('[aria-label*="סל"], [aria-label*="עגלה"], .cart-btn, #cart-btn');
-    if (cartToggle) {
-      cartToggle.click();
-      setTimeout(() => { findPayBtn()?.click(); }, 250);
-      return true;
-    }
-    return false;
-  }
-
-  // ---------------- Carrefour Israel (Self-Point / stor.ai) helpers ----------------
-  function discoverCarrefourContext() {
-    let branchId = '';
-    let cartId = '';
-    const existingLines = new Map();
-
-    const inspectObj = (obj, depth) => {
-      if (!obj || typeof obj !== 'object' || depth > 4) return;
-      if (!branchId) {
-        const b = obj.branchId ?? obj.selectedBranchId ?? obj.branch?.id ?? obj.branch?.branchId;
-        if (b && /^\d{2,6}$/.test(String(b)) && String(b) !== '1540') {
-          branchId = String(b);
-        }
-      }
-      if (!cartId) {
-        const c = obj.cartId ?? obj.activeCartId ?? (Array.isArray(obj.lines) && obj.id ? obj.id : null) ?? obj.cart?.id ?? obj.cart?.cartId;
-        if (c && /^[A-Za-z0-9_-]{4,64}$/.test(String(c))) {
-          cartId = String(c);
-        }
-      }
-      const linesArr = Array.isArray(obj.lines) ? obj.lines : (Array.isArray(obj.cart?.lines) ? obj.cart.lines : null);
-      if (linesArr) {
-        for (const ln of linesArr) {
-          const rpid = Number(ln?.retailerProductId ?? ln?.product?.retailerProductId ?? ln?.productId);
-          const q = Number(ln?.quantity ?? ln?.qty ?? 0);
-          if (rpid > 0 && q > 0 && !existingLines.has(rpid)) {
-            existingLines.set(rpid, {
-              retailerProductId: rpid,
-              quantity: q,
-              type: ln?.type || 1,
-              soldBy: ln?.soldBy ?? null,
-            });
-          }
-        }
-      }
-      for (const v of Object.values(obj)) {
-        if (v && typeof v === 'object' && !Array.isArray(v)) {
-          inspectObj(v, depth + 1);
-        }
-      }
-    };
-
-    for (const storage of [localStorage, sessionStorage]) {
-      try {
-        for (let i = 0; i < storage.length; i++) {
-          const k = storage.key(i) || '';
-          const raw = (storage.getItem(k) || '').trim();
-          if (!raw) continue;
-          const cleanScalar = raw.replace(/^"|"$/g, '');
-          if (!branchId && /branch/i.test(k) && /^\d{2,6}$/.test(cleanScalar) && cleanScalar !== '1540') {
-            branchId = cleanScalar;
-          }
-          if (!cartId && /cart.?id/i.test(k) && /^[A-Za-z0-9_-]{4,64}$/.test(cleanScalar)) {
-            cartId = cleanScalar;
-          }
-          if (raw.startsWith('{') || raw.startsWith('[')) {
-            try { inspectObj(JSON.parse(raw), 0); } catch (e) { /* ignore */ }
-          }
-        }
-      } catch (e) { /* ignore */ }
-    }
-    return { branchId: branchId || '3003', cartId, existingLines };
-  }
-
-  function mapCarrefourProduct(p, fallbackItem) {
-    const rpid = p?.retailerProductId || p?.branchProductId || p?.id;
-    const barcode = String(p?.barcode || p?.barcodes?.[0] || '');
-    const name = p?.names?.[1]?.short
-      || p?.names?.['1']?.long
-      || p?.names?.[1]?.long
-      || p?.localName
-      || p?.name
-      || fallbackItem?.product?.name
-      || fallbackItem?.name
-      || '';
-    const isWeighted = Boolean(p?.isWeighted || p?.weightable || fallbackItem?.product?.sellingMethod === 'BY_WEIGHT');
-    const rawPrice = p?.price ?? p?.branch?.regularPrice ?? p?.regularPrice ?? p?.prices?.regularPrice;
-    const rawImg = p?.images?.[0]?.url || p?.images?.[0]?.small || p?.imageUrl || p?.image || '';
-    const brandRaw = p?.brand?.names?.[1] || p?.brand?.name || (typeof p?.brand === 'string' ? p.brand : '') || '';
-    return {
-      retailerProductId: rpid ? Number(rpid) : null,
-      code: String(barcode || rpid || ''),
-      barcode,
-      name: String(name),
-      brand: String(brandRaw),
-      img: rawImg ? absolute(rawImg) : '',
-      price: typeof rawPrice === 'number' ? `₪${rawPrice.toFixed(2)}` : (rawPrice ? `₪${rawPrice}` : ''),
-      unitDesc: isWeighted ? 'לפי משקל (ק"ג)' : '',
-      isWeighted,
-      sellingMethod: isWeighted ? 'BY_WEIGHT' : 'BY_UNIT',
-      inStock: p?.isOutOfStock !== true && p?.inStock !== false && p?.branch?.isActive !== false,
-      purchasable: Boolean(rpid),
-    };
-  }
-
-  async function carrefourFetchList(url) {
-    const res = await fetch(url, {
-      method: 'GET',
-      credentials: 'include',
-      headers: { accept: 'application/json' },
-    });
-    if (!res.ok) throw new Error('CARR_SEARCH_' + res.status);
-    const data = await res.json();
-    return data?.suggestions?.suggestProducts?.products
-      || data?.products
-      || (Array.isArray(data) ? data : []);
-  }
-
-  async function carrefourSearch(query, limit = 10, fallbackItem = null) {
-    const q = String(query || '').trim();
-    if (!q) return [];
-    const { branchId } = discoverCarrefourContext();
-    const isBarcode = /^\d{7,14}$/.test(q);
-    let rawProducts = [];
-
-    if (isBarcode) {
-      const acUrl = `/v2/retailers/1540/branches/${encodeURIComponent(branchId)}/products/autocomplete?appId=4&barcode=${encodeURIComponent(q)}&filters=%7B%7D&from=0&isSearch=true&languageId=1&minScore=0&query=${encodeURIComponent(q)}&size=${limit}`;
-      try {
-        rawProducts = await carrefourFetchList(acUrl);
-      } catch (e) { /* fall back to /products */ }
-    }
-
-    if (!rawProducts.length) {
-      const prodUrl = `/v2/retailers/1540/branches/${encodeURIComponent(branchId)}/products?appId=4&filters=%7B%7D&from=0&isSearch=true&languageId=1&minScore=0&query=${encodeURIComponent(q)}&size=${limit}`;
-      try {
-        rawProducts = await carrefourFetchList(prodUrl);
-      } catch (e) {
-        if (!isBarcode) {
-          const acFallback = `/v2/retailers/1540/branches/${encodeURIComponent(branchId)}/products/autocomplete?appId=4&filters=%7B%7D&from=0&isSearch=true&languageId=1&minScore=0&query=${encodeURIComponent(q)}&size=${limit}`;
-          rawProducts = await carrefourFetchList(acFallback);
-        } else {
-          throw e;
-        }
-      }
-    }
-
-    return rawProducts
-      .map((p) => mapCarrefourProduct(p, fallbackItem))
-      .filter((p) => p.purchasable);
-  }
-
-  async function carrefourAddCart(readyItems) {
-    const { branchId, cartId, existingLines } = discoverCarrefourContext();
-    const lineMap = new Map(existingLines);
-
-    for (const i of readyItems) {
-      const rpid = Number(i.product?.retailerProductId || i.product?.code);
-      if (!(rpid > 0)) continue;
-      const q = Number(i.addQty) || 1;
-      const isWeighted = Boolean(i.product?.isWeighted || i.product?.sellingMethod === 'BY_WEIGHT');
-      if (lineMap.has(rpid)) {
-        const prev = lineMap.get(rpid);
-        lineMap.set(rpid, { ...prev, quantity: round2(prev.quantity + q) });
-      } else {
-        lineMap.set(rpid, {
-          retailerProductId: rpid,
-          quantity: q,
-          type: 1,
-          soldBy: isWeighted ? 'weight' : null,
-        });
-      }
-    }
-
-    const mergedLines = Array.from(lineMap.values());
-    let res = null;
-
-    if (cartId) {
-      res = await fetch(`/v2/retailers/1540/branches/${encodeURIComponent(branchId)}/carts/${encodeURIComponent(cartId)}?appId=4`, {
-        method: 'POST',
-        credentials: 'include',
-        headers: {
-          'content-type': 'application/json',
-          accept: 'application/json',
-          'x-http-method-override': 'PATCH',
-        },
-        body: JSON.stringify({ lines: mergedLines }),
-      });
-      if (res.status === 404) res = null;
-    }
-
-    if (!res) {
-      res = await fetch(`/v2/retailers/1540/branches/${encodeURIComponent(branchId)}/carts?appId=4`, {
-        method: 'POST',
-        credentials: 'include',
-        headers: {
-          'content-type': 'application/json',
-          accept: 'application/json',
-        },
-        body: JSON.stringify({ lines: mergedLines }),
-      });
-    }
-
-    if (res.status === 401 || res.status === 403 || res.status === 400 || res.status === 422) {
-      throw new Error('CARR_ADDRESS_OR_LOGIN');
-    }
-    if (!res.ok) throw new Error('CARR_CART_' + res.status);
-
-    const data = await res.json().catch(() => ({}));
-    const newCartId = data?.cart?.id || data?.id || cartId;
-    if (newCartId) {
-      try { localStorage.setItem('sp_smartcart_cartId', String(newCartId)); } catch (e) { /* ignore */ }
-    }
-    const respLines = data?.cart?.lines || data?.lines || [];
-    const inCart = respLines.length
-      ? new Set(respLines.map((ln) => Number(ln?.retailerProductId ?? ln?.product?.retailerProductId ?? ln?.productId)))
-      : new Set(mergedLines.map((ln) => Number(ln.retailerProductId)));
-    return { inCart };
-  }
-
-  function clickCarrefourCheckoutButton() {
-    const btn = Array.from(document.querySelectorAll('button, a')).find((b) =>
-      b.textContent.trim().includes('לתשלום'),
-    );
-    if (btn) {
-      btn.click();
-      return;
-    }
-    location.href = '/?loginOrRegister=1';
-  }
-
-  // ---------------- Unified catalog search ----------------
-  async function searchStoreCatalog(query, limit = 12, fallbackItem = null) {
-    if (IS_RAMI) return ramiSearch(query, limit);
-    if (IS_CARR) return carrefourSearch(query, limit, fallbackItem);
-    return shufSearch(query, limit);
+  function safeImg(url) {
+    return typeof url === 'string' && url.length < 500 && /^https:\/\//i.test(url) ? url : '';
   }
 
   // ---------------- Panel state ----------------
   let state = null;
   let shufMappings = {};
-  let chainMappings = { shufersal: {}, ramilevy: {}, carrefour: {} };
+  let chainMappings = {};
   let shufAuth = { user: '' };
   let settings = { remember: true, autoPick: true };
   let root = null;
@@ -534,9 +36,12 @@
   let styleSheet = null;
   let collapsed = false;
   let currentTs = 0;
+  let lastHighlightedCard = null;
+  let domObserver = null;
+  let lastAssistSig = '';
 
   function activeChainMap() {
-    if (IS_SHUF) return shufMappings;
+    if (CHAIN === 'shufersal') return shufMappings;
     if (!chainMappings[CHAIN] || typeof chainMappings[CHAIN] !== 'object') {
       chainMappings[CHAIN] = {};
     }
@@ -545,7 +50,7 @@
 
   async function saveChainMapping(itemKey, prod) {
     if (!settings.remember || !itemKey || !prod) return;
-    if (IS_SHUF) {
+    if (CHAIN === 'shufersal') {
       shufMappings[itemKey] = prod;
       await set({ mappings: shufMappings });
     } else {
@@ -555,17 +60,14 @@
   }
 
   function isSavedProductReadyForChain(prod) {
-    if (!prod || typeof prod !== 'object') return false;
-    if (IS_SHUF) return Boolean(prod.code && !/^SEARCH/i.test(prod.code) && String(prod.code).startsWith('P_'));
-    if (IS_RAMI) return Boolean(prod.ramiId && /^\d+$/.test(String(prod.ramiId)));
-    if (IS_CARR) return Boolean(prod.retailerProductId && Number(prod.retailerProductId) > 0);
-    return false;
+    return Boolean(ADAPTER.isSavedProductReady && ADAPTER.isSavedProductReady(prod));
   }
 
   async function persist() {
     const pending = await get('pending');
     if (!pending || !state) return;
     pending.items = state.items.map(({ results, ...rest }) => rest);
+    pending.activeItemKey = state.activeItemKey || '';
     pending.autoAdd = false;
     pending.chain = CHAIN;
     await set({ pending });
@@ -590,39 +92,80 @@
     }
   }
 
-  // ---------------- Login email helper on /online/he/login (Shufersal) ----------------
-  function tryFillLoginForm() {
-    if (!isOnLoginPage()) return;
-    sessionStorage.setItem('sl_from_login', '1');
-    const uInput = document.querySelector('#j_username');
-    const pInput = document.querySelector('#j_password');
-    if (!uInput) return;
-
-    if (!uInput.dataset.slBound) {
-      uInput.dataset.slBound = '1';
-      uInput.addEventListener('change', () => {
-        shufAuth = { user: uInput.value.trim() };
-        set({ shufAuth });
-      });
+  // ---------------- Host-page highlight helper (Guided DOM Assist, zero inline style=) ----------------
+  function setHighlightedCard(cardEl) {
+    if (lastHighlightedCard && lastHighlightedCard !== cardEl) {
+      lastHighlightedCard.classList.remove('smartcart-assist-card');
+      lastHighlightedCard = null;
     }
-
-    if (shufAuth.user && !uInput.value) {
-      uInput.value = shufAuth.user;
-      uInput.dispatchEvent(new Event('input', { bubbles: true }));
-      uInput.dispatchEvent(new Event('change', { bubbles: true }));
+    if (!cardEl || !document.head) return;
+    if (!document.getElementById('smartcart-page-assist-style')) {
+      const st = document.createElement('style');
+      st.id = 'smartcart-page-assist-style';
+      st.textContent = '.smartcart-assist-card { outline: 2.5px solid #16a34a !important; outline-offset: 3px !important; border-radius: 12px !important; }';
+      document.head.append(st);
     }
-
-    if (!uInput.value) {
-      uInput.focus();
-    } else if (pInput && !pInput.value) {
-      pInput.focus();
-    }
+    cardEl.classList.add('smartcart-assist-card');
+    lastHighlightedCard = cardEl;
   }
 
-  // ---------------- Background product resolution queue (never auto-adds to cart) ----------------
+  function computeGuidedAssist() {
+    if (!IS_GUIDED || !state || !ADAPTER.getCurrentSearchQuery) {
+      setHighlightedCard(null);
+      return null;
+    }
+    const q = ADAPTER.getCurrentSearchQuery();
+    if (!q) {
+      setHighlightedCard(null);
+      return null;
+    }
+    const normQ = normalizeText(q);
+    const targetItem = state.items.find((i) => i.status === 'ready' && i.key === state.activeItemKey)
+      || state.items.find((i) => {
+        if (i.status !== 'ready') return false;
+        const ean = extractEanBarcode(i);
+        if (ean && ean === q) return true;
+        return normalizeText(i.name) === normQ || normalizeText(i.product?.name || '') === normQ;
+      });
+    if (!targetItem) {
+      setHighlightedCard(null);
+      return null;
+    }
+    const found = ADAPTER.findSinglePageMatchAssist ? ADAPTER.findSinglePageMatchAssist(q) : null;
+    if (!found || !found.addButton) {
+      setHighlightedCard(null);
+      return null;
+    }
+    setHighlightedCard(found.cardEl || null);
+    return { item: targetItem, addButton: found.addButton, title: found.title || '' };
+  }
+
+  function ensureGuidedObserver() {
+    if (!IS_GUIDED || domObserver || !document.body) return;
+    let timer = null;
+    const check = () => {
+      timer = null;
+      if (!state || !root) return;
+      const q = ADAPTER.getCurrentSearchQuery ? ADAPTER.getCurrentSearchQuery() : '';
+      const found = q && ADAPTER.findSinglePageMatchAssist ? ADAPTER.findSinglePageMatchAssist(q) : null;
+      const sig = `${q}|${Boolean(found && found.addButton)}|${found?.title || ''}`;
+      if (sig !== lastAssistSig) {
+        lastAssistSig = sig;
+        render();
+      }
+    };
+    domObserver = new MutationObserver(() => {
+      if (timer) return;
+      timer = setTimeout(check, 220);
+    });
+    domObserver.observe(document.body, { childList: true, subtree: true });
+    window.addEventListener('popstate', () => setTimeout(check, 120));
+  }
+
+  // ---------------- Background product resolution queue (auto chains only; never auto-adds to cart) ----------------
   let queueRunning = false;
   async function runQueue() {
-    if (queueRunning || !state) return;
+    if (IS_GUIDED || queueRunning || !state || !ADAPTER.searchCatalog) return;
     queueRunning = true;
     render();
     try {
@@ -648,23 +191,22 @@
   async function searchFor(item, query, allowAutoPick = true) {
     try {
       const cleanBarcode = String(item.wantBarcode || '').replace(/^P_/, '').trim();
-      let results = await searchStoreCatalog(query, 12, item);
+      let results = await ADAPTER.searchCatalog(query, 12, item);
 
-      // If initial barcode lookup returned empty, fall back to product name or generic item name
       if (!results.length && allowAutoPick) {
         const nameFallbacks = [item.product?.name, item.name]
           .map((s) => String(s || '').trim())
           .filter((s) => s && s !== query);
         for (const fb of nameFallbacks) {
-          results = await searchStoreCatalog(fb, 12, item);
+          results = await ADAPTER.searchCatalog(fb, 12, item);
           if (results.length) break;
           if (fb.includes(' ')) {
-            results = await searchStoreCatalog(fb.split(' ').slice(0, -1).join(' '), 12, item);
+            results = await ADAPTER.searchCatalog(fb.split(' ').slice(0, -1).join(' '), 12, item);
             if (results.length) break;
           }
         }
       } else if (!results.length && query.includes(' ')) {
-        results = await searchStoreCatalog(query.split(' ').slice(0, -1).join(' '), 12, item);
+        results = await ADAPTER.searchCatalog(query.split(' ').slice(0, -1).join(' '), 12, item);
       }
 
       results = results.filter((r) => r.purchasable !== false);
@@ -673,7 +215,6 @@
       if (!results.length) {
         item.status = 'notfound';
       } else if (allowAutoPick) {
-        // Match exact EAN barcode first when available, else first in-stock result
         const exactInStock = cleanBarcode
           ? results.find((r) => r.inStock && r.barcode && String(r.barcode) === cleanBarcode)
           : null;
@@ -695,12 +236,12 @@
 
   // ---------------- Add to cart (explicit user click ONLY) ----------------
   async function addAll() {
-    if (!state) return;
-    if (IS_SHUF && !isLoggedIn()) {
+    if (!state || IS_GUIDED) return;
+    if (!ADAPTER.isLoggedIn()) {
       state.error = 'login';
       await persist();
       render();
-      if (!isOnLoginPage()) location.href = `${SHUF_BASE}/login`;
+      if (ADAPTER.loginUrl && !ADAPTER.isOnLoginPage()) location.href = ADAPTER.loginUrl;
       return;
     }
 
@@ -708,76 +249,11 @@
     if (!ready.length) return;
     state.phase = 'adding';
     state.error = null;
+    state.errorAction = null;
     render();
 
     try {
-      if (IS_SHUF) {
-        const toGridItem = (i) => {
-          const q = Number(i.addQty) || 1;
-          return {
-            productCode: i.product.code,
-            quantity: q,
-            frontQuantity: q,
-            sellingMethod: i.product.sellingMethod === 'BY_UNIT' ? 'BY_UNIT' : 'BY_PACKAGE',
-            longTail: false,
-          };
-        };
-        const { cartCodes } = await shufAddGrid(ready.map(toGridItem));
-        const inCart = new Set(cartCodes || []);
-
-        // Fallback resolution if a P_<barcode> differed from Shufersal's internal P_ catalog code
-        const unconfirmed = ready.filter((i) => !inCart.has(i.product.code));
-        if (unconfirmed.length) {
-          const retryPayload = [];
-          for (const i of unconfirmed) {
-            const rawCode = String(i.product.code || '').replace(/^P_/, '');
-            const found = await shufSearch(rawCode || i.name, 4).catch(() => []);
-            const cand = found.find((r) => r.inStock && r.purchasable) || found[0];
-            if (cand && cand.code && cand.code !== i.product.code) {
-              i.product = cand;
-              retryPayload.push(toGridItem(i));
-            }
-          }
-          if (retryPayload.length) {
-            const retryRes = await shufAddGrid(retryPayload).catch(() => ({ cartCodes: [] }));
-            for (const c of retryRes.cartCodes || []) inCart.add(c);
-          }
-        }
-
-        for (const i of ready) {
-          if (inCart.has(i.product.code)) {
-            i.status = 'added';
-            await saveChainMapping(i.key, i.product);
-          } else {
-            i.status = 'error';
-            i.errorMsg = 'לא אושר בסל של שופרסל – בדוק מלאי או בחר חלופה.';
-          }
-        }
-      } else if (IS_RAMI) {
-        const { inCart } = await ramiAddCart(ready);
-        for (const i of ready) {
-          const rid = String(i.product?.ramiId || '');
-          if (rid && inCart.has(rid)) {
-            i.status = 'added';
-            await saveChainMapping(i.key, i.product);
-          } else {
-            i.status = 'error';
-            i.errorMsg = 'לא אושר בסל רמי לוי – לחץ החלף לבחירת מוצר חלופי.';
-          }
-        }
-      } else if (IS_CARR) {
-        const { inCart } = await carrefourAddCart(ready);
-        for (const i of ready) {
-          const rpid = Number(i.product?.retailerProductId || i.product?.code);
-          if (rpid && inCart.has(rpid)) {
-            i.status = 'added';
-            await saveChainMapping(i.key, i.product);
-          } else {
-            i.status = 'error';
-            i.errorMsg = 'לא אושר בסל קרפור – לחץ "🔍 פתח מוצר" או בחר חלופה.';
-          }
-        }
-      }
+      const outcome = await ADAPTER.addReadyItems(ready, { saveMapping: saveChainMapping });
 
       const left = state.items.filter((i) =>
         ['choose', 'notfound', 'error', 'todo', 'searching', 'ready'].includes(i.status),
@@ -787,9 +263,8 @@
         const addedCount = state.items.filter((i) => i.status === 'added').length;
         await del('pending');
         render();
-        if (IS_RAMI) {
-          // Reload once so Rami Levy's inline sidebar hydrates from localStorage.ramilevy, then show checkout button
-          sessionStorage.setItem('sl_done_banner', JSON.stringify({ chain: 'ramilevy', added: addedCount }));
+        if (outcome && outcome.reloadAfterDone) {
+          sessionStorage.setItem('sl_done_banner', JSON.stringify({ chain: CHAIN, added: addedCount }));
           setTimeout(() => location.reload(), 350);
         }
         return;
@@ -797,45 +272,36 @@
       await persist();
     } catch (err) {
       state.phase = 'work';
-      if (IS_SHUF && (err.message === 'LOGIN_REQUIRED' || err.message === 'NO_CSRF')) {
+      const formatted = ADAPTER.formatAddError
+        ? ADAPTER.formatAddError(err)
+        : { message: 'שגיאה בהוספה לסל: ' + (err?.message || err) };
+      if (formatted.redirectLogin) {
         state.error = 'login';
         await persist();
-        if (!isOnLoginPage()) location.href = `${SHUF_BASE}/login`;
+        if (ADAPTER.loginUrl && !ADAPTER.isOnLoginPage()) location.href = ADAPTER.loginUrl;
         return;
       }
-      if (IS_CARR && err.message === 'CARR_ADDRESS_OR_LOGIN') {
-        state.error = 'בקרפור יש לבחור כתובת משלוח או להתחבר לחשבון באתר לפני הוספה אוטומטית לסל (או להשתמש בכפתור "🔍 פתח מוצר" ליד כל פריט).';
-        await persist();
-        render();
-        return;
-      }
-      state.error = 'שגיאה בהוספה לסל: ' + err.message;
+      state.error = formatted.message;
+      state.errorAction = formatted.actionUrl
+        ? { label: formatted.actionLabel || 'פתח דף התחברות', url: formatted.actionUrl }
+        : null;
       await persist();
     }
     render();
   }
 
-  function goToCheckout() {
-    if (IS_SHUF) {
-      location.href = `${SHUF_BASE}/cart`;
-      return;
+  async function goToCheckout() {
+    if (IS_GUIDED) {
+      await persist();
     }
-    if (IS_RAMI) {
-      if (!clickRamiCheckoutButton()) {
-        location.reload();
-      }
-      return;
-    }
-    if (IS_CARR) {
-      clickCarrefourCheckoutButton();
-    }
+    ADAPTER.goToCheckout();
   }
 
   // ---------------- Shadow DOM UI ----------------
   function h(tag, attrs, ...children) {
     const el = document.createElement(tag);
     for (const [k, v] of Object.entries(attrs || {})) {
-      if (v == null || v === false) continue;
+      if (v == null || v === false || k === 'style') continue;
       if (k.startsWith('on')) el.addEventListener(k.slice(2), v);
       else if (k === 'class') el.className = v;
       else el.setAttribute(k, v === true ? '' : v);
@@ -846,11 +312,11 @@
     return el;
   }
 
-  const ACCENT = META.accent;
+  const ACCENT = ADAPTER.accent || '#0f766e';
   const CSS = `
     :host { all: initial; }
     * { box-sizing: border-box; font-family: system-ui, -apple-system, "Segoe UI", Arial, sans-serif; }
-    .panel { position: fixed; bottom: 16px; left: 16px; width: 400px; max-width: calc(100vw - 24px); max-height: calc(100vh - 100px); z-index: 2147483646;
+    .panel { position: fixed; bottom: 16px; left: 16px; width: 406px; max-width: calc(100vw - 24px); max-height: calc(100vh - 96px); z-index: 2147483646;
       background: #fff; color: #1d1d1f; border-radius: 16px; box-shadow: 0 12px 48px rgba(0,0,0,.28);
       display: flex; flex-direction: column; direction: rtl; overflow: hidden; font-size: 14px; border: 1px solid rgba(0,0,0,.08); }
     .panel.collapsed { width: auto; }
@@ -866,15 +332,18 @@
     .body { overflow: auto; padding: 6px 10px; flex: 1; }
     .item { border-bottom: 1px solid #eee; padding: 8px 4px; }
     .item:last-child { border-bottom: 0; }
+    .item.active-guided { background: #f0fdf4; border-radius: 10px; padding: 8px 8px; margin: 2px 0; border: 1px solid #bbf7d0; }
+    .item.added-guided { opacity: .68; }
     .row { display: flex; align-items: center; gap: 8px; }
-    .row-tight { display: flex; align-items: center; gap: 4px; }
-    .col-actions { display: flex; flex-direction: column; align-items: center; gap: 3px; }
-    .thumb { width: 44px; height: 44px; object-fit: contain; border-radius: 8px; background: #f6f6f8; flex-shrink: 0; }
+    .row-tight { display: flex; align-items: center; gap: 4px; flex-wrap: wrap; justify-content: flex-end; }
+    .col-actions { display: flex; flex-direction: column; align-items: flex-end; gap: 4px; flex-shrink: 0; }
+    .thumb { width: 42px; height: 42px; object-fit: contain; border-radius: 8px; background: #f6f6f8; flex-shrink: 0; }
     .card-ph { height: 64px; }
     .grow { flex: 1; min-width: 0; }
     .want { font-size: 12px; color: #6e6e73; }
+    .qty-pill { display: inline-block; background: #f1f5f9; color: #0f172a; border-radius: 6px; padding: 1px 6px; font-size: 11.5px; font-weight: 700; margin-right: 4px; }
     .pname { font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-    .meta { font-size: 12px; color: #6e6e73; }
+    .meta { font-size: 12px; color: #6e6e73; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
     .qty { width: 58px; padding: 4px; border: 1px solid #ddd; border-radius: 8px; text-align: center; font-size: 13px; }
     .lnk { background: none; border: 0; color: ${ACCENT}; cursor: pointer; font-size: 12px; padding: 2px 4px; text-decoration: none; }
     .lnk:hover { text-decoration: underline; }
@@ -893,6 +362,13 @@
     .refine input { flex: 1; min-width: 120px; padding: 7px 8px; border: 1px solid #ddd; border-radius: 8px; font-size: 13px; }
     .refine button, .btn { border: 1px solid #ddd; background: #fff; border-radius: 8px; padding: 5px 9px; cursor: pointer; font-size: 12px; color: #1d1d1f; }
     .btn.act { border-color: ${ACCENT}; color: ${ACCENT}; font-weight: 600; }
+    .btn.search-go { background: ${ACCENT}; color: #fff; border-color: ${ACCENT}; font-weight: 600; }
+    .btn.search-go:hover { filter: brightness(0.92); }
+    .btn.mark-done { border-color: #16a34a; color: #15803d; background: #f0fdf4; font-weight: 600; }
+    .btn.mark-done.is-added { background: #dcfce7; border-color: #16a34a; color: #166534; }
+    .assist-box { background: #ecfdf5; border: 1.5px solid #10b981; color: #065f46; border-radius: 12px; padding: 9px 10px; margin-bottom: 8px; display: flex; flex-direction: column; gap: 6px; font-size: 12.5px; }
+    .assist-btn { background: #16a34a; color: #fff; border: 0; border-radius: 9px; padding: 8px 10px; font-size: 13px; font-weight: 700; cursor: pointer; text-align: center; }
+    .assist-btn:hover { background: #15803d; }
     .tip-box { background: #eff6ff; border: 1px solid #bfdbfe; color: #1e3a8a; border-radius: 10px; padding: 8px 10px; font-size: 12px; line-height: 1.4; margin-bottom: 6px; }
     .login-box { background: #fff8e6; border: 1px solid #ffe08a; border-radius: 12px; padding: 10px; display: flex; flex-direction: column; gap: 6px; margin-bottom: 6px; font-size: 12.5px; }
     .skipped { opacity: .5; }
@@ -922,9 +398,15 @@
       styleSheet = null;
     }
     document.documentElement.append(root);
+    ensureGuidedObserver();
   }
 
   function unmount() {
+    setHighlightedCard(null);
+    if (domObserver) {
+      domObserver.disconnect();
+      domObserver = null;
+    }
     if (root) root.remove();
     root = null;
     shadow = null;
@@ -936,26 +418,27 @@
     return `${i.qty} ${{ kg: 'ק"ג', g: 'גרם', pack: "חב'" }[i.unit] || i.unit}`;
   }
 
-  function carrefourOpenProductBtn(item) {
-    if (!IS_CARR) return null;
+  function openStoreSearchBtn(item) {
+    if (!ADAPTER.buildProductSearchUrl) return null;
     const q = item.product?.name || item.name;
     return h('button', {
       class: 'lnk',
-      title: 'פתח חיפוש מוצר ישיר באתר קרפור',
+      title: `פתח חיפוש מוצר ישיר באתר ${ADAPTER.name}`,
       onclick: async () => {
         await persist();
-        location.href = `/search/${encodeURIComponent(q)}`;
+        location.href = ADAPTER.buildProductSearchUrl(q);
       },
     }, '🔍 פתח מוצר');
   }
 
   function productCard(item, p) {
+    const imgSrc = safeImg(p.img);
     return h('button', {
       class: 'card' + (p.inStock ? '' : ' oos'),
       title: `${p.name} ${p.brand}`,
       onclick: () => { choose(item, p, true); render(); persist(); },
     },
-      p.img ? h('img', { src: p.img, alt: '', loading: 'lazy' }) : h('div', { class: 'card-ph' }),
+      imgSrc ? h('img', { src: imgSrc, alt: '', loading: 'lazy' }) : h('div', { class: 'card-ph' }),
       h('span', { class: 'n' }, p.name),
       h('span', { class: 'meta' }, [p.brand, p.unitDesc].filter(Boolean).join(' · ')),
       h('span', { class: 'p' }, p.price, p.inStock ? '' : ' (אזל)'),
@@ -974,17 +457,110 @@
     return h('div', { class: 'refine' },
       input,
       h('button', { onclick: go }, '🔍'),
-      carrefourOpenProductBtn(item),
+      openStoreSearchBtn(item),
       h('button', { onclick: () => { item.status = 'skipped'; render(); persist(); } }, 'דלג'),
     );
   }
 
-  function renderItem(item) {
+  function renderGuidedItem(item) {
+    if (item.status === 'skipped') {
+      return h('div', { class: 'item skipped' },
+        h('div', { class: 'row' },
+          h('div', { class: 'grow' }, h('b', {}, item.name), ' ', h('span', { class: 'want' }, fmtQty(item))),
+          h('button', {
+            class: 'lnk',
+            onclick: () => {
+              item.status = 'ready';
+              render();
+              persist();
+            },
+          }, 'החזר'),
+        ),
+      );
+    }
+
+    const p = item.product;
+    const imgSrc = safeImg(p?.img);
+    const ean = extractEanBarcode(item);
+    const qtyLabel = fmtQty(item) || '×1';
+    const isAdded = item.status === 'added';
+    const isActive = !isAdded && state.activeItemKey && state.activeItemKey === item.key;
+
+    const navigateSearch = async (preferName) => {
+      const q = resolveGuidedQuery(item, preferName);
+      if (!q) return;
+      state.activeItemKey = item.key;
+      await persist();
+      location.href = ADAPTER.buildSearchUrl(q);
+    };
+
+    const toggleAdded = async () => {
+      item.status = isAdded ? 'ready' : 'added';
+      if (item.status === 'added' && state.activeItemKey === item.key) {
+        state.activeItemKey = '';
+      }
+      await persist();
+      render();
+    };
+
+    const metaParts = [p?.brand, ean ? `ברקוד ${ean}` : '', p?.price].filter(Boolean);
+
+    return h('div', { class: 'item' + (isActive ? ' active-guided' : '') + (isAdded ? ' added-guided' : '') },
+      h('div', { class: 'row' },
+        imgSrc ? h('img', { class: 'thumb', src: imgSrc, alt: '' }) : null,
+        h('div', { class: 'grow' },
+          h('div', { class: 'pname', title: p?.name || item.name },
+            item.name,
+            h('span', { class: 'qty-pill' }, qtyLabel),
+          ),
+          p?.name && p.name !== item.name ? h('div', { class: 'want', title: p.name }, p.name) : null,
+          metaParts.length ? h('div', { class: 'meta' }, metaParts.join(' · ')) : null,
+        ),
+        h('div', { class: 'col-actions' },
+          h('div', { class: 'row-tight' },
+            !isAdded
+              ? h('button', {
+                  class: 'btn search-go',
+                  onclick: () => navigateSearch(false),
+                }, ADAPTER.searchButtonLabel || '🔍 חפש והוסף')
+              : null,
+            h('button', {
+              class: 'btn mark-done' + (isAdded ? ' is-added' : ''),
+              onclick: toggleAdded,
+            }, isAdded ? '✓ נוסף (בטל)' : '✓ הוספתי'),
+          ),
+          !isAdded
+            ? h('div', { class: 'row-tight' },
+                ean
+                  ? h('button', {
+                      class: 'lnk',
+                      title: 'חפש לפי שם המוצר במקום ברקוד',
+                      onclick: () => navigateSearch(true),
+                    }, 'חפש לפי שם')
+                  : null,
+                h('button', {
+                  class: 'lnk grey',
+                  onclick: () => {
+                    item.status = 'skipped';
+                    if (state.activeItemKey === item.key) state.activeItemKey = '';
+                    render();
+                    persist();
+                  },
+                }, 'דלג'),
+              )
+            : null,
+        ),
+      ),
+    );
+  }
+
+  function renderAutoItem(item) {
     const label = h('span', {}, h('b', {}, item.name), ' ', h('span', { class: 'want' }, fmtQty(item)));
     switch (item.status) {
       case 'ready':
       case 'added': {
         const p = item.product;
+        const imgSrc = safeImg(p?.img);
         const isUnit = !p || p.sellingMethod === 'BY_UNIT';
         const qty = h('input', {
           class: 'qty',
@@ -1000,7 +576,7 @@
         });
         return h('div', { class: 'item' },
           h('div', { class: 'row' },
-            p?.img ? h('img', { class: 'thumb', src: p.img, alt: '' }) : h('div', { class: 'thumb' }),
+            imgSrc ? h('img', { class: 'thumb', src: imgSrc, alt: '' }) : h('div', { class: 'thumb' }),
             h('div', { class: 'grow' },
               h('div', { class: 'want' }, item.name, ' ', fmtQty(item)),
               h('div', { class: 'pname', title: p?.name || item.name }, p?.name || item.name),
@@ -1020,7 +596,7 @@
                         searchFor(item, item.query, false);
                       },
                     }, 'החלף'),
-                    carrefourOpenProductBtn(item),
+                    openStoreSearchBtn(item),
                     h('button', { class: 'lnk grey', onclick: () => { item.status = 'skipped'; render(); persist(); } }, 'דלג'),
                   ),
                 ),
@@ -1073,20 +649,22 @@
 
     const items = state.items || [];
     const total = items.length;
-    const resolved = items.filter((i) => ['ready', 'added', 'skipped'].includes(i.status)).length;
-    const ready = items.filter((i) => i.status === 'ready').length;
-    const added = state.doneAdded || items.filter((i) => i.status === 'added').length;
-    const loggedIn = isLoggedIn();
+    const addedCount = state.doneAdded || items.filter((i) => i.status === 'added').length;
+    const skippedCount = items.filter((i) => i.status === 'skipped').length;
+    const readyCount = items.filter((i) => i.status === 'ready').length;
+    const resolved = IS_GUIDED ? (addedCount + skippedCount) : (readyCount + addedCount + skippedCount);
+    const loggedIn = ADAPTER.isLoggedIn();
 
     const panel = h('div', { class: 'panel' + (collapsed ? ' collapsed' : '') });
     panel.append(h('div', { class: 'head' },
       h('span', {}, '🛒'),
-      h('b', {}, collapsed ? `${resolved}/${total}` : `העגלה החכמה ← ${META.name}`),
+      h('b', {}, collapsed ? `${resolved}/${total}` : `העגלה החכמה ← ${ADAPTER.name}`),
       h('button', { title: collapsed ? 'הרחב' : 'מזער', onclick: () => { collapsed = !collapsed; render(); } }, collapsed ? '▢' : '–'),
       h('button', {
         title: 'סגור חלונית',
         onclick: async () => {
-          if (state.phase === 'done' || confirm('לסגור ולנקות את הרשימה מהתוסף?')) {
+          const allHandled = IS_GUIDED && (addedCount + skippedCount >= total);
+          if (state.phase === 'done' || allHandled || confirm('לסגור ולנקות את הרשימה מהתוסף?')) {
             await del('pending');
             unmount();
           }
@@ -1094,20 +672,18 @@
       }, '✕'),
     ));
 
-    if (state.phase === 'done') {
+    if (!IS_GUIDED && state.phase === 'done') {
       panel.append(h('div', { class: 'body' },
         h('div', { class: 'done' },
           h('div', { class: 'big' }, '🎉'),
-          h('h3', {}, `${added} מוצרים נוספו לסל ב${META.name}!`),
-          h('p', {}, IS_RAMI
-            ? 'הסל של רמי לוי עודכן (פריטים קודמים נשמרו). לחץ למעבר לתשלום:'
-            : `כל המוצרים נוספו לסל ב${META.name}. מוכן למעבר לתשלום!`),
+          h('h3', {}, `${addedCount} מוצרים נוספו לסל ב${ADAPTER.name}!`),
+          h('p', {}, ADAPTER.doneSubtitle || `כל המוצרים נוספו לסל ב${ADAPTER.name}. מוכן למעבר לתשלום!`),
         ),
       ));
       const foot = h('div', { class: 'foot' },
-        h('button', { class: 'primary', onclick: goToCheckout }, META.checkoutLabel),
+        h('button', { class: 'primary', onclick: goToCheckout }, ADAPTER.checkoutLabel),
       );
-      if (!IS_RAMI) {
+      if (ADAPTER.showRefreshOnDone !== false) {
         foot.append(h('button', { class: 'secondary', onclick: () => location.reload() }, '🔄 רענן דף והצג סל מעודכן'));
       }
       panel.append(foot);
@@ -1115,67 +691,105 @@
       return;
     }
 
-    const subText = !loggedIn
-      ? '🔐 יש להתחבר לחשבון שופרסל לפני ההוספה לסל'
-      : state.phase === 'adding'
-        ? `מוסיף מוצרים לסל ב${META.name}…`
-        : queueRunning && !ready
-          ? `מתאים מוצרים מול קטלוג ${META.name}… (${resolved}/${total})`
-          : `${ready} מוצרים מוכנים להוספה (${resolved}/${total})`;
+    const subText = IS_GUIDED
+      ? (addedCount + skippedCount >= total && total > 0
+          ? `🎉 כל הפריטים סומנו (${addedCount}/${total} נוספו לסל) – מוכן לתשלום!`
+          : `סומנו ${addedCount} מתוך ${total} מוצרים בסל ${ADAPTER.name}`)
+      : !loggedIn
+        ? `🔐 יש להתחבר לחשבון ${ADAPTER.name} לפני ההוספה לסל`
+        : state.phase === 'adding'
+          ? `מוסיף מוצרים לסל ב${ADAPTER.name}…`
+          : queueRunning && !readyCount
+            ? `מתאים מוצרים מול קטלוג ${ADAPTER.name}… (${resolved}/${total})`
+            : `${readyCount} מוצרים מוכנים להוספה (${resolved}/${total})`;
 
     panel.append(h('div', { class: 'sub' }, h('span', {}, subText)));
     panel.append(h('progress', { class: 'prog', max: String(total || 1), value: String(resolved) }));
 
     const body = h('div', { class: 'body' });
-    if (IS_CARR) {
-      body.append(h('div', { class: 'tip-box' },
-        '💡 טיפ לקרפור: בחר כתובת משלוח או התחבר באתר קרפור לפני הלחיצה על הוספה לסל',
+    const guidedAssist = computeGuidedAssist();
+
+    if (guidedAssist) {
+      const wantQty = fmtQty(guidedAssist.item);
+      body.append(h('div', { class: 'assist-box' },
+        h('b', {}, `⚡ נמצאה התאמה יחידה בדף עבור "${guidedAssist.item.name}"${wantQty ? ` (${wantQty})` : ''}`),
+        guidedAssist.title ? h('span', {}, guidedAssist.title) : null,
+        h('button', {
+          class: 'assist-btn',
+          onclick: async () => {
+            guidedAssist.addButton.click();
+            guidedAssist.item.status = 'added';
+            if (state.activeItemKey === guidedAssist.item.key) state.activeItemKey = '';
+            await persist();
+            render();
+          },
+        }, `➕ הוסף לסל בדף וסמן ✓${wantQty && guidedAssist.item.qty > 1 ? ` (בדוק כמות ${wantQty} בסל)` : ''}`),
       ));
+    } else if (ADAPTER.tipText) {
+      body.append(h('div', { class: 'tip-box' }, ADAPTER.tipText));
     }
-    if (IS_SHUF && !loggedIn) {
+
+    if (!IS_GUIDED && !loggedIn) {
       body.append(h('div', { class: 'login-box' },
-        h('b', {}, '👤 התחבר לחשבון שופרסל:'),
+        h('b', {}, `👤 התחבר לחשבון ${ADAPTER.name}:`),
         h('span', { class: 'meta' }, 'שום מוצר לא מתווסף אוטומטית. לאחר ההתחברות תוכל לבדוק את המוצרים וללחוץ הוספה לסל.'),
       ));
     }
 
-    const order = { choose: 0, notfound: 0, error: 0, searching: 1, todo: 1, ready: 2, skipped: 3, added: 4 };
-    [...items]
-      .sort((a, b) => (order[a.status] ?? 0) - (order[b.status] ?? 0))
-      .forEach((i) => body.append(renderItem(i)));
+    if (IS_GUIDED) {
+      const rankGuided = (i) => {
+        if (i.status === 'ready' && state.activeItemKey && i.key === state.activeItemKey) return -1;
+        if (i.status === 'ready') return 0;
+        if (i.status === 'skipped') return 1;
+        return 2;
+      };
+      [...items]
+        .sort((a, b) => rankGuided(a) - rankGuided(b))
+        .forEach((i) => body.append(renderGuidedItem(i)));
+    } else {
+      const order = { choose: 0, notfound: 0, error: 0, searching: 1, todo: 1, ready: 2, skipped: 3, added: 4 };
+      [...items]
+        .sort((a, b) => (order[a.status] ?? 0) - (order[b.status] ?? 0))
+        .forEach((i) => body.append(renderAutoItem(i)));
+    }
     panel.append(body);
 
     const foot = h('div', { class: 'foot' });
     if (state.error && state.error !== 'login') {
       const errBox = h('div', { class: 'login-box' }, h('span', {}, state.error));
-      if (IS_CARR) {
+      if (state.errorAction) {
         errBox.append(h('button', {
           class: 'secondary',
           onclick: async () => {
             await persist();
-            location.href = '/?loginOrRegister=1';
+            location.href = state.errorAction.url;
           },
-        }, '👤 התחבר / בחר כתובת בקרפור'));
+        }, state.errorAction.label));
       }
       foot.append(errBox);
     }
 
-    if (IS_SHUF && !loggedIn) {
-      if (!isOnLoginPage()) {
+    if (IS_GUIDED) {
+      foot.append(h('button', {
+        class: 'primary',
+        onclick: goToCheckout,
+      }, ADAPTER.checkoutLabel));
+    } else if (!loggedIn) {
+      if (ADAPTER.loginUrl && !ADAPTER.isOnLoginPage()) {
         foot.append(h('button', {
           class: 'primary',
-          onclick: () => { location.href = `${SHUF_BASE}/login`; },
-        }, 'התחבר לשופרסל כדי להוסיף לסל'));
+          onclick: () => { location.href = ADAPTER.loginUrl; },
+        }, `התחבר ל${ADAPTER.name} כדי להוסיף לסל`));
       }
     } else {
       const label = state.phase === 'adding'
         ? 'מוסיף לסל…'
-        : queueRunning && !ready
+        : queueRunning && !readyCount
           ? 'מתאים מוצרים…'
-          : `🛒 הוסף ${ready} מוצרים לסל ועבור לתשלום`;
+          : `🛒 הוסף ${readyCount} מוצרים לסל ועבור לתשלום`;
       foot.append(h('button', {
         class: 'primary',
-        disabled: !ready || state.phase === 'adding',
+        disabled: !readyCount || state.phase === 'adding',
         onclick: addAll,
       }, label));
     }
@@ -1185,14 +799,13 @@
 
   // ---------------- Boot ----------------
   async function start() {
-    // Post-reload Rami Levy done banner so the hydrated cart sidebar and checkout button appear together
     const doneBannerRaw = sessionStorage.getItem('sl_done_banner');
     if (doneBannerRaw && !location.hash.includes('smartlist=')) {
       sessionStorage.removeItem('sl_done_banner');
       try {
         const parsed = JSON.parse(doneBannerRaw);
         if (parsed && parsed.chain === CHAIN) {
-          state = { items: [], phase: 'done', doneAdded: Number(parsed.added) || 0, error: null };
+          state = { items: [], phase: 'done', doneAdded: Number(parsed.added) || 0, error: null, errorAction: null };
           collapsed = false;
           render();
           return;
@@ -1210,17 +823,14 @@
     if (!pending) return;
     if (pending.chain && pending.chain !== CHAIN) return;
 
-    // If returning right after logging in on Shufersal /login, reload once so CSRF/session is fresh
-    if (IS_SHUF && !isOnLoginPage() && sessionStorage.getItem('sl_from_login') === '1') {
-      sessionStorage.removeItem('sl_from_login');
-      sessionStorage.removeItem('sl_submitted_once');
+    if (ADAPTER.consumePostLoginReload && ADAPTER.consumePostLoginReload()) {
       location.reload();
       return;
     }
 
     currentTs = pending.ts || 0;
     shufMappings = (await get('mappings')) || {};
-    chainMappings = { shufersal: {}, ramilevy: {}, carrefour: {}, ...((await get('chainMappings')) || {}) };
+    chainMappings = (await get('chainMappings')) || {};
     const storedAuth = (await get('shufAuth')) || {};
     shufAuth = { user: storedAuth.user || '' };
     if (storedAuth.pass) await set({ shufAuth });
@@ -1248,7 +858,7 @@
 
         const savedMap = activeChainMap();
         items = decoded.items.map((it) => {
-          const itemKey = normalize(it.name);
+          const itemKey = normalizeText(it.name);
           const savedProd = savedMap[itemKey];
           const linkProd = it.product;
           const wantBarcode = String(linkProd?.code || '').replace(/^P_/, '').trim();
@@ -1257,20 +867,24 @@
             key: itemKey,
             wantBarcode,
             product: linkProd || null,
-            status: 'todo',
+            status: IS_GUIDED ? 'ready' : 'todo',
+            addQty: qtyFor(it, linkProd),
           };
+
+          if (IS_GUIDED) {
+            return base;
+          }
 
           if (isSavedProductReadyForChain(savedProd)) {
             base.product = savedProd;
             base.addQty = qtyFor(it, savedProd);
             base.status = 'ready';
-          } else if (IS_SHUF && isSavedProductReadyForChain(linkProd)) {
+          } else if (ADAPTER.acceptsLinkProductDirectly && isSavedProductReadyForChain(linkProd)) {
             // Session preview only – never persisted to saved mappings until user clicks addAll/choose
             base.product = linkProd;
             base.addQty = qtyFor(it, linkProd);
             base.status = 'ready';
           } else {
-            // Rami Levy & Carrefour require resolving EAN barcode to internal product ID via runQueue()
             base.query = wantBarcode || linkProd?.name || it.name;
           }
           return base;
@@ -1279,27 +893,39 @@
         pending.v = 3;
         pending.chain = CHAIN;
         pending.autoAdd = false;
+        pending.activeItemKey = '';
         await set({ pending });
       } catch (err) {
         await del('pending');
         return;
       }
-    } else {
+    } else if (!IS_GUIDED) {
       items = items.map((i) =>
         (['searching', 'choose'].includes(i.status) ? { ...i, status: 'todo' } : i),
       );
     }
 
-    state = { items, phase: 'work', error: null };
+    state = {
+      items,
+      phase: 'work',
+      error: null,
+      errorAction: null,
+      activeItemKey: pending.activeItemKey || '',
+    };
     collapsed = false;
     await persist();
     render();
 
-    if (isOnLoginPage()) {
-      tryFillLoginForm();
+    if (ADAPTER.tryFillLoginForm && ADAPTER.isOnLoginPage()) {
+      ADAPTER.tryFillLoginForm(shufAuth, (nextAuth) => {
+        shufAuth = nextAuth;
+        set({ shufAuth });
+      });
     }
 
-    runQueue();
+    if (!IS_GUIDED) {
+      runQueue();
+    }
   }
 
   chrome.storage.onChanged.addListener((changes, area) => {

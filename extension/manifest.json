@@ -1,14 +1,18 @@
 {
   "manifest_version": 3,
-  "name": "העגלה החכמה – מילוי סל בשופרסל, רמי לוי וקרפור (לא רשמי)",
+  "name": "העגלה החכמה – מילוי סל ב-7 רשתות שיווק (לא רשמי)",
   "short_name": "SmartCart",
-  "version": "3.0.0",
-  "description": "כלי עצמאי ובלתי רשמי למילוי סל בלחיצה אחת ומעבר לתשלום בשופרסל, רמי לוי וקרפור ישראל.",
+  "version": "3.1.0",
+  "description": "כלי עצמאי ובלתי רשמי למילוי סל ומעבר לתשלום בשופרסל, רמי לוי, קרפור, מחסני השוק, ויקטורי, יוחננוף וטיב טעם.",
   "permissions": ["storage"],
   "host_permissions": [
     "https://www.shufersal.co.il/*",
     "https://www.rami-levy.co.il/*",
-    "https://www.carrefour.co.il/*"
+    "https://www.carrefour.co.il/*",
+    "https://www.mck.co.il/*",
+    "https://www.victoryonline.co.il/*",
+    "https://yochananof.co.il/*",
+    "https://www.tivtaam.co.il/*"
   ],
   "action": {
     "default_popup": "popup.html",
@@ -31,7 +35,11 @@
       "matches": [
         "https://www.shufersal.co.il/*",
         "https://www.rami-levy.co.il/*",
-        "https://www.carrefour.co.il/*"
+        "https://www.carrefour.co.il/*",
+        "https://www.mck.co.il/*",
+        "https://www.victoryonline.co.il/*",
+        "https://yochananof.co.il/*",
+        "https://www.tivtaam.co.il/*"
       ],
       "js": ["capture.js"],
       "run_at": "document_start"
@@ -40,9 +48,24 @@
       "matches": [
         "https://www.shufersal.co.il/*",
         "https://www.rami-levy.co.il/*",
-        "https://www.carrefour.co.il/*"
+        "https://www.carrefour.co.il/*",
+        "https://www.mck.co.il/*",
+        "https://www.victoryonline.co.il/*",
+        "https://yochananof.co.il/*",
+        "https://www.tivtaam.co.il/*"
       ],
-      "js": ["codec.js", "panel.js"],
+      "js": [
+        "codec.js",
+        "chains/selfpoint.js",
+        "chains/shufersal.js",
+        "chains/ramilevy.js",
+        "chains/carrefour.js",
+        "chains/mahsaneihashuk.js",
+        "chains/victory.js",
+        "chains/yochananof.js",
+        "chains/tivtaam.js",
+        "panel.js"
+      ],
       "run_at": "document_idle"
     }
   ]

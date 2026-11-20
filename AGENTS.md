@@ -8,7 +8,7 @@
 
 1. **Extreme Ease of Use (<60s UX):** Turn messy WhatsApp chats, free text, CSV/TSV, Google Sheets, or styled `.xlsx` files into a deduplicated, aisle-sorted RTL shopping list in under 60 seconds—with zero build step and zero silent auto-saving of unchosen products.
 2. **100% Real, Honest Prices Only:**
-   - Single source of truth: Israel's official **Price Transparency Law (`חוק שקיפות מחירים`)** feeds (`Stores`, `PriceFull`, `PromoFull`) for **Shufersal**, **Rami Levy**, and **Carrefour**. (**Victory** and **Yochananof** show `"בקרוב"` until wired in.)
+   - Single source of truth: Israel's official **Price Transparency Law (`חוק שקיפות מחירים`)** feeds (`Stores`, `PriceFull`, `PromoFull`) across **9 live chains**: **Shufersal**, **Rami Levy**, **Carrefour**, **Machsanei HaShuk**, **Victory**, **Yochananof**, **Tiv Taam**, **Keshet Teamim**, and **Osher Ad** (7 with online delivery stores + 2 physical-branch-only chains marked `hasOnlineStore: false`).
    - **Never invent, extrapolate, or copy prices across chains.**
 3. **Commercial Readiness:** Static price feeds (`data/v1/`) publish daily to orphan `gh-pages` (`https://shmuelsfez.github.io/smart-grocery/data/v1`) and the frontend runs on Vercel (`https://smart-grocery-kappa.vercel.app`), with a clean path to Cloudflare R2 + Vercel Pro + server-side `/api/ai` before monetization.
 

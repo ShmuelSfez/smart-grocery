@@ -58,28 +58,28 @@ export function normalizeStoreId(raw) {
  *      Stores7290058140886-000-20261116-050500.xml
  */
 export function extractFileMeta(filename) {
-  const base = String(filename || '').split('/').pop().split('?')[0];
-  let m = base.match(/^(PriceFull|PromoFull|Stores)\d+-(\d+)-(\d+)-(\d{8})-?(\d*)/i);
+  const base = String(filename || '').replace(/\\/g, '/').split('/').pop().split('?')[0];
+  let m = base.match(/^(PriceFull|PromoFull|StoresFull|Stores)\d+-(\d+)-(\d+)-(\d{8})-?(\d*)/i);
   if (m) {
-    const kind = m[1];
-    const isStores = /^stores$/i.test(kind);
+    const rawKind = m[1];
+    const isStores = /^stores/i.test(rawKind);
     return {
-      kind,
+      kind: isStores ? 'Stores' : rawKind,
       subChainId: m[2],
       storeId: isStores ? '0' : normalizeStoreId(m[3]),
       stamp: isStores ? `${m[3]}${m[4]}` : `${m[4]}${m[5] || ''}`,
       filename: base,
     };
   }
-  m = base.match(/^(PriceFull|PromoFull|Stores)\d+-(\d+)-(\d{8,14})/i);
+  m = base.match(/^(PriceFull|PromoFull|StoresFull|Stores)\d+-(\d+)-(\d{8,14})-?(\d*)/i);
   if (m) {
-    const kind = m[1];
-    const isStores = /^stores$/i.test(kind);
+    const rawKind = m[1];
+    const isStores = /^stores/i.test(rawKind);
     return {
-      kind,
+      kind: isStores ? 'Stores' : rawKind,
       subChainId: '0',
       storeId: isStores ? '0' : normalizeStoreId(m[2]),
-      stamp: m[3],
+      stamp: `${m[3]}${m[4] || ''}`,
       filename: base,
     };
   }
@@ -89,45 +89,63 @@ export function extractFileMeta(filename) {
 export function getTag(block, tagNames) {
   const names = Array.isArray(tagNames) ? tagNames : [tagNames];
   for (const name of names) {
-    const re = new RegExp(`<${name}(?:\\s[^>]*)?>([\\s\\S]*?)<\\/${name}>`, 'i');
+    const re = new RegExp(`<${name}(?:\\s[^>/]*)?>([\\s\\S]*?)<\\/${name}>`, 'i');
     const m = block.match(re);
     if (m) return unescapeXml(m[1].trim());
   }
   return '';
 }
 
+const ONLINE_STORE_HINT_RE = /אינטרנט|אונליין|online|משלוח|ליקוט|ממ["״']?ר|קוויק|quick|וולט|wolt|פיק\s*-?\s*אפ|pickup|\.co\.il|\.co\.|\.com/i;
+const DEDICATED_INTERNET_NAME_RE = /(?:^|\s|-)(אינטרנט|אונליין|online)(?:\s|-|$)/i;
+
 export function parseStoresXml(xml, chainId, cityMap) {
   const byId = new Map();
-  const storeRe = /<Store(?:\s[^>]*)?>([\s\S]*?)<\/Store>/gi;
+  const storeRe = /<Store(?:\s[^>/]*)?>([\s\S]*?)<\/Store>/gi;
   let m;
   while ((m = storeRe.exec(xml)) !== null) {
     const block = m[1];
     const storeId = normalizeStoreId(getTag(block, ['StoreID', 'StoreId', 'STOREID']));
     if (!storeId) continue;
     const name = getTag(block, ['StoreName', 'STORENAME']).replace(/\s+/g, ' ').trim();
-    const address = getTag(block, ['Address', 'ADDRESS']).replace(/\s+/g, ' ').trim();
+    let address = getTag(block, ['Address', 'ADDRESS']).replace(/\s+/g, ' ').trim();
+    if (/^(לא ידוע|unknown|null|none|-)$/i.test(address)) address = '';
     const rawCity = getTag(block, ['City', 'CITY']);
     const city = resolveCityName(rawCity, cityMap, name);
-    if (!name && !city) continue;
-    // StoreType 2 = online / fulfilment store (per the Price Transparency regulations), 1 = physical branch
-    const storeType = getTag(block, ['StoreType', 'STORETYPE']);
+    if (!name && !city && !address) continue;
+    // StoreType 2 = online / fulfilment store (per the Price Transparency regulations), 1 = physical branch.
+    // Also detect dedicated internet fulfilment stores even if tagged StoreType=1 with name "אינטרנט"/"אונליין".
+    const storeType = getTag(block, ['StoreType', 'STORETYPE']).trim();
+    const hasOnlineHint = ONLINE_STORE_HINT_RE.test(`${name} ${address}`);
+    const isOnline = storeType === '2' || DEDICATED_INTERNET_NAME_RE.test(name);
     byId.set(storeId, {
       chain: chainId,
       storeId,
       name: name || `סניף ${storeId}`,
       address,
       city: city || 'כללי',
-      type: storeType === '2' ? 'online' : 'branch',
+      type: isOnline ? 'online' : 'branch',
+      _storeType: storeType,
+      _hasOnlineHint: hasOnlineHint,
     });
   }
-  return [...byId.values()];
+
+  // Nibit ERP quirk (e.g. Machsanei HaShuk): some physical franchise branches ("20 להבים", "11 עין יהב") carry
+  // StoreType=2 alongside real internet stores ("97 אינטרנט", "96 אינטרנט אילת"). When a chain publishes explicit
+  // online-named StoreType=2 stores, reclassify street-addressed StoreType=2 branches that lack any online hint.
+  const all = [...byId.values()];
+  const hasExplicitOnline = all.some((s) => s.type === 'online' && s._hasOnlineHint);
+  return all.map(({ _storeType, _hasOnlineHint, ...s }) => ({
+    ...s,
+    type: s.type === 'online' && hasExplicitOnline && !_hasOnlineHint && Boolean(s.address) ? 'branch' : s.type,
+  }));
 }
 
 export function parsePricesXml(xml) {
   const topHead = xml.slice(0, 600);
   const xmlStoreId = normalizeStoreId(getTag(topHead, ['StoreID', 'StoreId', 'STOREID']));
   const items = [];
-  const itemRe = /<Item(?:\s[^>]*)?>([\s\S]*?)<\/Item>/gi;
+  const itemRe = /<Item(?:\s[^>/]*)?>([\s\S]*?)<\/Item>/gi;
   let m;
   while ((m = itemRe.exec(xml)) !== null) {
     const b = m[1];
@@ -135,7 +153,7 @@ export function parsePricesXml(xml) {
     if (!code) continue;
     const price = round2(Number(getTag(b, ['ItemPrice', 'ITEMPRICE'])));
     if (!(price > 0)) continue;
-    const name = (getTag(b, ['ItemName', 'ITEMNAME']) || getTag(b, ['ManufacturerItemDescription', 'ManufactureItemDescription'])).replace(/\s+/g, ' ').trim();
+    const name = (getTag(b, ['ItemName', 'ItemNm', 'ITEMNAME']) || getTag(b, ['ManufacturerItemDescription', 'ManufactureItemDescription'])).replace(/\s+/g, ' ').trim();
     if (!name) continue;
     let manufacturer = getTag(b, ['ManufactureName', 'ManufacturerName', 'MANUFACTURENAME']).replace(/\s+/g, ' ').trim();
     if (/^(לא ידוע|unknown|null|-)$/i.test(manufacturer)) manufacturer = '';

@@ -6,15 +6,16 @@
 
 A Hebrew-first grocery planning web app (PWA) built around three principles:
 1. **Extreme ease of use:** Go from messy notes, WhatsApp messages, or Google Sheets to an aisle-sorted shopping list in under 60 seconds.
-2. **100% real, transparent prices:** Compare item-level and full-basket costs across **Shufersal, Rami Levy, and Carrefour** using Israel's official **Price Transparency Law (חוק שקיפות מחירים)** branch feeds—never invented or guessed prices. (**Victory** and **Yochananof** are shown as *בקרוב* until wired in.)
+2. **100% real, transparent prices:** Compare item-level and full-basket costs across **9 live Israeli supermarket chains** (**Shufersal, Rami Levy, Carrefour, Machsanei HaShuk, Victory, Yochananof, Tiv Taam, Keshet Teamim, and Osher Ad**) using Israel's official **Price Transparency Law (חוק שקיפות מחירים)** branch feeds—never invented or guessed prices.
 3. **Built to grow commercially:** Clean, zero-build frontend + daily automated feed pipeline designed to evolve toward commercial scale.
 
 ---
 
 ## Features
-- **Official Price Transparency Comparison (`pipeline/`, `web/js/prices.js`, `web/js/pricing.js`):**
-  - Ingests official `Stores`, `PriceFull`, and `PromoFull` XML/GZ/ZIP feeds for **Shufersal** (~417 stores), **Rami Levy** (~97 stores), and **Carrefour** (~148 stores) across **117 Israeli localities** plus official **`StoreType=2` online fulfilment stores** (`online.json`).
-  - **Delivery vs In-Store Mode:** Defaults to **`🚚 משלוח הביתה`** (prices each chain directly from its official online fulfilment store: Shufersal `413`, Rami Levy `39`, Carrefour `471/472/473`), or toggle to **`🏬 קנייה בסניף פיזי`** to pick a city and physical branch (`סניף ▾`).
+- **Official Price Transparency Comparison (`pipeline/`, `web/js/prices.js`, `web/js/pricing.js`, `web/js/ranking.js`):**
+  - Ingests official `Stores`, `PriceFull`, and `PromoFull` XML/GZ/ZIP feeds across **9 Israeli supermarket chains** (~798 branches across **122 localities**) plus official **`StoreType=2` online fulfilment stores** (`online.json` for Shufersal, Rami Levy, Carrefour, Machsanei HaShuk, Victory, Tiv Taam, and Keshet Teamim; Yochananof and Osher Ad are available in physical Store Mode).
+  - **Vertical Top-Down Ranked Results List:** Displays all chains top-to-bottom (complete baskets ranked cheapest-first, followed by partial baskets and store-only chains), with expandable inline per-item breakdowns.
+  - **Delivery vs In-Store Mode:** Defaults to **`🚚 משלוח הביתה`** (prices each online chain from its official fulfilment store), or toggle to **`🏬 קנייה בסניף פיזי`** to pick a city and physical branch (`סניף ▾`).
   - **All-Customer Promotions:** Applies active non-coupon promotions open to all customers (`ClubID = 0`, single-item discounts and `X for ₪Y` bundles across `<PromotionItem>` and `<PromotionItems><Item>`). Club-only deals are excluded for now.
   - **Strict Price & Ambiguity Honesty:** Missing items show `אין נתון`, incomplete baskets are marked `חלקי` (never eligible for `🏆 הכי זול!`), bare ambiguous words (`סודה`, `פלפל`, `שמנת`, `נייר`, etc.) prompt 1-click disambiguation chips instead of guessing, bought items (`✅`, `[x]`, `~~...~~`, Excel strikethrough) import unchecked, and asymmetric delivery fees compare on apples-to-apples product subtotals.
   - **Verified Delivery & Coverage Configs (`web/data/delivery.json`, `web/data/delivery-coverage.json`):** Only human-verified fees/coverage are asserted with a visible `lastChecked` date; unknown cities show a direct check link to the chain's site.
@@ -24,8 +25,8 @@ A Hebrew-first grocery planning web app (PWA) built around three principles:
 - **DV-Style 628-List Regression Suite (`tests/regression/`):**
   - **108 directed corner-case lists + 520 seeded constrained-random lists** (₪200–₪4,000) checked against a 392-entry golden dictionary, a frozen 2.3 MB online-store XML snapshot, and a standalone zero-import XML price oracle (`S1`–`S10` scoreboard + 1D/cross/DUT-response coverage).
 - **Suggestions, Recipes & Optional AI (`suggest.js`, `recipes.js`, `ai.js`):** Purchase-interval predictions (*"כנראה נגמר לך"*), scalable meal templates, and optional BYO Gemini API key.
-- **Optional Desktop Chrome Extension (`extension/`, frozen bonus):**
-  - Manifest V3 extension (`v2.3.0`) for desktop Chrome: opens prefilled on **Shufersal** and adds items only after an explicit click on `"הוסף לסל"` (never auto-submits on link open, never touches passwords), and provides a safe **guided search-and-add** checklist on **Rami Levy**.
+- **Modular 7-Chain Desktop Chrome Extension (`extension/` v3.1.0, `extension/build.mjs`):**
+  - Unified Manifest V3 extension (`web/smartcart-extension.zip`) structured into isolated per-chain modules (`extension/chains/<chain>.js`): **1-click automated cart fill** on **Shufersal, Rami Levy, Carrefour, and Machsanei HaShuk**, plus **guided search-and-add assist** on **Victory, Yochananof, and Tiv Taam** (never auto-submits on untrusted link load, never touches passwords). Also supports building per-chain archives via `node extension/build.mjs --all-chains`.
 
 ---
 

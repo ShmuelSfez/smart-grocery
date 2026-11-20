@@ -10,7 +10,7 @@ import { fileURLToPath } from 'node:url';
 const SNAP_DIR = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..', 'snapshot');
 
 function xmlVal(chunk, tag) {
-  const openRe = new RegExp(`<${tag}(?:\\s[^>]*)?>`, 'i');
+  const openRe = new RegExp(`<${tag}(?:\\s[^>/]*)?>`, 'i');
   const m = openRe.exec(chunk);
   if (!m) return '';
   const start = m.index + m[0].length;
@@ -19,6 +19,9 @@ function xmlVal(chunk, tag) {
   return chunk
     .slice(start, closeIdx)
     .trim()
+    .replace(/&#x([0-9a-fA-F]+);/g, (_, hex) => String.fromCodePoint(parseInt(hex, 16)))
+    .replace(/&#(\d+);/g, (_, dec) => String.fromCodePoint(parseInt(dec, 10)))
+    .replace(/&nbsp;/g, ' ')
     .replace(/&quot;/g, '"')
     .replace(/&apos;/g, "'")
     .replace(/&lt;/g, '<')
@@ -295,7 +298,7 @@ export function loadReferenceSnapshot() {
  * Independent reference calculation of basket totals for the matched barcodes per chain.
  */
 export function refEvaluateBasket(checkedLines, dutMatches, refSnap, deliveryCfg = {}, includeDelivery = true) {
-  const chainIds = ['shufersal', 'ramilevy', 'carrefour'];
+  const chainIds = Object.keys(refSnap.chains);
   const perChain = {};
 
   for (const cid of chainIds) {

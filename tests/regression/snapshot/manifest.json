@@ -1,23 +1,47 @@
 {
-  "capturedAt": "2026-11-18T15:53:40.130Z",
+  "capturedAt": "2026-11-19T21:56:44.647Z",
   "stores": {
     "shufersal": {
       "storeId": "413",
-      "priceStamp": "20261118034000",
+      "priceStamp": "20261119034000",
       "priceCompressedKB": 590,
       "promoCompressedKB": 350
     },
     "ramilevy": {
       "storeId": "39",
-      "priceStamp": "202611180519",
-      "priceCompressedKB": 625,
+      "priceStamp": "202611190518",
+      "priceCompressedKB": 624,
       "promoCompressedKB": 21
     },
     "carrefour": {
       "storeId": "471",
-      "priceStamp": "20261118121014",
+      "priceStamp": "20261119121012",
       "priceCompressedKB": 520,
-      "promoCompressedKB": 234
+      "promoCompressedKB": 235
+    },
+    "mahsaneihashuk": {
+      "storeId": "97",
+      "priceStamp": "20261119050519",
+      "priceCompressedKB": 586,
+      "promoCompressedKB": 187
+    },
+    "victory": {
+      "storeId": "97",
+      "priceStamp": "20261119051854",
+      "priceCompressedKB": 408,
+      "promoCompressedKB": 131
+    },
+    "tivtaam": {
+      "storeId": "514",
+      "priceStamp": "20261119004004",
+      "priceCompressedKB": 776,
+      "promoCompressedKB": 319
+    },
+    "keshet": {
+      "storeId": "116",
+      "priceStamp": "202611190010",
+      "priceCompressedKB": 560,
+      "promoCompressedKB": 154
     }
   }
 }

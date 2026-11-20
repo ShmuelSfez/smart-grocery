@@ -1,13 +1,100 @@
 // Supermarket chains shown in the app.
 // status: 'live' = real prices from the official Price Transparency files, 'soon' = not wired in yet.
-// cartFill: what the optional desktop extension (v3.0+) can do for this chain ('auto' = 1-click cart fill + checkout).
+// hasOnlineStore: true = publishes an official StoreType=2 online fulfilment store in online.json; false = physical branches only (Store Mode).
+// cartFill: what the optional desktop extension (v3.1+) can do for this chain ('auto' = 1-click cart fill, 'guided' = assisted search-and-add, 'none' = link only).
 export const CHAINS = [
-  { id: 'shufersal', name: 'שופרסל', emoji: '🔴', url: 'https://www.shufersal.co.il/online/he/', status: 'live', cartFill: 'auto' },
-  { id: 'ramilevy', name: 'רמי לוי', emoji: '🛒', url: 'https://www.rami-levy.co.il/he/online/market', status: 'live', cartFill: 'auto' },
-  { id: 'carrefour', name: 'קרפור', emoji: '🔵', url: 'https://www.carrefour.co.il/', status: 'live', cartFill: 'auto' },
-  { id: 'victory', name: 'ויקטורי', emoji: '🏪', url: 'https://www.victoryonline.co.il/', status: 'soon', cartFill: 'none' },
-  { id: 'yochananof', name: 'יוחננוף', emoji: '🛍️', url: 'https://yochananof.co.il/', status: 'soon', cartFill: 'none' },
+  {
+    id: 'shufersal',
+    name: 'שופרסל',
+    emoji: '🔴',
+    url: 'https://www.shufersal.co.il/online/he/',
+    searchUrl: 'https://www.shufersal.co.il/online/he/search?text={q}',
+    hasOnlineStore: true,
+    status: 'live',
+    cartFill: 'auto',
+  },
+  {
+    id: 'ramilevy',
+    name: 'רמי לוי',
+    emoji: '🛒',
+    url: 'https://www.rami-levy.co.il/he/online/market',
+    searchUrl: 'https://www.rami-levy.co.il/he/online/search?q={q}',
+    hasOnlineStore: true,
+    status: 'live',
+    cartFill: 'auto',
+  },
+  {
+    id: 'carrefour',
+    name: 'קרפור',
+    emoji: '🔵',
+    url: 'https://www.carrefour.co.il/',
+    searchUrl: 'https://www.carrefour.co.il/search/{q}',
+    hasOnlineStore: true,
+    status: 'live',
+    cartFill: 'auto',
+  },
+  {
+    id: 'mahsaneihashuk',
+    name: 'מחסני השוק',
+    emoji: '🟡',
+    url: 'https://www.mck.co.il/',
+    searchUrl: 'https://www.mck.co.il/search/{q}',
+    hasOnlineStore: true,
+    status: 'live',
+    cartFill: 'auto',
+  },
+  {
+    id: 'victory',
+    name: 'ויקטורי',
+    emoji: '🏪',
+    url: 'https://www.victoryonline.co.il/',
+    searchUrl: 'https://www.victoryonline.co.il/search?q={q}',
+    hasOnlineStore: true,
+    status: 'live',
+    cartFill: 'guided',
+  },
+  {
+    id: 'yochananof',
+    name: 'יוחננוף',
+    emoji: '🛍️',
+    url: 'https://yochananof.co.il/',
+    searchUrl: 'https://yochananof.co.il/category?search={q}',
+    hasOnlineStore: false,
+    status: 'live',
+    cartFill: 'guided',
+  },
+  {
+    id: 'tivtaam',
+    name: 'טיב טעם',
+    emoji: '🟣',
+    url: 'https://www.tivtaam.co.il/',
+    searchUrl: 'https://www.tivtaam.co.il/search/{q}',
+    hasOnlineStore: true,
+    status: 'live',
+    cartFill: 'guided',
+  },
+  {
+    id: 'keshet',
+    name: 'קשת טעמים',
+    emoji: '🌈',
+    url: 'https://www.keshet-teamim.co.il/',
+    searchUrl: null,
+    hasOnlineStore: true,
+    status: 'live',
+    cartFill: 'none',
+  },
+  {
+    id: 'osherad',
+    name: 'אושר עד',
+    emoji: '🟠',
+    url: 'https://osherad.co.il/',
+    searchUrl: null,
+    hasOnlineStore: false,
+    status: 'live',
+    cartFill: 'none',
+  },
 ];
 
 export const CHAIN_BY_ID = Object.fromEntries(CHAINS.map((c) => [c.id, c]));
 export const LIVE_CHAIN_IDS = CHAINS.filter((c) => c.status === 'live').map((c) => c.id);
+export const ONLINE_LIVE_CHAIN_IDS = CHAINS.filter((c) => c.status === 'live' && c.hasOnlineStore !== false).map((c) => c.id);

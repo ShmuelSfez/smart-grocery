@@ -1,9 +1,15 @@
 {
   "_comment": "Delivery fees are NOT in the official price files. A person must verify each value on the chain's website and update lastChecked. null = unknown (shown as 'לא ידוע' and excluded from totals).",
-  "lastChecked": "2026-11-18",
+  "lastChecked": "2026-11-19",
   "chains": {
     "shufersal": { "fee": 29.9, "freeOver": null, "source": "https://www.shufersal.co.il/online/terms" },
     "ramilevy": { "fee": null, "freeOver": null, "source": "https://www.rami-levy.co.il/he/terms-of-use" },
-    "carrefour": { "fee": null, "freeOver": null, "source": "https://www.carrefour.co.il/" }
+    "carrefour": { "fee": null, "freeOver": null, "source": "https://www.carrefour.co.il/" },
+    "mahsaneihashuk": { "fee": null, "freeOver": null, "source": "https://www.mck.co.il/" },
+    "victory": { "fee": null, "freeOver": null, "source": "https://www.victoryonline.co.il/" },
+    "yochananof": { "fee": null, "freeOver": null, "source": "https://yochananof.co.il/" },
+    "tivtaam": { "fee": null, "freeOver": null, "source": "https://www.tivtaam.co.il/" },
+    "keshet": { "fee": null, "freeOver": null, "source": "https://www.keshet-teamim.co.il/" },
+    "osherad": { "fee": null, "freeOver": null, "source": "https://osherad.co.il/" }
   }
 }

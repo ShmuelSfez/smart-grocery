@@ -37,7 +37,7 @@ export function parsePromosXml(xml, { now = new Date() } = {}) {
     unsupportedSkipped: 0,
   };
 
-  const promoRe = /<Promotion(?:\s[^>]*)?>([\s\S]*?)<\/Promotion>/gi;
+  const promoRe = /<Promotion(?:\s[^>/]*)?>([\s\S]*?)<\/Promotion>/gi;
   let m;
   while ((m = promoRe.exec(xml)) !== null) {
     stats.total++;
@@ -80,7 +80,7 @@ export function parsePromosXml(xml, { now = new Date() } = {}) {
       continue;
     }
 
-    const groups = [...block.matchAll(/<Group(?:\s[^>]*)?>([\s\S]*?)<\/Group>/gi)].map((gm) => gm[1]);
+    const groups = [...block.matchAll(/<Group(?:\s[^>/]*)?>([\s\S]*?)<\/Group>/gi)].map((gm) => gm[1]);
     if (groups.length > 1) {
       stats.conditionalSkipped++;
       continue;
@@ -105,11 +105,11 @@ export function parsePromosXml(xml, { now = new Date() } = {}) {
     const promoLevelMinQty = Number(getTag(block, ['MinQty'])) || 0;
 
     // Shufersal/Carrefour emit <PromotionItem>, whereas Rami Levy nests <PromotionItems><Item>...</Item></PromotionItems>
-    let itemBlocks = [...scope.matchAll(/<PromotionItem(?:\s[^>]*)?>([\s\S]*?)<\/PromotionItem>/gi)].map((im) => im[1]);
+    let itemBlocks = [...scope.matchAll(/<PromotionItem(?:\s[^>/]*)?>([\s\S]*?)<\/PromotionItem>/gi)].map((im) => im[1]);
     if (!itemBlocks.length) {
-      const wrap = scope.match(/<PromotionItems(?:\s[^>]*)?>([\s\S]*?)<\/PromotionItems>/i)?.[1] || '';
+      const wrap = scope.match(/<PromotionItems(?:\s[^>/]*)?>([\s\S]*?)<\/PromotionItems>/i)?.[1] || '';
       if (wrap) {
-        itemBlocks = [...wrap.matchAll(/<Item(?:\s[^>]*)?>([\s\S]*?)<\/Item>/gi)].map((im) => im[1]);
+        itemBlocks = [...wrap.matchAll(/<Item(?:\s[^>/]*)?>([\s\S]*?)<\/Item>/gi)].map((im) => im[1]);
       }
     }
     if (!itemBlocks.length) {

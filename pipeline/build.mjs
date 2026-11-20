@@ -1,5 +1,5 @@
 // Builds static JSON price data (data/v1/) from official Israeli Price Transparency feeds.
-// Usage: node pipeline/build.mjs [--chains=shufersal,ramilevy,carrefour] [--limit-stores=N] [--out=data/v1]
+// Usage: node pipeline/build.mjs [--chains=shufersal,ramilevy,...] [--limit-stores=N] [--out=data/v1]
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -9,13 +9,30 @@ import { parsePromosXml } from './promos.mjs';
 import * as shufersal from './sources/shufersal.mjs';
 import * as ramilevy from './sources/ramilevy.mjs';
 import * as carrefour from './sources/carrefour.mjs';
+import * as mahsaneihashuk from './sources/mahsaneihashuk.mjs';
+import * as victory from './sources/victory.mjs';
+import * as yochananof from './sources/yochananof.mjs';
+import * as tivtaam from './sources/tivtaam.mjs';
+import * as keshet from './sources/keshet.mjs';
+import * as osherad from './sources/osherad.mjs';
 
-const SOURCES = { shufersal, ramilevy, carrefour };
+const SOURCES = {
+  shufersal,
+  ramilevy,
+  carrefour,
+  mahsaneihashuk,
+  victory,
+  yochananof,
+  tivtaam,
+  keshet,
+  osherad,
+};
 const PRIORITY_CITIES = ['הרצליה', 'תל אביב-יפו', 'ירושלים', 'חיפה', 'באר שבע', 'ראשון לציון', 'פתח תקווה'];
+const PROD_PAGES_BASE = 'https://shmuelsfez.github.io/smart-grocery/data/v1';
 
 function parseArgs(argv) {
   const opts = {
-    chains: ['shufersal', 'ramilevy', 'carrefour'],
+    chains: Object.keys(SOURCES),
     limitStores: 0,
     outDir: 'data/v1',
   };
@@ -177,11 +194,86 @@ async function buildChain(chainId, cityMap, outRoot, limitStores) {
   };
 }
 
+async function loadPreviousBuildState(outRoot) {
+  const readLocalJson = (rel) => {
+    const p = path.join(outRoot, rel);
+    if (!fs.existsSync(p)) return null;
+    try { return JSON.parse(fs.readFileSync(p, 'utf8')); } catch { return null; }
+  };
+  let meta = readLocalJson('meta.json');
+  let cities = readLocalJson('cities.json');
+  let online = readLocalJson('online.json');
+  let fromRemote = false;
+
+  if (!meta || !cities || !online) {
+    try {
+      const [mRes, cRes, oRes] = await Promise.all([
+        fetch(`${PROD_PAGES_BASE}/meta.json`, { signal: AbortSignal.timeout(10000) }),
+        fetch(`${PROD_PAGES_BASE}/cities.json`, { signal: AbortSignal.timeout(10000) }),
+        fetch(`${PROD_PAGES_BASE}/online.json`, { signal: AbortSignal.timeout(10000) }),
+      ]);
+      if (mRes.ok && cRes.ok && oRes.ok) {
+        meta = await mRes.json();
+        cities = await cRes.json();
+        online = await oRes.json();
+        fromRemote = true;
+      }
+    } catch {}
+  }
+  return { meta, cities, online, fromRemote };
+}
+
+export async function tryCarryForwardChain(chainId, outRoot, prev, errMsg, fetchImpl = globalThis.fetch) {
+  const prevMeta = prev?.meta?.chains?.[chainId];
+  if (!prevMeta?.ok || !prev?.cities) return null;
+
+  const prevCityEntries = [];
+  for (const [city, branches] of Object.entries(prev.cities)) {
+    for (const b of Array.isArray(branches) ? branches : []) {
+      if (b.chain === chainId) prevCityEntries.push({ city, branch: b });
+    }
+  }
+  const prevOnline = prev.online && Object.prototype.hasOwnProperty.call(prev.online, chainId)
+    ? prev.online[chainId]
+    : null;
+  const neededStoreIds = new Set([
+    ...prevCityEntries.map((x) => x.branch.storeId),
+    ...(Array.isArray(prevOnline) ? prevOnline.map((s) => s.storeId) : []),
+  ]);
+  if (!neededStoreIds.size) return null;
+
+  const chainDir = path.join(outRoot, chainId);
+  const storesDir = path.join(chainDir, 'stores');
+  fs.mkdirSync(storesDir, { recursive: true });
+  const catPath = path.join(chainDir, 'catalog.json');
+
+  if (!fs.existsSync(catPath)) {
+    const r = await fetchImpl(`${PROD_PAGES_BASE}/${chainId}/catalog.json`, { signal: AbortSignal.timeout(20000) });
+    if (!r.ok) return null;
+    fs.writeFileSync(catPath, Buffer.from(await r.arrayBuffer()));
+  }
+  for (const sid of neededStoreIds) {
+    const sp = path.join(storesDir, `${sid}.json`);
+    if (!fs.existsSync(sp)) {
+      const r = await fetchImpl(`${PROD_PAGES_BASE}/${chainId}/stores/${encodeURIComponent(sid)}.json`, { signal: AbortSignal.timeout(15000) });
+      if (!r.ok) return null;
+      fs.writeFileSync(sp, Buffer.from(await r.arrayBuffer()));
+    }
+  }
+
+  return {
+    meta: { ...prevMeta, ok: true, carriedForward: true, rolloverNote: errMsg },
+    cityEntries: prevCityEntries,
+    onlineEntries: prevOnline,
+  };
+}
+
 async function main() {
   const opts = parseArgs(process.argv);
   const outRoot = path.resolve(opts.outDir);
   fs.mkdirSync(outRoot, { recursive: true });
 
+  const prevState = await loadPreviousBuildState(outRoot);
   const cityMap = await loadCityMap({ fetchRemote: true });
   const citiesIndex = {};
   const onlineIndex = {};
@@ -195,6 +287,7 @@ async function main() {
       succeededChains++;
       for (const s of stores) {
         if (s.type === 'online') {
+          if (s.itemsCount < 200) continue;
           if (!onlineIndex[chainId]) onlineIndex[chainId] = [];
           onlineIndex[chainId].push({
             storeId: s.storeId,
@@ -202,7 +295,7 @@ async function main() {
             address: s.address,
             city: s.city,
             itemsCount: s.itemsCount,
-            quick: /קוויק|quick/i.test(s.name),
+            quick: /קוויק|quick|וולט|wolt/i.test(s.name),
           });
           continue;
         }
@@ -215,11 +308,39 @@ async function main() {
         });
       }
       if (!onlineIndex[chainId]?.length) {
-        console.warn(`[${chainId}] WARNING: no online (StoreType=2) store built – delivery mode has no price list for this chain`);
+        onlineIndex[chainId] = null;
+        console.log(`[${chainId}] Note: no online (StoreType=2) fulfilment store published – online[${chainId}] = null (in-store mode only).`);
       }
     } catch (err) {
-      console.error(`[${chainId}] FAILED: ${err.message}`);
-      metaChains[chainId] = { ok: false, error: err.message, storesCount: 0, catalogCount: 0 };
+      const carried = await tryCarryForwardChain(chainId, outRoot, prevState, err.message).catch(() => null);
+      if (carried) {
+        console.warn(`[${chainId}] Upstream portal rollover (${err.message}) – carried forward ${carried.meta.storesCount} last-known-good branches.`);
+        metaChains[chainId] = carried.meta;
+        onlineIndex[chainId] = carried.onlineEntries;
+        for (const { city, branch } of carried.cityEntries) {
+          if (!citiesIndex[city]) citiesIndex[city] = [];
+          citiesIndex[city].push(branch);
+        }
+        succeededChains++;
+      } else {
+        console.error(`[${chainId}] FAILED: ${err.message}`);
+        metaChains[chainId] = { ok: false, error: err.message, storesCount: 0, catalogCount: 0 };
+      }
+    }
+  }
+
+  // When running a partial --chains= subset on an existing outDir, preserve untouched chains already built on disk
+  for (const cid of Object.keys(SOURCES)) {
+    if (opts.chains.includes(cid)) continue;
+    const preserved = await tryCarryForwardChain(cid, outRoot, prevState, 'preserved').catch(() => null);
+    if (preserved) {
+      const { carriedForward, rolloverNote, ...cleanMeta } = preserved.meta;
+      metaChains[cid] = cleanMeta;
+      onlineIndex[cid] = preserved.onlineEntries;
+      for (const { city, branch } of preserved.cityEntries) {
+        if (!citiesIndex[city]) citiesIndex[city] = [];
+        citiesIndex[city].push(branch);
+      }
     }
   }
 
@@ -242,9 +363,11 @@ async function main() {
   };
 
   fs.writeFileSync(path.join(outRoot, 'cities.json'), JSON.stringify(sortedCities));
-  // Online stores per chain: standard delivery store first (most items, not "quick"), quick-commerce last
+  // Online stores per chain: standard nationwide delivery store first (most items, not "quick" or Eilat), quick-commerce last
+  const isEilatOnline = (s) => /אילת/.test(`${s.name} ${s.city}`);
   for (const list of Object.values(onlineIndex)) {
-    list.sort((a, b) => (a.quick - b.quick) || (b.itemsCount - a.itemsCount));
+    if (!Array.isArray(list)) continue;
+    list.sort((a, b) => (a.quick - b.quick) || (isEilatOnline(a) - isEilatOnline(b)) || (b.itemsCount - a.itemsCount));
   }
   fs.writeFileSync(path.join(outRoot, 'online.json'), JSON.stringify(onlineIndex));
   fs.writeFileSync(path.join(outRoot, 'meta.json'), JSON.stringify(meta, null, 2) + '\n');
@@ -260,7 +383,7 @@ async function main() {
     ];
     for (const [cid, m] of Object.entries(metaChains)) {
       lines.push(m.ok
-        ? `| \`${cid}\` | ✅ OK | ${m.storesCount} | ${m.catalogCount} | ${m.promoItemsCount} | \`${m.latestStamp}\` |`
+        ? `| \`${cid}\` | ${m.carriedForward ? '⚠️ Carried Forward' : '✅ OK'} | ${m.storesCount} | ${m.catalogCount} | ${m.promoItemsCount} | \`${m.latestStamp}\` |`
         : `| \`${cid}\` | ❌ Error | 0 | 0 | 0 | ${m.error} |`);
     }
     fs.appendFileSync(process.env.GITHUB_STEP_SUMMARY, lines.join('\n') + '\n');

@@ -16,7 +16,7 @@ import { parsePromosXml } from '../../pipeline/promos.mjs';
 import { serializeBranchItems } from '../../pipeline/build.mjs';
 
 // Production web runtime modules (exact modules wired into web/js/app.js, C2)
-import { LIVE_CHAIN_IDS } from '../../web/js/chains.js';
+import { LIVE_CHAIN_IDS, ONLINE_LIVE_CHAIN_IDS } from '../../web/js/chains.js';
 import { buildCatalogBundle, matchLineAcrossChains } from '../../web/js/prices.js';
 import { compareBasket } from '../../web/js/pricing.js';
 import { parseItem, normalizeName } from '../../web/js/parser.js';
@@ -87,8 +87,9 @@ function verifyLexiconIndependence(dictionary) {
 /** Build the DUT's in-memory `branchData` using the exact `pipeline/build.mjs` `serializeBranchItems` function (M12). */
 function buildDutBranchDataFromSnapshot(refSnap) {
   const branchData = {};
-  for (const cid of LIVE_CHAIN_IDS) {
+  for (const cid of ONLINE_LIVE_CHAIN_IDS) {
     const raw = refSnap.chains[cid];
+    if (!raw) throw new Error(`Missing frozen online snapshot for live online chain "${cid}"`);
     const { items } = parsePricesXml(raw.rawPricesXml);
     const { promosByItem } = raw.rawPromosXml
       ? parsePromosXml(raw.rawPromosXml, { now: refSnap.refDate })
@@ -452,7 +453,7 @@ async function main() {
       lineMatches.set(it.id, matches);
       cmpLines.push({ id: it.id, name: it.name, qty: it.qty, unit: it.unit, qtyExplicit: Boolean(it.qtyExplicit), matches });
     }
-    const cmp = compareBasket(cmpLines, LIVE_CHAIN_IDS, deliveryChains, { includeDelivery: true });
+    const cmp = compareBasket(cmpLines, ONLINE_LIVE_CHAIN_IDS, deliveryChains, { includeDelivery: true });
 
     // --- S7: Ambiguity Handling (Seen & Unseen) ---
     if (tc.bins.ambiguity !== 'none') {
@@ -493,7 +494,7 @@ async function main() {
       if (exp.dictId === 'rare_camel_truffle_fantasy' && dut.checked) {
         s8Checked = true;
         const mByChain = lineMatches.get(dut.id) || {};
-        for (const cid of LIVE_CHAIN_IDS) {
+        for (const cid of ONLINE_LIVE_CHAIN_IDS) {
           if (mByChain[cid]) {
             s8Ok = false;
             fail('S8', `unobtainable item "${exp.canonical}" falsely matched "${mByChain[cid].productName}" on ${cid}`);
@@ -501,7 +502,7 @@ async function main() {
         }
       }
     }
-    for (const cid of LIVE_CHAIN_IDS) {
+    for (const cid of ONLINE_LIVE_CHAIN_IDS) {
       const hasMissingLine = cmpLines.some((l) => !l.matches[cid]);
       if (hasMissingLine) {
         s8Checked = true;
@@ -522,7 +523,7 @@ async function main() {
       const mByChain = lineMatches.get(dut.id) || {};
       const availByChain = refAvail.get(exp.dictId) || {};
 
-      for (const cid of LIVE_CHAIN_IDS) {
+      for (const cid of ONLINE_LIVE_CHAIN_IDS) {
         const m = mByChain[cid];
         if (!m || !m.productName) {
           // S9-Recall check: if this is a standard `real` item that the oracle confirms exists in `cid`, DUT must not return null!
@@ -566,7 +567,7 @@ async function main() {
     // --- S10: Independent XML Price & Winner Oracle ---
     const ref = refEvaluateBasket(checkedDut, lineMatches, refSnap, deliveryChains, true);
     let priceOk = true;
-    for (const cid of LIVE_CHAIN_IDS) {
+    for (const cid of ONLINE_LIVE_CHAIN_IDS) {
       const dC = cmp.perChain[cid];
       const rC = ref.perChain[cid];
       if (
@@ -599,7 +600,7 @@ async function main() {
 
       // Sample DUT-Response Functional Coverpoints (M8)
       const hitResp = (bin) => covHits.dutResponse.set(bin, (covHits.dutResponse.get(bin) || 0) + 1);
-      for (const cid of LIVE_CHAIN_IDS) {
+      for (const cid of ONLINE_LIVE_CHAIN_IDS) {
         const pc = cmp.perChain[cid];
         if (pc.promoSavings > 0) {
           hitResp('promo_price_applied');
@@ -704,7 +705,8 @@ async function main() {
     history.push(runRecord);
     fs.writeFileSync(histPath, JSON.stringify(history, null, 2) + '\n');
 
-    const md = buildMarkdownReport(runRecord, ruleStats, subSplits, dimSummary, covHits.dutResponse, history, failedCaseSamples, refSnap.capturedAt, overlapInfo, activeWaivers);
+    const snapSummary = Object.entries(refSnap.chains).map(([cid, ch]) => `\`${cid} ${ch.storeId}\``).join(', ');
+    const md = buildMarkdownReport(runRecord, ruleStats, subSplits, dimSummary, covHits.dutResponse, history, failedCaseSamples, refSnap.capturedAt, snapSummary, overlapInfo, activeWaivers);
     fs.writeFileSync(path.join(REPORTS_DIR, 'latest.md'), md);
     console.log(`\nWrote ${path.relative(REPO_ROOT, path.join(REPORTS_DIR, 'latest.md'))} and updated history.json.`);
   }
@@ -714,7 +716,7 @@ async function main() {
   }
 }
 
-function buildMarkdownReport(rec, ruleStats, subSplits, dimSummary, respHits, history, failedSamples, snapDate, overlapInfo, waivers) {
+function buildMarkdownReport(rec, ruleStats, subSplits, dimSummary, respHits, history, failedSamples, snapDate, snapSummary, overlapInfo, waivers) {
   const ruleRows = SPEC_RULES.map(([id, title]) => {
     const st = ruleStats[id];
     const tot = st.pass + st.fail;
@@ -747,7 +749,7 @@ function buildMarkdownReport(rec, ruleStats, subSplits, dimSummary, respHits, hi
 
 - **Commit:** \`${rec.commit}\`
 - **Executed At:** \`${rec.timestamp}\` (${rec.elapsedSec}s)
-- **Frozen Online-Store Snapshot:** \`${snapDate}\` (\`Shufersal 413\`, \`Rami Levy 39\`, \`Carrefour 471\`)
+- **Frozen Online-Store Snapshot:** \`${snapDate}\` (${snapSummary})
 - **Primary KPI — Overall List Pass Rate:** **${rec.listPassPct}%** (${rec.passedLists} / ${rec.totalLists} lists green)
 - **Functional Cross-Coverage Closure (Passing Lists Only):** **${rec.crossPct}%** cross-coverage · **${rec.singleBinPct}%** 1D + DUT-response bins
 - **Scoreboard Assertion Score:** **${rec.assertPassPct}%** (${rec.passedAssertions} / ${rec.totalAssertions} checks)

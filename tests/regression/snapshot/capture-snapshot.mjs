@@ -1,5 +1,5 @@
-// One-time / on-demand snapshot capture of the 3 chains' official online-store feeds (StoreType=2)
-// into tests/regression/snapshot/*.xml.gz so the 600-list regression is 100% deterministic and offline.
+// One-time / on-demand snapshot capture of all live online-delivery chains' official feeds (StoreType=2)
+// into tests/regression/snapshot/*.xml.gz so the 628-list regression is 100% deterministic and offline.
 import fs from 'node:fs';
 import path from 'node:path';
 import zlib from 'node:zlib';
@@ -7,6 +7,10 @@ import { fileURLToPath } from 'node:url';
 import * as shufersal from '../../../pipeline/sources/shufersal.mjs';
 import * as ramilevy from '../../../pipeline/sources/ramilevy.mjs';
 import * as carrefour from '../../../pipeline/sources/carrefour.mjs';
+import * as mahsaneihashuk from '../../../pipeline/sources/mahsaneihashuk.mjs';
+import * as victory from '../../../pipeline/sources/victory.mjs';
+import * as tivtaam from '../../../pipeline/sources/tivtaam.mjs';
+import * as keshet from '../../../pipeline/sources/keshet.mjs';
 import { decodeFeedBuffer } from '../../../pipeline/parse.mjs';
 
 const SNAP_DIR = path.dirname(fileURLToPath(import.meta.url));
@@ -14,6 +18,10 @@ const TARGETS = [
   { chain: 'shufersal', src: shufersal, storeId: '413' },
   { chain: 'ramilevy', src: ramilevy, storeId: '39' },
   { chain: 'carrefour', src: carrefour, storeId: '471' },
+  { chain: 'mahsaneihashuk', src: mahsaneihashuk, storeId: '97' },
+  { chain: 'victory', src: victory, storeId: '97' },
+  { chain: 'tivtaam', src: tivtaam, storeId: '514' },
+  { chain: 'keshet', src: keshet, storeId: '116' },
 ];
 
 const manifest = { capturedAt: new Date().toISOString(), stores: {} };

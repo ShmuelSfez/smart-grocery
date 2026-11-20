@@ -17,9 +17,14 @@ const CITY_ALIASES = new Map([
   ['פ"ת', 'פתח תקווה'],
   ['ראשון-לציון', 'ראשון לציון'],
   ['ראשל"צ', 'ראשון לציון'],
+  ['ראשלצ', 'ראשון לציון'],
   ['באר-שבע', 'באר שבע'],
+  ['ב"ש', 'באר שבע'],
+  ['כ"ס', 'כפר סבא'],
   ['מודיעין מכבים רעות', 'מודיעין-מכבים-רעות'],
   ['מודיעין', 'מודיעין-מכבים-רעות'],
+  ['מישור אדומים', 'מעלה אדומים'],
+  ['איירפורט סיטי', 'לוד'],
   ['נהרייה', 'נהריה'],
   ['הרצלייה', 'הרצליה'],
   ['קריית אתא', 'קרית אתא'],
@@ -79,6 +84,19 @@ export async function loadCityMap({ fetchRemote = false } = {}) {
   return map;
 }
 
+const STORE_AREA_CITY_HINTS = [
+  ['חוצות המפרץ', 'חיפה'],
+  ['קרית אליעזר', 'חיפה'],
+  ['יד אליהו', 'תל אביב-יפו'],
+  ['רמת החייל', 'תל אביב-יפו'],
+  ['נחלת יצחק', 'תל אביב-יפו'],
+  ['קניון הבאר', 'ראשון לציון'],
+  ['צומת ביל"ו', 'קרית עקרון'],
+  ['בילו', 'קרית עקרון'],
+  ['עקרון', 'קרית עקרון'],
+  ['יוחננוף מפוח', 'רחובות'],
+];
+
 export function resolveCityName(rawCity, cityMap, storeName = '') {
   const trimmed = String(rawCity || '').trim();
   if (/^\d+$/.test(trimmed)) {
@@ -90,12 +108,29 @@ export function resolveCityName(rawCity, cityMap, storeName = '') {
   if (!cleaned || /^(לא ידוע|unknown|null|none|-)$/i.test(cleaned)) {
     return inferCityFromStoreName(storeName, cityMap);
   }
+  // Some chains put an industrial zone in <City> (e.g. "סגולה" or "כרמים") while <StoreName> names the real city ("סגולה פתח תקווה")
+  const knownCities = new Set(cityMap.values());
+  if (!knownCities.has(cleaned)) {
+    const fromName = inferCityFromStoreName(storeName, cityMap);
+    if (fromName) return fromName;
+  }
   return cleaned;
 }
 
 function inferCityFromStoreName(storeName, cityMap) {
-  const s = cleanCityString(storeName);
+  const s = cleanCityString(storeName).replace(/-/g, ' ').replace(/\s+/g, ' ').trim();
   if (!s) return '';
+  for (const [alias, canonical] of CITY_ALIASES.entries()) {
+    const cleanAlias = alias.replace(/-/g, ' ').replace(/\s+/g, ' ').trim();
+    if (cleanAlias.length >= 3 && (s === cleanAlias || s.startsWith(cleanAlias + ' ') || s.endsWith(' ' + cleanAlias) || s.includes(' ' + cleanAlias + ' '))) {
+      return canonical;
+    }
+  }
+  for (const [hint, canonical] of STORE_AREA_CITY_HINTS) {
+    if (s === hint || s.startsWith(hint + ' ') || s.endsWith(' ' + hint) || s.includes(' ' + hint + ' ')) {
+      return canonical;
+    }
+  }
   for (const city of cityMap.values()) {
     if (city.length >= 3 && (s === city || s.startsWith(city + ' ') || s.endsWith(' ' + city) || s.includes(' ' + city + ' '))) {
       return city;

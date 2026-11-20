@@ -3,28 +3,57 @@ const CHAINS = {
     name: 'שופרסל',
     url: 'https://www.shufersal.co.il/online/he/',
     pattern: 'https://www.shufersal.co.il/*',
+    host: 'shufersal.co.il',
   },
   ramilevy: {
     name: 'רמי לוי',
     url: 'https://www.rami-levy.co.il/he/online/market',
     pattern: 'https://www.rami-levy.co.il/*',
+    host: 'rami-levy.co.il',
   },
   carrefour: {
     name: 'קרפור',
     url: 'https://www.carrefour.co.il/',
     pattern: 'https://www.carrefour.co.il/*',
+    host: 'carrefour.co.il',
+  },
+  mahsaneihashuk: {
+    name: 'מחסני השוק',
+    url: 'https://www.mck.co.il/',
+    pattern: 'https://www.mck.co.il/*',
+    host: 'mck.co.il',
+  },
+  victory: {
+    name: 'ויקטורי',
+    url: 'https://www.victoryonline.co.il/',
+    pattern: 'https://www.victoryonline.co.il/*',
+    host: 'victoryonline.co.il',
+  },
+  yochananof: {
+    name: 'יוחננוף',
+    url: 'https://yochananof.co.il/',
+    pattern: 'https://yochananof.co.il/*',
+    host: 'yochananof.co.il',
+  },
+  tivtaam: {
+    name: 'טיב טעם',
+    url: 'https://www.tivtaam.co.il/',
+    pattern: 'https://www.tivtaam.co.il/*',
+    host: 'tivtaam.co.il',
   },
 };
+
+const NON_SHUF_CHAINS = Object.keys(CHAINS).filter((id) => id !== 'shufersal');
 
 const $ = (id) => document.getElementById(id);
 const get = (k) => new Promise((r) => chrome.storage.local.get(k, (v) => r(v[k])));
 const set = (o) => new Promise((r) => chrome.storage.local.set(o, r));
 
 function detectChainFromText(raw) {
-  const s = String(raw || '');
-  if (s.includes('rami-levy.co.il')) return 'ramilevy';
-  if (s.includes('carrefour.co.il')) return 'carrefour';
-  if (s.includes('shufersal.co.il')) return 'shufersal';
+  const s = String(raw || '').toLowerCase();
+  for (const [id, meta] of Object.entries(CHAINS)) {
+    if (s.includes(meta.host)) return id;
+  }
   return '';
 }
 
@@ -44,7 +73,7 @@ async function refresh() {
   for (const [k, p] of Object.entries(shufMaps)) {
     entries.push({ chain: 'shufersal', key: k, prod: p });
   }
-  for (const cid of ['ramilevy', 'carrefour']) {
+  for (const cid of NON_SHUF_CHAINS) {
     for (const [k, p] of Object.entries(chainMaps[cid] || {})) {
       entries.push({ chain: cid, key: k, prod: p });
     }
@@ -53,7 +82,7 @@ async function refresh() {
 
   $('mapsTitle').textContent = `מוצרים שמורים (${entries.length})`;
   const box = $('maps');
-  box.innerHTML = '';
+  box.replaceChildren();
   if (!entries.length) {
     const empty = document.createElement('div');
     empty.className = 'muted';
@@ -124,7 +153,8 @@ $('import').onclick = async () => {
     $('pendingInfo').textContent = '⚠️ לא נמצא קוד רשימה בטקסט.';
     return;
   }
-  let chain = detectChainFromText(raw);
+  const selected = $('chainSelect')?.value || 'auto';
+  let chain = selected !== 'auto' && CHAINS[selected] ? selected : detectChainFromText(raw);
   if (!chain && globalThis.SLCodec?.decodePayload) {
     try {
       const dec = await globalThis.SLCodec.decodePayload(m[1]);

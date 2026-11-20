@@ -8,7 +8,7 @@
   <link rel="manifest" href="manifest.webmanifest" />
   <link rel="icon" href="icon.svg" type="image/svg+xml" />
   <link rel="apple-touch-icon" href="icon.svg" />
-  <link rel="stylesheet" href="styles.css?v=25" />
+  <link rel="stylesheet" href="styles.css?v=26" />
 </head>
 <body>
   <header class="topbar">
@@ -76,7 +76,7 @@
         </div>
         <button type="button" class="chip-btn active-auto" id="btnAutoChain">🏆 בחר אוטומטית את הזולה ביותר</button>
       </div>
-      <div id="chainGrid" class="chain-grid"></div>
+      <div id="chainGrid" class="chain-list"></div>
     </section>
 
     <section id="authBar" class="auth-bar">
@@ -93,7 +93,7 @@
 
     <div id="emptyState" class="empty" hidden>
       <div class="empty-emoji">🧺</div>
-      <p>הרשימה ריקה. הוסף מוצרים למעלה כדי להשוות מחירים אמיתיים בין שופרסל, רמי לוי וקרפור.</p>
+      <p>הרשימה ריקה. הוסף מוצרים למעלה כדי להשוות מחירים אמיתיים בין רשתות השיווק בישראל.</p>
     </div>
     <p class="disclaimer">שירות השוואת מחירים עצמאי ובלתי רשמי – אינו קשור או מופעל ע״י רשתות השיווק.</p>
   </main>
@@ -206,7 +206,7 @@
       <div id="sendDesktop" class="ext-setup-box">
         <div class="ext-setup-head">
           <b>🧩 מילוי סל אוטומטי בקליק אחד (התקנה חד-פעמית ב-15 שניות)</b>
-          <a href="shufersal-extension.zip" download="shufersal-extension.zip" class="btn primary dl-link ext-dl-btn">⬇️ הורד את התוסף (shufersal-extension.zip)</a>
+          <a href="smartcart-extension.zip" download="smartcart-extension.zip" class="btn primary dl-link ext-dl-btn">⬇️ הורד את התוסף (smartcart-extension.zip)</a>
         </div>
         <ol class="steps compact-steps">
           <li>חלץ את הקובץ לתיקייה במחשב.</li>
@@ -325,21 +325,21 @@
   <!-- Extension install dialog -->
   <dialog id="dlgExt">
     <form method="dialog" class="dlg">
-      <h3>🧩 התקנת התוסף לכרום (שופרסל, רמי לוי וקרפור)</h3>
+      <h3>🧩 התקנת התוסף לכרום (שופרסל, רמי לוי, קרפור, מחסני השוק, ויקטורי, יוחננוף וטיב טעם)</h3>
       <ol class="steps">
-        <li><a href="shufersal-extension.zip" download="shufersal-extension.zip"><b>הורד את קובץ התוסף (shufersal-extension.zip)</b></a> וחלץ אותו לתיקייה במחשב.</li>
+        <li><a href="smartcart-extension.zip" download="smartcart-extension.zip"><b>הורד את קובץ התוסף (smartcart-extension.zip)</b></a> וחלץ אותו לתיקייה במחשב.</li>
         <li>פתח בכרום את הכתובת <code>chrome://extensions</code> והפעל <b>Developer mode (מצב פיתוח)</b> (למעלה מימין).</li>
         <li>לחץ <b>Load unpacked (טען פריט unpacked)</b> ובחר את התיקייה שחילצת (או לחץ ↻ אם כבר מותקן).</li>
       </ol>
       <div class="dlg-actions">
-        <a href="shufersal-extension.zip" download="shufersal-extension.zip" class="btn primary dl-link">⬇️ הורד את התוסף (v3.0)</a>
+        <a href="smartcart-extension.zip" download="smartcart-extension.zip" class="btn primary dl-link">⬇️ הורד את התוסף (v3.1)</a>
         <button value="cancel" class="btn">סגור</button>
       </div>
     </form>
   </dialog>
 
   <div id="toast" class="toast" hidden></div>
-  <script src="js/codec.js?v=25"></script>
-  <script type="module" src="js/app.js?v=25"></script>
+  <script src="js/codec.js?v=26"></script>
+  <script type="module" src="js/app.js?v=26"></script>
 </body>
 </html>
