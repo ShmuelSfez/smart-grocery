@@ -189,10 +189,10 @@
           const initialQ = item.query || item.wantBarcode || item.product?.name || item.name;
           await searchFor(item, initialQ, true);
           if (queueAborted) return;
-          await new Promise((r) => setTimeout(r, 80));
+          await new Promise((r) => setTimeout(r, 40));
         }
       };
-      await Promise.all([worker(), worker()]);
+      await Promise.all([worker(), worker(), worker(), worker()]);
     } finally {
       queueRunning = false;
       if (!queueAborted && state && state.phase !== 'done') {
@@ -350,7 +350,7 @@
   const CSS = `
     :host { all: initial; }
     * { box-sizing: border-box; font-family: system-ui, -apple-system, "Segoe UI", Arial, sans-serif; }
-    .panel { position: fixed; bottom: 16px; left: 16px; width: 406px; max-width: calc(100vw - 24px); max-height: calc(100vh - 96px); z-index: 2147483646;
+    .panel { position: fixed; bottom: 16px; left: 16px; width: 406px; max-width: calc(100vw - 24px); max-height: calc(100vh - 96px); z-index: 2147483647;
       background: #fff; color: #1d1d1f; border-radius: 16px; box-shadow: 0 12px 48px rgba(0,0,0,.28);
       display: flex; flex-direction: column; direction: rtl; overflow: hidden; font-size: 14px; border: 1px solid rgba(0,0,0,.08); }
     .panel.collapsed { width: auto; }
@@ -962,9 +962,21 @@
         return;
       }
     } else if (!IS_GUIDED) {
-      items = items.map((i) =>
-        (['searching', 'choose'].includes(i.status) ? { ...i, status: 'todo' } : i),
-      );
+      items = items.map((i) => {
+        if (['searching', 'choose', 'error'].includes(i.status)) {
+          return { ...i, status: 'todo', errorMsg: '' };
+        }
+        if (i.status === 'ready' && !isSavedProductReadyForChain(i.product)) {
+          const wb = String(i.wantBarcode || i.product?.code || '').replace(/^P_/, '').trim();
+          return {
+            ...i,
+            wantBarcode: wb,
+            query: wb || i.product?.name || i.name,
+            status: 'todo',
+          };
+        }
+        return i;
+      });
     }
 
     state = {

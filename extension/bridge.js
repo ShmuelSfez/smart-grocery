@@ -3,7 +3,7 @@
 (function () {
   function announce() {
     if (!document.documentElement) return;
-    document.documentElement.dataset.smartcartExt = '3.1.1';
+    document.documentElement.dataset.smartcartExt = '3.1.2';
     document.dispatchEvent(new CustomEvent('smartcart-ext-ready'));
   }
   announce();

@@ -51,7 +51,7 @@ test('extension build: codec.js is byte-synced and unified zips pass listZipEntr
   assert.ok(smartcartBytes.equals(rebuilt), 'committed unified zip must match fresh buildUnifiedZipBuffer()');
 
   const { entries, names, manifest } = verifyExtensionZipBuffer(smartcartBytes);
-  assert.equal(manifest.version, '3.1.1');
+  assert.equal(manifest.version, '3.1.2');
   assert.equal(manifest.host_permissions.length, 7);
   for (const spec of Object.values(CHAIN_BUILD_SPECS)) {
     assert.ok(manifest.host_permissions.includes(spec.matchPattern), `missing host permission ${spec.matchPattern}`);
@@ -60,7 +60,7 @@ test('extension build: codec.js is byte-synced and unified zips pass listZipEntr
 
   const bridgeEntry = entries.find((e) => e.name === 'bridge.js');
   const bridgeSrc = (bridgeEntry.method === 8 ? zlib.inflateRawSync(bridgeEntry.data) : Buffer.from(bridgeEntry.data)).toString('utf8');
-  assert.ok(bridgeSrc.includes("dataset.smartcartExt = '3.1.1'"), 'bridge.js must announce v3.1.1');
+  assert.ok(bridgeSrc.includes("dataset.smartcartExt = '3.1.2'"), 'bridge.js must announce v3.1.2');
 });
 
 test('extension build: per-chain zip generator scopes manifest and scripts cleanly for all 7 chains', () => {
@@ -243,5 +243,127 @@ test('extension CSP & WebKit hygiene: zero inline style= attributes and zero reg
     const rel = path.relative(ROOT_DIR, file);
     assert.equal(/\bstyle\s*=\s*["']/i.test(src), false, `inline style= attribute forbidden in ${rel}`);
     assert.equal(/\(\?<[=!]/.test(src), false, `regex lookbehind forbidden in ${rel}`);
+  }
+});
+
+test('Shufersal helpers: translates shortened P_ codes <-> 13-digit 729 barcodes and requires online verification', () => {
+  const reg = globalThis.SmartCartChains;
+  const shuf = reg.get('shufersal');
+  const { barcodeFromShufersalCode, shufersalSearchQueries } = reg.helpers;
+
+  assert.equal(shuf.acceptsLinkProductDirectly, false);
+  assert.equal(shuf.isSavedProductReady({ code: 'P_7290003107223' }), false);
+  assert.equal(shuf.isSavedProductReady({ code: 'P_3107223', verifiedOnline: true, inStock: true }), true);
+  assert.equal(shuf.isSavedProductReady({ code: 'P_3107223', verifiedOnline: true, inStock: false }), false);
+
+  assert.equal(barcodeFromShufersalCode('P_3107223'), '7290003107223');
+  assert.equal(barcodeFromShufersalCode('P_183'), '7290000000183');
+  assert.equal(barcodeFromShufersalCode('P_1579'), '7290000001579');
+  assert.equal(barcodeFromShufersalCode('P_2317265'), '7290002317265');
+  assert.equal(barcodeFromShufersalCode('P_7296073151548'), '7296073151548');
+  assert.equal(barcodeFromShufersalCode('P_66264'), '7290000066264');
+  assert.equal(barcodeFromShufersalCode('P_66265'), '66265');
+
+  assert.deepEqual(shufersalSearchQueries('7290003107223'), ['3107223', '7290003107223']);
+  assert.deepEqual(shufersalSearchQueries('7290000000183'), ['183', '7290000000183']);
+  assert.deepEqual(shufersalSearchQueries('7296073151548'), ['7296073151548', '6073151548']);
+});
+
+test('Shufersal addReadyItems: upgrades unverified P_72900 codes and isolates ADD_500 per item without losing basket', async () => {
+  const shuf = globalThis.SmartCartChains.get('shufersal');
+  const origFetch = globalThis.fetch;
+
+  globalThis.fetch = async (url, opts = {}) => {
+    const u = String(url);
+    if (u.includes('/search/results?q=3107223:relevance')) {
+      return new Response(JSON.stringify({
+        results: [{
+          code: 'P_3107223',
+          name: 'סולת 1 ק"ג',
+          brand: { name: 'טחנת קמח דגן' },
+          price: { formattedValue: '₪6.90' },
+          sellingMethod: { code: 'BY_UNIT' },
+          stock: { stockLevelStatus: { code: 'inStock' } },
+          purchasable: true,
+        }],
+      }), { status: 200 });
+    }
+    if (u.includes('/search/results?q=183:relevance')) {
+      return new Response(JSON.stringify({
+        results: [{
+          code: 'P_183',
+          name: 'סלק',
+          brand: { name: 'קטיף' },
+          price: { formattedValue: '₪5.90' },
+          sellingMethod: { code: 'BY_WEIGHT' },
+          stock: { stockLevelStatus: { code: 'inStock' } },
+          purchasable: true,
+        }],
+      }), { status: 200 });
+    }
+    if (u.includes('/search/results')) {
+      return new Response(JSON.stringify({ results: [] }), { status: 200 });
+    }
+    if (u.includes('/search?text=')) {
+      return new Response('<html></html>', { status: 200 });
+    }
+    if (u.includes('/cart/addGrid')) {
+      const body = JSON.parse(opts.body || '[]');
+      // Simulate SAP Hybris throwing HTTP 500 whenever P_9999999 is present in the batch
+      if (body.some((x) => x.productCode === 'P_9999999')) {
+        return new Response('Internal Server Error', { status: 500 });
+      }
+      const codesScript = body.map((x) => `{statusCode:'success',productCode:'${x.productCode}'}`).join(',');
+      return new Response(`<script>window.miglog.cart.modifications=[${codesScript}];</script>`, { status: 200 });
+    }
+    return new Response('', { status: 404 });
+  };
+
+  try {
+    const saved = {};
+    const readyItems = [
+      {
+        key: 'סולת',
+        name: 'סולת',
+        qty: 1,
+        unit: 'unit',
+        addQty: 1,
+        status: 'ready',
+        product: { code: 'P_7290003107223', name: 'סולת 1 ק"ג', sellingMethod: 'BY_UNIT' },
+      },
+      {
+        key: 'סלק',
+        name: 'סלק',
+        qty: 1,
+        unit: 'kg',
+        addQty: 1,
+        status: 'ready',
+        product: { code: 'P_7290000000183', name: 'סלק', sellingMethod: 'BY_WEIGHT' },
+      },
+      {
+        key: 'פריט חסר',
+        name: 'פריט חסר',
+        qty: 1,
+        unit: 'unit',
+        addQty: 1,
+        status: 'ready',
+        product: { code: 'P_9999999', name: 'פריט חסר', sellingMethod: 'BY_UNIT', verifiedOnline: true, inStock: true },
+      },
+    ];
+
+    const outcome = await shuf.addReadyItems(readyItems, {
+      saveMapping: async (k, p) => { saved[k] = p; },
+    });
+
+    assert.equal(outcome.navigateToCartUrl, '/online/he/cart');
+    assert.equal(readyItems[0].status, 'added');
+    assert.equal(readyItems[0].product.code, 'P_3107223');
+    assert.equal(readyItems[1].status, 'added');
+    assert.equal(readyItems[1].product.code, 'P_183');
+    assert.equal(readyItems[2].status, 'error');
+    assert.equal(saved['סולת'].code, 'P_3107223');
+    assert.equal(saved['סלק'].code, 'P_183');
+  } finally {
+    globalThis.fetch = origFetch;
   }
 });

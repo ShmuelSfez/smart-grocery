@@ -1,8 +1,44 @@
 // Shufersal Online adapter (SAP Hybris — https://www.shufersal.co.il/*).
 (function (root) {
   const reg = root.SmartCartChains;
-  const { absoluteUrl, fetchWithTimeout } = reg.helpers;
+  const { absoluteUrl, fetchWithTimeout, round2 } = reg.helpers;
   const SHUF_BASE = '/online/he';
+
+  // Shufersal Online strips '729' + leading zeros on legacy Israeli EAN-13 barcodes
+  // (e.g. 7290003107223 -> P_3107223, 7290000000183 -> P_183, while 7296073151548 -> P_7296073151548).
+  function hasValidEan13CheckDigit(ean) {
+    if (!/^\d{13}$/.test(ean)) return false;
+    let sum = 0;
+    for (let i = 0; i < 12; i++) {
+      sum += Number(ean[i]) * (i % 2 === 0 ? 1 : 3);
+    }
+    return ((10 - (sum % 10)) % 10) === Number(ean[12]);
+  }
+
+  function barcodeFromShufersalCode(code) {
+    const m = /^P_(\d+)$/.exec(String(code || '').trim());
+    if (!m) return '';
+    const digits = m[1];
+    if (digits.length === 8 || digits.length >= 11) return digits;
+    if (digits.length <= 10) {
+      const israeli = '729' + digits.padStart(10, '0');
+      if (hasValidEan13CheckDigit(israeli)) return israeli;
+    }
+    return digits;
+  }
+
+  function shufersalSearchQueries(rawBarcode) {
+    const clean = String(rawBarcode || '').replace(/^P_/, '').trim();
+    if (!/^\d{4,14}$/.test(clean)) return clean ? [clean] : [];
+    const shortened = clean.startsWith('729')
+      ? clean.slice(3).replace(/^0+/, '')
+      : clean.replace(/^0+/, '');
+    if (!shortened || shortened === clean) return [clean];
+    return clean.startsWith('72900') ? [shortened, clean] : [clean, shortened];
+  }
+
+  reg.helpers.barcodeFromShufersalCode = barcodeFromShufersalCode;
+  reg.helpers.shufersalSearchQueries = shufersalSearchQueries;
 
   function isOnLoginPage() {
     return typeof location !== 'undefined' && location.pathname.includes('/login');
@@ -28,18 +64,19 @@
   }
 
   async function findCsrfToken() {
-    const input = document.querySelector('input[name="CSRFToken"]');
+    if (typeof document === 'undefined') return 'TEST_CSRF';
+    const input = document.querySelector('input[name="CSRFToken"], input[name="_csrf"]');
     if (input && input.value) return input.value;
     for (const s of document.scripts) {
-      const m = (s.textContent || '').match(/CSRFToken\s*[:=]\s*["']([^"']+)["']/);
+      const m = (s.textContent || '').match(/CSRFToken\s*[:=]\s*["']([^"']+)["']/i);
       if (m) return m[1];
     }
-    const htmlMatch = (document.documentElement.innerHTML || '').match(/CSRFToken\s*[:=]\s*["']([^"']+)["']/);
+    const htmlMatch = (document.documentElement.innerHTML || '').match(/CSRFToken\s*[:=]\s*["']([^"']+)["']/i);
     if (htmlMatch) return htmlMatch[1];
     try {
       const res = await fetchWithTimeout(`${SHUF_BASE}/cart/load?restoreCart=true`, { credentials: 'include' }, 5000);
       const txt = await res.text();
-      const m = txt.match(/CSRFToken\s*[:=]\s*["']([^"']+)["']/);
+      const m = txt.match(/CSRFToken\s*[:=]\s*["']([^"']+)["']/i);
       if (m) return m[1];
     } catch (e) { /* ignore */ }
     return null;
@@ -63,27 +100,28 @@
       if (!name) continue;
       const priceTxt = (el.querySelector('.price .number, .price')?.textContent || '').replace(/\s+/g, ' ').trim();
       const imgEl = el.querySelector('img[src]');
-      const byWeight = (el.outerHTML || '').includes('BY_WEIGHT') || (el.outerHTML || '').includes('לק"ג');
+      const outer = el.outerHTML || '';
+      const byWeight = outer.includes('BY_WEIGHT') || outer.includes('BY_PACKAGE') || outer.includes('לק"ג');
+      const notInStock = el.classList.contains('outOfStock') || outer.includes('notInStock');
       out.push({
         code,
-        barcode: code.replace(/^P_/, ''),
+        barcode: barcodeFromShufersalCode(code) || code.replace(/^P_/, ''),
         name,
         brand: '',
         img: imgEl ? absoluteUrl(imgEl.getAttribute('src')) : '',
         price: priceTxt ? (priceTxt.includes('₪') ? priceTxt : `₪${priceTxt}`) : '',
         unitDesc: byWeight ? 'לפי משקל' : '',
         sellingMethod: byWeight ? 'BY_WEIGHT' : 'BY_UNIT',
-        inStock: !el.classList.contains('outOfStock'),
+        inStock: !notInStock,
         purchasable: true,
+        verifiedOnline: true,
       });
       if (out.length >= limit) break;
     }
     return out;
   }
 
-  async function searchCatalog(query, limit = 12) {
-    const q = String(query || '').trim();
-    if (!q) return [];
+  async function fetchShufSearchOnce(q, limit = 12) {
     try {
       const url = `${SHUF_BASE}/search/results?q=${encodeURIComponent(q)}:relevance&limit=${limit}&page=0`;
       const res = await fetchWithTimeout(url, {
@@ -96,7 +134,7 @@
           const data = JSON.parse(raw);
           const mapped = (data.results || []).map((p) => ({
             code: p.code,
-            barcode: String(p.code || '').replace(/^P_/, ''),
+            barcode: barcodeFromShufersalCode(p.code) || String(p.code || '').replace(/^P_/, ''),
             name: p.name || '',
             brand: (p.brand && p.brand.name) || '',
             img: pickShufImage(p.images),
@@ -105,6 +143,7 @@
             sellingMethod: (p.sellingMethod && p.sellingMethod.code) || 'BY_UNIT',
             inStock: !(p.stock && p.stock.stockLevelStatus) || p.stock.stockLevelStatus.code === 'inStock',
             purchasable: p.purchasable !== false,
+            verifiedOnline: true,
           }));
           if (mapped.length) return mapped;
         } else {
@@ -125,6 +164,28 @@
     return [];
   }
 
+  async function searchCatalog(query, limit = 12) {
+    const q = String(query || '').trim();
+    if (!q) return [];
+    const cleanDigits = q.replace(/^P_/, '').trim();
+
+    // Barcode / PLU query: try shortened Shufersal code (e.g. 3107223 / 183) + full EAN,
+    // and strictly verify code/barcode match so an unstocked barcode falls back cleanly to Hebrew product name.
+    if (/^\d{4,14}$/.test(cleanDigits)) {
+      const variants = shufersalSearchQueries(cleanDigits);
+      for (const subQ of variants) {
+        const found = await fetchShufSearchOnce(subQ, limit);
+        const exact = found.filter(
+          (r) => r.barcode === cleanDigits || r.code === `P_${subQ}` || r.code === `P_${cleanDigits}`,
+        );
+        if (exact.length) return exact;
+      }
+      return [];
+    }
+
+    return fetchShufSearchOnce(q, limit);
+  }
+
   async function shufAddGrid(items) {
     const token = await findCsrfToken();
     if (!token) throw new Error('NO_CSRF');
@@ -132,7 +193,7 @@
       method: 'POST',
       credentials: 'include',
       redirect: 'manual',
-      headers: { 'content-type': 'application/json', csrftoken: token, 'x-requested-with': 'XMLHttpRequest' },
+      headers: { 'content-type': 'application/json', csrftoken: token },
       body: JSON.stringify(items),
     }, 15000);
     if (res.type === 'opaqueredirect' || (res.status >= 300 && res.status < 400)) throw new Error('LOGIN_REQUIRED');
@@ -149,10 +210,9 @@
         if (c) foundCodes.add(c);
       }
     }
-    for (const m of html.matchAll(/P_\d{4,14}/g)) {
+    for (const m of html.matchAll(/P_\d{1,14}/g)) {
       foundCodes.add(m[0]);
     }
-    // If Shufersal returned HTTP 200 OK without per-item DOM attributes (e.g. JSON summary fragment), confirm submitted codes
     if (foundCodes.size === 0 && html.trim().length > 0) {
       for (const it of items) {
         if (it.productCode) foundCodes.add(it.productCode);
@@ -161,48 +221,184 @@
     return { cartCodes: Array.from(foundCodes) };
   }
 
-  async function addReadyItems(readyItems, { saveMapping }) {
-    const toGridItem = (i) => {
-      const q = Number(i.addQty) || 1;
-      return {
-        productCode: i.product.code,
-        quantity: q,
-        frontQuantity: q,
-        sellingMethod: i.product.sellingMethod === 'BY_UNIT' ? 'BY_UNIT' : 'BY_PACKAGE',
-        longTail: false,
-      };
-    };
-    const { cartCodes } = await shufAddGrid(readyItems.map(toGridItem));
-    const inCart = new Set(cartCodes || []);
+  function computeQtyForProduct(item, prod) {
+    const byUnit = !prod || prod.sellingMethod === 'BY_UNIT';
+    if (byUnit) {
+      return item.unit === 'unit' || item.unit === 'pack'
+        ? Math.max(1, Math.round(Number(item.qty) || 1))
+        : Math.max(1, Math.round(Number(item.addQty) || 1));
+    }
+    if (item.unit === 'kg') return Math.max(0.5, round2(Number(item.qty) || 1));
+    if (item.unit === 'g') return Math.max(0.5, round2((Number(item.qty) || 500) / 1000));
+    return Math.max(0.5, round2(Number(item.addQty) || 1));
+  }
 
-    // Cap fallback catalog resolution to at most 4 unconfirmed items in parallel so it never stalls
-    const unconfirmed = readyItems.filter((i) => !inCart.has(i.product.code)).slice(0, 4);
-    if (unconfirmed.length) {
-      const retryPayload = [];
-      await Promise.all(unconfirmed.map(async (i) => {
-        const rawCode = String(i.product.code || '').replace(/^P_/, '');
-        const found = await searchCatalog(rawCode || i.name, 4).catch(() => []);
-        const cand = found.find((r) => r.inStock && r.purchasable) || found[0];
-        if (cand && cand.code && cand.code !== i.product.code) {
-          i.product = cand;
-          retryPayload.push(toGridItem(i));
+  function toGridItem(item, methodOverride, qtyOverride) {
+    const rawQty = qtyOverride != null ? qtyOverride : (Number(item.addQty) || 1);
+    const method = methodOverride || (item.product.sellingMethod === 'BY_UNIT' ? 'BY_UNIT' : 'BY_PACKAGE');
+    const q = method === 'BY_UNIT' ? Math.max(1, Math.round(rawQty)) : Math.max(0.1, round2(rawQty));
+    return {
+      productCode: item.product.code,
+      quantity: q,
+      frontQuantity: q,
+      sellingMethod: method,
+      longTail: false,
+    };
+  }
+
+  async function runPool(list, concurrency, fn) {
+    let idx = 0;
+    const workers = Array.from({ length: Math.min(concurrency, list.length) }, async () => {
+      while (idx < list.length) {
+        const cur = list[idx++];
+        await fn(cur);
+      }
+    });
+    await Promise.all(workers);
+  }
+
+  async function ensureOnlineVerifiedItem(item) {
+    const prod = item.product;
+    if (
+      prod
+      && prod.verifiedOnline === true
+      && prod.code
+      && String(prod.code).startsWith('P_')
+      && prod.inStock !== false
+      && prod.purchasable !== false
+    ) {
+      return true;
+    }
+
+    const rawBarcode = String(item.wantBarcode || prod?.code || '').replace(/^P_/, '').trim();
+    const queries = [];
+    if (/^\d{4,14}$/.test(rawBarcode)) queries.push(rawBarcode);
+    if (prod?.name) queries.push(prod.name);
+    if (item.name && item.name !== prod?.name) queries.push(item.name);
+    if (item.name && item.name.includes(' ')) {
+      queries.push(item.name.split(/\s+/).slice(0, 2).join(' '));
+    }
+
+    for (const q of queries) {
+      const results = await searchCatalog(q, 10);
+      const inStockMatch = results.find((r) => r.inStock && r.purchasable !== false);
+      if (inStockMatch) {
+        const prevMethod = item.product?.sellingMethod;
+        item.product = inStockMatch;
+        if (!item.addQty || prevMethod !== inStockMatch.sellingMethod) {
+          item.addQty = computeQtyForProduct(item, inStockMatch);
         }
-      }));
-      if (retryPayload.length) {
-        const retryRes = await shufAddGrid(retryPayload).catch(() => ({ cartCodes: [] }));
-        for (const c of retryRes.cartCodes || []) inCart.add(c);
+        return true;
+      }
+    }
+    return false;
+  }
+
+  async function tryAddSingleWithFallback(item, saveMapping) {
+    const attempts = [toGridItem(item)];
+    if (item.product.sellingMethod && item.product.sellingMethod !== 'BY_UNIT') {
+      const stepKg = Math.max(0.5, Math.round((Number(item.addQty) || 1) * 2) / 2);
+      attempts.push(toGridItem(item, 'BY_PACKAGE', stepKg));
+      attempts.push(toGridItem(item, 'BY_WEIGHT', stepKg));
+      attempts.push(toGridItem(item, 'BY_UNIT', Math.max(1, Math.round(Number(item.addQty) || 1))));
+    }
+
+    for (const payload of attempts) {
+      try {
+        const { cartCodes } = await shufAddGrid([payload]);
+        if (cartCodes.includes(payload.productCode)) {
+          item.status = 'added';
+          await saveMapping(item.key, item.product);
+          return true;
+        }
+      } catch (err) {
+        if (err && (err.message === 'LOGIN_REQUIRED' || err.message === 'NO_CSRF')) throw err;
       }
     }
 
+    // Last resort: search by Hebrew item name for a fresh in-stock alternative in Shufersal Online
+    const altQueries = [item.name, item.name?.split(/\s+/).slice(0, 2).join(' ')].filter(Boolean);
+    for (const q of altQueries) {
+      const results = await searchCatalog(q, 8);
+      const alt = results.find((r) => r.inStock && r.purchasable !== false && r.code !== item.product?.code);
+      if (alt) {
+        item.product = alt;
+        item.addQty = computeQtyForProduct(item, alt);
+        try {
+          const { cartCodes } = await shufAddGrid([toGridItem(item)]);
+          if (cartCodes.includes(alt.code)) {
+            item.status = 'added';
+            await saveMapping(item.key, item.product);
+            return true;
+          }
+        } catch (err) {
+          if (err && (err.message === 'LOGIN_REQUIRED' || err.message === 'NO_CSRF')) throw err;
+        }
+      }
+    }
+
+    item.status = 'error';
+    item.errorMsg = 'המוצר אזל או אינו זמין במשלוח שופרסל אונליין.';
+    return false;
+  }
+
+  async function addReadyItems(readyItems, { saveMapping }) {
+    // 1. Upgrade any unverified physical-feed P_72900... codes to live Shufersal Online P_ codes
+    const unverified = readyItems.filter(
+      (i) => !i.product?.verifiedOnline || i.product.inStock === false || i.product.purchasable === false,
+    );
+    if (unverified.length) {
+      await runPool(unverified, 4, ensureOnlineVerifiedItem);
+    }
+
+    const candidates = [];
     for (const i of readyItems) {
-      if (inCart.has(i.product.code)) {
-        i.status = 'added';
-        await saveMapping(i.key, i.product);
+      if (
+        i.product?.code
+        && String(i.product.code).startsWith('P_')
+        && i.product.inStock !== false
+        && i.product.purchasable !== false
+      ) {
+        candidates.push(i);
       } else {
         i.status = 'error';
-        i.errorMsg = 'לא אושר בסל של שופרסל – בדוק מלאי או בחר חלופה.';
+        i.errorMsg = 'לא נמצא במלאי שופרסל אונליין – ניתן לבחור חלופה ידנית.';
       }
     }
+
+    // 2. Submit in chunks of 10; if any chunk hits ADD_500 (e.g. 1 warehouse-unavailable item),
+    // isolate per item so 1 unavailable item never blocks the rest of the basket!
+    const CHUNK_SIZE = 10;
+    for (let offset = 0; offset < candidates.length; offset += CHUNK_SIZE) {
+      const chunk = candidates.slice(offset, offset + CHUNK_SIZE);
+      try {
+        const { cartCodes } = await shufAddGrid(chunk.map((i) => toGridItem(i)));
+        const inCart = new Set(cartCodes || []);
+        const missed = [];
+        for (const i of chunk) {
+          if (inCart.has(i.product.code)) {
+            i.status = 'added';
+            await saveMapping(i.key, i.product);
+          } else {
+            missed.push(i);
+          }
+        }
+        if (missed.length) {
+          await runPool(missed, 3, (i) => tryAddSingleWithFallback(i, saveMapping));
+        }
+      } catch (err) {
+        if (err && (err.message === 'LOGIN_REQUIRED' || err.message === 'NO_CSRF')) {
+          throw err;
+        }
+        await runPool(chunk, 3, (i) => tryAddSingleWithFallback(i, saveMapping));
+      }
+    }
+
+    const addedTotal = readyItems.filter((i) => i.status === 'added').length;
+    if (readyItems.length > 0 && addedTotal === 0) {
+      throw new Error('לא הצלחנו להוסיף את המוצרים לסל שופרסל אונליין – בדוק שבחרת כתובת משלוח פעילה באתר.');
+    }
+
     return { reloadAfterDone: false, navigateToCartUrl: `${SHUF_BASE}/cart` };
   }
 
@@ -254,13 +450,21 @@
     checkoutLabel: '💳 עבור לסל ולתשלום בשופרסל',
     loginUrl: `${SHUF_BASE}/login`,
     showRefreshOnDone: true,
-    acceptsLinkProductDirectly: true,
+    acceptsLinkProductDirectly: false,
     isLoggedIn,
     isOnLoginPage,
     tryFillLoginForm,
     consumePostLoginReload,
     isSavedProductReady: (prod) =>
-      Boolean(prod && prod.code && !/^SEARCH/i.test(prod.code) && String(prod.code).startsWith('P_')),
+      Boolean(
+        prod
+        && prod.verifiedOnline === true
+        && prod.code
+        && !/^SEARCH/i.test(prod.code)
+        && String(prod.code).startsWith('P_')
+        && prod.inStock !== false
+        && prod.purchasable !== false,
+      ),
     searchCatalog,
     addReadyItems,
     formatAddError(err) {

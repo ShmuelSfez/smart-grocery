@@ -2,7 +2,7 @@
   "manifest_version": 3,
   "name": "העגלה החכמה – מילוי סל ב-7 רשתות שיווק (לא רשמי)",
   "short_name": "SmartCart",
-  "version": "3.1.1",
+  "version": "3.1.2",
   "description": "כלי עצמאי ובלתי רשמי למילוי סל ומעבר לתשלום בשופרסל, רמי לוי, קרפור, מחסני השוק, ויקטורי, יוחננוף וטיב טעם.",
   "permissions": ["storage"],
   "host_permissions": [

@@ -1,8 +1,8 @@
 # Codebase File Inventory (Auto-Generated)
 
-- **Updated:** 2026-11-21T00:48:40.278Z
-- **Latest Commit:** `3bd46d5 2026-11-20 fix(extension): add fetch timeouts, skip-while-searching, and immediate cart navigation on partial match`
-- **Unit Tests (`npm test`):** 41 pass, 0 fail
+- **Updated:** 2026-11-21T19:38:35.745Z
+- **Latest Commit:** `96f45f5 2026-11-21 fix(extension): complete v3.1.1 zip build and auto-navigate to cart after adding ready items`
+- **Unit Tests (`npm test`):** 43 pass, 0 fail
 
 | File | Lines / Size | Exports |
 | :--- | :--- | :--- |
@@ -22,13 +22,13 @@
 | `AGENTS.md` | 115 | — |
 | `README.md` | 107 | — |
 | `api/sheet.js` | 98 | `extractSheetExportUrl`, `fetchGoogleCsv`, `default` |
-| `dist/extensions/smartcart-carrefour.zip` | binary (28250 B) | — |
-| `dist/extensions/smartcart-mahsaneihashuk.zip` | binary (28300 B) | — |
-| `dist/extensions/smartcart-ramilevy.zip` | binary (30678 B) | — |
-| `dist/extensions/smartcart-shufersal.zip` | binary (30731 B) | — |
-| `dist/extensions/smartcart-tivtaam.zip` | binary (28578 B) | — |
-| `dist/extensions/smartcart-victory.zip` | binary (28542 B) | — |
-| `dist/extensions/smartcart-yochananof.zip` | binary (28555 B) | — |
+| `dist/extensions/smartcart-carrefour.zip` | binary (28887 B) | — |
+| `dist/extensions/smartcart-mahsaneihashuk.zip` | binary (28937 B) | — |
+| `dist/extensions/smartcart-ramilevy.zip` | binary (31338 B) | — |
+| `dist/extensions/smartcart-shufersal.zip` | binary (34259 B) | — |
+| `dist/extensions/smartcart-tivtaam.zip` | binary (29214 B) | — |
+| `dist/extensions/smartcart-victory.zip` | binary (29179 B) | — |
+| `dist/extensions/smartcart-yochananof.zip` | binary (29192 B) | — |
 | `dist/smartcart-mahsaneihashuk.zip` | binary (28300 B) | — |
 | `docs/web-dev-and-scaling-guide.md` | 362 | — |
 | `extension/bridge.js` | 14 | — |
@@ -38,7 +38,7 @@
 | `extension/chains/mahsaneihashuk.js` | 16 | — |
 | `extension/chains/ramilevy.js` | 209 | — |
 | `extension/chains/selfpoint.js` | 571 | — |
-| `extension/chains/shufersal.js` | 277 | — |
+| `extension/chains/shufersal.js` | 481 | — |
 | `extension/chains/tivtaam.js` | 32 | — |
 | `extension/chains/victory.js` | 27 | — |
 | `extension/chains/yochananof.js` | 28 | — |
@@ -47,7 +47,7 @@
 | `extension/icons/16.png` | binary (438 B) | — |
 | `extension/icons/48.png` | binary (984 B) | — |
 | `extension/manifest.json` | 73 | — |
-| `extension/panel.js` | 1014 | — |
+| `extension/panel.js` | 1026 | — |
 | `extension/popup.html` | 63 | — |
 | `extension/popup.js` | 170 | — |
 | `gemini/agents.md` | 18 | — |
@@ -76,7 +76,7 @@
 | `pipeline/sources/yochananof.mjs` | 11 | `listFeeds` |
 | `serve.mjs` | 170 | — |
 | `tests/core.test.mjs` | 129 | — |
-| `tests/extension.test.mjs` | 248 | — |
+| `tests/extension.test.mjs` | 370 | — |
 | `tests/fixtures/prices-sample.xml` | binary (1160 B) | — |
 | `tests/fixtures/promos-sample.xml` | binary (4793 B) | — |
 | `tests/fixtures/stores-sample.xml` | binary (879 B) | — |
@@ -138,7 +138,7 @@
 | `web/js/xlsx.js` | 359 | `XLSX_LIMITS`, `scanXmlElements`, `parseXlsxBuffer` |
 | `web/js/zip.js` | 93 | `isZip`, `listZipEntries` |
 | `web/manifest.webmanifest` | 16 | — |
-| `web/shufersal-extension.zip` | binary (38597 B) | — |
-| `web/smartcart-extension.zip` | binary (38597 B) | — |
+| `web/shufersal-extension.zip` | binary (40680 B) | — |
+| `web/smartcart-extension.zip` | binary (40680 B) | — |
 | `web/styles.css` | 472 | — |
 | `web/sw.js` | 50 | — |
