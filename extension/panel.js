@@ -272,20 +272,37 @@
     try {
       const outcome = await ADAPTER.addReadyItems(ready, { saveMapping: saveChainMapping });
 
-      const left = state.items.filter((i) =>
-        ['choose', 'notfound', 'error', 'todo', 'searching', 'ready'].includes(i.status),
-      );
-      state.phase = left.length ? 'work' : 'done';
-      if (state.phase === 'done') {
-        const addedCount = state.items.filter((i) => i.status === 'added').length;
+      const addedCount = state.items.filter((i) => i.status === 'added').length;
+      const unaddedNames = state.items
+        .filter((i) => i.status !== 'added' && i.status !== 'skipped')
+        .map((i) => i.name);
+      if (addedCount > 0) {
+        state.phase = 'done';
+        state.doneAdded = addedCount;
+        state.unaddedNames = unaddedNames;
         await del('pending');
         render();
+        if (outcome && outcome.navigateToCartUrl && !location.pathname.endsWith('/cart')) {
+          sessionStorage.setItem('sl_done_banner', JSON.stringify({
+            chain: CHAIN,
+            added: addedCount,
+            missing: unaddedNames,
+          }));
+          setTimeout(() => { location.href = outcome.navigateToCartUrl; }, 350);
+          return;
+        }
         if (outcome && outcome.reloadAfterDone) {
-          sessionStorage.setItem('sl_done_banner', JSON.stringify({ chain: CHAIN, added: addedCount }));
+          sessionStorage.setItem('sl_done_banner', JSON.stringify({
+            chain: CHAIN,
+            added: addedCount,
+            missing: unaddedNames,
+          }));
           setTimeout(() => location.reload(), 350);
+          return;
         }
         return;
       }
+      state.phase = 'work';
       await persist();
     } catch (err) {
       state.phase = 'work';

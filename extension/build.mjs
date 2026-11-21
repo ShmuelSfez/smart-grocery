@@ -86,7 +86,7 @@ export function verifyExtensionZipBuffer(zipBuf, expectedFiles = []) {
     ? zlib.inflateRawSync(manifestEntry.data)
     : Buffer.from(manifestEntry.data);
   const manifest = JSON.parse(rawManifest.toString('utf8'));
-  if (manifest.manifest_version !== 3 || manifest.version !== '3.1.0') {
+  if (manifest.manifest_version !== 3 || manifest.version !== '3.1.1') {
     throw new Error(`Unexpected manifest version in zip: ${manifest.version}`);
   }
 

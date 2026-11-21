@@ -1,8 +1,8 @@
 # Codebase File Inventory (Auto-Generated)
 
-- **Updated:** 2026-11-20T16:48:41.422Z
-- **Latest Commit:** `4f5f7da 2026-11-20 feat(chains,ui,extension): expand to 9 live chains, add top-down ranked list UI, and modular v3.1 extension`
-- **Unit Tests (`npm test`):** FAILED
+- **Updated:** 2026-11-21T00:48:40.278Z
+- **Latest Commit:** `3bd46d5 2026-11-20 fix(extension): add fetch timeouts, skip-while-searching, and immediate cart navigation on partial match`
+- **Unit Tests (`npm test`):** 41 pass, 0 fail
 
 | File | Lines / Size | Exports |
 | :--- | :--- | :--- |
@@ -47,7 +47,7 @@
 | `extension/icons/16.png` | binary (438 B) | — |
 | `extension/icons/48.png` | binary (984 B) | — |
 | `extension/manifest.json` | 73 | — |
-| `extension/panel.js` | 997 | — |
+| `extension/panel.js` | 1014 | — |
 | `extension/popup.html` | 63 | — |
 | `extension/popup.js` | 170 | — |
 | `gemini/agents.md` | 18 | — |
@@ -138,7 +138,7 @@
 | `web/js/xlsx.js` | 359 | `XLSX_LIMITS`, `scanXmlElements`, `parseXlsxBuffer` |
 | `web/js/zip.js` | 93 | `isZip`, `listZipEntries` |
 | `web/manifest.webmanifest` | 16 | — |
-| `web/shufersal-extension.zip` | binary (37130 B) | — |
-| `web/smartcart-extension.zip` | binary (37130 B) | — |
+| `web/shufersal-extension.zip` | binary (38597 B) | — |
+| `web/smartcart-extension.zip` | binary (38597 B) | — |
 | `web/styles.css` | 472 | — |
 | `web/sw.js` | 50 | — |
