@@ -11,7 +11,13 @@ To maximize accuracy while preserving context-window budget (Antigravity enforce
 1. **Hierarchical Directory Rules (`AGENTS.md` — Contextual & Always Active in Scope):**
    - [`/AGENTS.md`](../AGENTS.md) — Root engineering, honesty, security, zero-dependency, and git/deploy contract loaded across the whole repository.
    - [`/web/AGENTS.md`](../web/AGENTS.md) — Loaded automatically only when working inside `web/` (pure ES modules, Safari regex rules, strict CSP/XSS, `?v=N` cache busting, `codec.js` sync, UI price honesty).
+   - [`/extension/AGENTS.md`](../extension/AGENTS.md) — Loaded automatically only when working inside `extension/` (zero passwords, `AbortController` timeouts, barcode translation, per-item `ADD_500` isolation, MV3 CSP).
    - [`/tests/regression/AGENTS.md`](../tests/regression/AGENTS.md) — Loaded automatically only when working inside `tests/regression/` (DUT vs. Testbench separation, zero-import XML oracle, `<= 30%` non-tautology gate, passing-only coverage, `waivers.json` expiry/ticket rules).
+
+2. **Specialized Subagents (`.agents/agents/*.md` — Strict Separation of Concerns):**
+   - [`agents/smartcart-web.md`](./agents/smartcart-web.md) — Owns only `web/**`, `pipeline/**`, `api/**`, and `serve.mjs` (SmartCart website, full delivery address & zone engine, Hebrew list importers, weighted produce, and 9-chain honest pricing).
+   - [`agents/smartcart-extensions.md`](./agents/smartcart-extensions.md) — Owns only `extension/**` and packaged `.zip` builds across all 7 online supermarket storefronts.
+   - [`agents/smartcart-verification.md`](./agents/smartcart-verification.md) — Independent DV verification agent owning `tests/**` and `tests/regression/**`; never edits production code, audits diffs, writes adversarial tests, and issues PASS/FAIL signoff.
 
 2. **Workspace Rules (`.agents/rules/*.md` — Always-On Gates):**
    - [`rules/verification-signoff.md`](./rules/verification-signoff.md) (`trigger: always_on`) — Mandatory pre-commit signoff gate (`node --check`, `npm test`, `regression:smoke`, and `update-map.mjs`).

@@ -19,8 +19,9 @@
 ```text
 smart-grocery/
 ├── AGENTS.md                 # Master repo contract (this file — always active)
-├── .agents/                  # Auto-discovered workspace rules & progressive-disclosure skills
+├── .agents/                  # Auto-discovered workspace rules, skills & specialized subagents
 │   ├── README.md             # AI agent infrastructure overview & discovery guide
+│   ├── agents/               # smartcart-web, smartcart-extensions, smartcart-verification
 │   ├── rules/                # Always-on pre-commit verification gates
 │   └── skills/               # code-infra, dv-regression, price-pipeline-ops, release-and-deploy
 ├── web/                      # Zero-build ES module PWA (scoped rules in web/AGENTS.md)
@@ -29,19 +30,19 @@ smart-grocery/
 │   ├── sw.js                 # Network-first service worker for static app shell only
 │   ├── data/                 # Human-verified delivery.json, delivery-coverage.json, sponsored.json
 │   ├── js/                   # Pure domain/pricing/produce modules + app.js + shared codec.js
-│   └── shufersal-extension.zip
+│   └── smartcart-extension.zip
 ├── pipeline/                 # Node 20+ Price Transparency ingestion & orphan gh-pages publisher
 │   ├── build.mjs             # Fetches, decodes, normalizes & writes data/v1/
 │   ├── publish-pages.mjs     # Force-pushes single-commit orphan snapshot to gh-pages
 │   ├── parse.mjs             # Gzip/disguised-ZIP + UTF-8/UTF-16/Windows-1255 XML parser
 │   ├── promos.mjs            # Active all-customer (ClubID=0) promotion extractor
 │   ├── cities.mjs            # CBS locality code (סמל ישוב) -> Hebrew city resolver
-│   └── sources/              # shufersal.mjs, ramilevy.mjs, carrefour.mjs
+│   └── sources/              # shufersal, ramilevy, carrefour, laibcatalog (MCK/Victory), cerberus
 ├── api/sheet.js              # SSRF-guarded Google Sheets CSV export proxy (shared with serve.mjs)
-├── extension/                # Desktop Chrome Extension MV3 (v3.0.0 — 3-chain 1-click cart fill)
-├── tests/                    # 25 Node built-in unit tests + 628-list DV regression
+├── extension/                # Desktop Chrome Extension MV3 (v3.1.2 — 7-chain cart fill, extension/AGENTS.md)
+├── tests/                    # 43 Node built-in unit tests + 631-list 7-chain DV regression
 │   └── regression/           # DV testbench, XML oracle & scoreboard (tests/regression/AGENTS.md)
-├── docs/                     # Architecture & scaling reference (docs/web-dev-and-scaling-guide.md)
+├── docs/                     # Product agenda (PROJECT_GOAL_AND_AGENDA.md) & scaling guide
 ├── gemini/                   # Legacy compatibility pointers to AGENTS.md and .agents/
 ├── serve.mjs                 # Local dev server (web/, local /data/v1/, /api/sheet, localhost /api/room)
 └── vercel.json               # Production rewrites + strict CSP & security headers
@@ -101,14 +102,19 @@ Additional targeted commands:
 
 ---
 
-## 6. Scoped Rules & On-Demand Workspace Skills
+## 6. Specialized Agents, Scoped Rules & On-Demand Workspace Skills
 
 | Customization | Path | When Used |
 | :--- | :--- | :--- |
+| **Product Goal & Agenda** | [docs/PROJECT_GOAL_AND_AGENDA.md](./docs/PROJECT_GOAL_AND_AGENDA.md) | Master product vision, mandatory full-address spec, Israeli competitor analysis, 2-phase roadmap & backlog. |
+| **Agent: `smartcart-web`** | [.agents/agents/smartcart-web.md](./.agents/agents/smartcart-web.md) | Dedicated subagent for `web/**`, `pipeline/**`, `api/**`, and `serve.mjs` (SmartCart UI, address, parsing, pricing). |
+| **Agent: `smartcart-extensions`** | [.agents/agents/smartcart-extensions.md](./.agents/agents/smartcart-extensions.md) | Dedicated subagent for `extension/**` and 7-chain supermarket cart-fill adapters & ZIP builds. |
+| **Agent: `smartcart-verification`** | [.agents/agents/smartcart-verification.md](./.agents/agents/smartcart-verification.md) | Independent DV subagent owning `tests/**` and `tests/regression/**` (audits changes & issues PASS/FAIL signoff). |
 | **Frontend Rules** | [web/AGENTS.md](./web/AGENTS.md) | Auto-loaded when editing `web/**` (ES modules, Safari compat, CSP/XSS, `?v=N`, UI honesty). |
+| **Extension Rules** | [extension/AGENTS.md](./extension/AGENTS.md) | Auto-loaded when editing `extension/**` (zero passwords, timeouts, `72900` barcode mapping, `ADD_500` isolation). |
 | **DV Testbench Rules** | [tests/regression/AGENTS.md](./tests/regression/AGENTS.md) | Auto-loaded when editing `tests/regression/**` (oracle independence, `<= 30%` non-tautology gate, waivers). |
 | **Signoff Gate Rule** | [.agents/rules/verification-signoff.md](./.agents/rules/verification-signoff.md) | Always-on pre-commit verification checklist (`node --check`, unit tests, DV smoke, map sync). |
 | **Skill: `code-infra`** | [.agents/skills/code-infra/SKILL.md](./.agents/skills/code-infra/SKILL.md) | Onboarding, 3-minute code-reading order, architecture flows, and refreshing `file-inventory.md` / `README.md`. |
-| **Skill: `dv-regression`** | [.agents/skills/dv-regression/SKILL.md](./.agents/skills/dv-regression/SKILL.md) | Running, triaging (`S1`–`S10`), extending, and closing coverage on the 628-list DV regression suite. |
-| **Skill: `price-pipeline-ops`** | [.agents/skills/price-pipeline-ops/SKILL.md](./.agents/skills/price-pipeline-ops/SKILL.md) | Operating `pipeline/`, XML/ZIP/encoding quirks, `StoreType=2`, `gh-pages`, and onboarding new chains (Victory/Yochananof). |
-| **Skill: `release-and-deploy`** | [.agents/skills/release-and-deploy/SKILL.md](./.agents/skills/release-and-deploy/SKILL.md) | Pre-release checklist, `?v=N` bump, `shufersal-extension.zip` rebuild, Vercel deploy, and SaaS migration checklist. |
+| **Skill: `dv-regression`** | [.agents/skills/dv-regression/SKILL.md](./.agents/skills/dv-regression/SKILL.md) | Running, triaging (`S1`–`S10`), extending, and closing coverage on the 631-list DV regression suite. |
+| **Skill: `price-pipeline-ops`** | [.agents/skills/price-pipeline-ops/SKILL.md](./.agents/skills/price-pipeline-ops/SKILL.md) | Operating `pipeline/`, XML/ZIP/encoding quirks, `StoreType=2`, `gh-pages`, and onboarding new chains. |
+| **Skill: `release-and-deploy`** | [.agents/skills/release-and-deploy/SKILL.md](./.agents/skills/release-and-deploy/SKILL.md) | Pre-release checklist, `?v=N` bump, `smartcart-extension.zip` rebuild, Vercel deploy, and SaaS migration checklist. |

@@ -1,12 +1,15 @@
 # Codebase File Inventory (Auto-Generated)
 
-- **Updated:** 2026-11-21T19:38:35.745Z
-- **Latest Commit:** `96f45f5 2026-11-21 fix(extension): complete v3.1.1 zip build and auto-navigate to cart after adding ready items`
+- **Updated:** 2026-11-22T00:46:56.606Z
+- **Latest Commit:** `465a7cd 2026-11-21 fix(shufersal): resolve shortened P_ catalog codes and isolate ADD_500 per item (v3.1.2)`
 - **Unit Tests (`npm test`):** 43 pass, 0 fail
 
 | File | Lines / Size | Exports |
 | :--- | :--- | :--- |
-| `.agents/README.md` | 31 | — |
+| `.agents/README.md` | 37 | — |
+| `.agents/agents/smartcart-extensions.md` | 35 | — |
+| `.agents/agents/smartcart-verification.md` | 37 | — |
+| `.agents/agents/smartcart-web.md` | 36 | — |
 | `.agents/rules/verification-signoff.md` | 36 | — |
 | `.agents/skills/code-infra/SKILL.md` | 68 | — |
 | `.agents/skills/code-infra/references/architecture.md` | 49 | — |
@@ -19,7 +22,7 @@
 | `.github/workflows/regression.yml` | 42 | — |
 | `.gitignore` | binary (47 B) | — |
 | `.vercelignore` | binary (68 B) | — |
-| `AGENTS.md` | 115 | — |
+| `AGENTS.md` | 121 | — |
 | `README.md` | 107 | — |
 | `api/sheet.js` | 98 | `extractSheetExportUrl`, `fetchGoogleCsv`, `default` |
 | `dist/extensions/smartcart-carrefour.zip` | binary (28887 B) | — |
@@ -30,7 +33,9 @@
 | `dist/extensions/smartcart-victory.zip` | binary (29179 B) | — |
 | `dist/extensions/smartcart-yochananof.zip` | binary (29192 B) | — |
 | `dist/smartcart-mahsaneihashuk.zip` | binary (28300 B) | — |
+| `docs/PROJECT_GOAL_AND_AGENDA.md` | 140 | — |
 | `docs/web-dev-and-scaling-guide.md` | 362 | — |
+| `extension/AGENTS.md` | 23 | — |
 | `extension/bridge.js` | 14 | — |
 | `extension/build.mjs` | 196 | `CHAIN_BUILD_SPECS`, `syncCodec`, `verifyExtensionZipBuffer`, `buildUnifiedZipBuffer`, `buildSingleChainZipBuffer`, `runBuild` |
 | `extension/capture.js` | 23 | — |
